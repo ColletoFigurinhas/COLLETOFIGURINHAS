@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  PARTICIPANTE
+  MARKETING
+  TI
+  ADMIN
+}
+
+enum TipoPacote {
+  PADRAO
+  PLUS
+  PREMIUM
+}
+
+enum StatusPacote {
+  DISPONIVEL
+  ABERTO
+}
+
+enum StatusTroca {
+  PENDENTE
+  ACEITA
+  RECUSADA
+  CANCELADA_SEM_FIGURINHA
+  CANCELADA_PELO_SOLICITANTE
+}
+
+// ─── Participantes ────────────────────────────────────────────────
+model Participante {
+  id                Int       @id @default(autoincrement())
+  matricula         String    @unique                     // login identifier
+  nome              String
+  email             String?                               // notificações + recuperação
+  senha             String?                               // null = primeiro acesso pendente
+  role              Role      @default(PARTICIPANTE)
+  ativo             Boolean   @default(true)
+  dataEntrada       DateTime  @default(now()) @map("data_entrada")
+  resetToken        String?   @unique @map("reset_token")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt      @map("updated_at")
+
+  albumItens        AlbumItem[]
+  pacotes           Pacote[]
+  trocasSolicitadas Troca[]        @relation("Solicitante")
+  trocasRecebidas   Troca[]        @relation("Destinatario")
+  ganhos            GanhadorAcao[]
+
+  @@map("participantes")
+}
+
+// ─── Campanhas ────────────────────────────────────────────────────
+model Campanha {
+  id                    Int      @id @default(autoincrement())
+  nome                  String
+  slug                  String   @unique
+  dataInicio            DateTime @map("data_inicio")
+  dataFim               DateTime @map("data_fim")
+  stickersPorDiaPadrao  Int      @default(14)   @map("stickers_por_dia_padrao")
+  stickersPorDiaPlus    Int      @default(15)   @map("stickers_por_dia_plus")
+  stickersPorDiaPremium Int      @default(15)   @map("stickers_por_dia_premium")
+  chanceEspecial        Float    @default(0.10) @map("chance_especial")
+  horarioCorteAcoes     String   @map("horario_corte_acoes")
+  status                String   @default("ativo")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  figurinhas Figurinha[]
+  pacotes    Pacote[]
+  trocas     Troca[]
+  acoes      AcaoCampanha[]
+
+  @@map("campanhas")
+}
+
+// ─── Figurinhas ───────────────────────────────────────────────────
+model Figurinha {
+  id            Int      @id @default(autoincrement())
+  campanhaId    Int      @map("campanha_id")
+  classificacao String
+  tipo          String   @default("FUNCIONARIO") // "FUNCIONARIO" | "GESTOR"
+  imagemUrl     String?  @map("imagem_url")
+  ativo         Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  campanha          Campanha          @relation(fields: [campanhaId], references: [id])
+  albumItens        AlbumItem[]
+  pacoteFigurinha   PacoteFigurinha[]
+  trocasSolicitadas Troca[]           @relation("FigurinhaOfertada")
+  trocasRecebidas   Troca[]           @relation("FigurinhaRecebida")
+
+  @@map("figurinhas")
+}
+
+// ─── Album Itens ──────────────────────────────────────────────────
+model AlbumItem {
+  id             Int      @id @default(autoincrement())
+  participanteId Int      @map("participante_id")
+  figurinhaId    Int      @map("figurinha_id")
+  quantidade     Int      @default(1)
+  primeiraVezEm  DateTime @default(now()) @map("primeira_vez_em")
+
+  participante Participante @relation(fields: [participanteId], references: [id])
+  figurinha    Figurinha    @relation(fields: [figurinhaId],    references: [id])
+
+  @@unique([participanteId, figurinhaId])
+  @@map("album_itens")
+}
+
+// ─── Pacotes ──────────────────────────────────────────────────────
+model Pacote {
+  id             Int          @id @default(autoincrement())
+  campanhaId     Int          @map("campanha_id")
+  participanteId Int          @map("participante_id")
+  tipo           TipoPacote   @default(PADRAO)
+  dataReferencia DateTime     @map("data_referencia")
+  abertoEm       DateTime?    @map("aberto_em")
+  status         StatusPacote @default(DISPONIVEL)
+  isNivelamento  Boolean      @default(false) @map("is_nivelamento")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  campanha     Campanha          @relation(fields: [campanhaId],     references: [id])
+  participante Participante       @relation(fields: [participanteId], references: [id])
+  figurinhas   PacoteFigurinha[]
+  premio       PremioFisico?
+
+  @@map("pacotes")
+}
+
+// ─── Pacote Figurinhas ────────────────────────────────────────────
+model PacoteFigurinha {
+  id          Int      @id @default(autoincrement())
+  pacoteId    Int      @map("pacote_id")
+  figurinhaId Int      @map("figurinha_id")
+  revelada    Boolean  @default(false)
+
+  pacote    Pacote    @relation(fields: [pacoteId],    references: [id])
+  figurinha Figurinha @relation(fields: [figurinhaId], references: [id])
+
+  @@map("pacote_figurinhas")
+}
+
+// ─── Prêmios Físicos ──────────────────────────────────────────────
+model PremioFisico {
+  id            Int       @id @default(autoincrement())
+  pacoteId      Int       @unique @map("pacote_id")
+  descricao     String
+  registradoPor String    @map("registrado_por")
+  notificadoEm  DateTime? @map("notificado_em")
+  entregueEm    DateTime? @map("entregue_em")
+  observacoes   String?
+
+  pacote Pacote @relation(fields: [pacoteId], references: [id])
+
+  @@map("premios_fisicos")
+}
+
+// ─── Trocas ───────────────────────────────────────────────────────
+model Troca {
+  id                  Int         @id @default(autoincrement())
+  campanhaId          Int         @map("campanha_id")
+  solicitanteId       Int         @map("solicitante_id")
+  figurinhaOfertadaId Int         @map("figurinha_ofertada_id")
+  destinatarioId      Int         @map("destinatario_id")
+  figurinhaRecebidaId Int?        @map("figurinha_recebida_id")
+  status              StatusTroca @default(PENDENTE)
+  createdAt           DateTime    @default(now()) @map("created_at")
+  respondidoEm        DateTime?   @map("respondido_em")
+
+  campanha          Campanha     @relation(fields: [campanhaId],          references: [id])
+  solicitante       Participante @relation("Solicitante",       fields: [solicitanteId],       references: [id])
+  figurinhaOfertada Figurinha    @relation("FigurinhaOfertada", fields: [figurinhaOfertadaId], references: [id])
+  destinatario      Participante @relation("Destinatario",      fields: [destinatarioId],      references: [id])
+  figurinhaRecebida Figurinha?   @relation("FigurinhaRecebida", fields: [figurinhaRecebidaId], references: [id])
+
+  @@map("trocas")
+}
+
+// ─── Ações de Campanha ────────────────────────────────────────────
+model AcaoCampanha {
+  id           Int      @id @default(autoincrement())
+  campanhaId   Int      @map("campanha_id")
+  nome         String
+  descricao    String?  @db.Text
+  dataAcao     DateTime @map("data_acao")
+  horarioCorte String   @map("horario_corte")
+  ativo        Boolean  @default(true)
+
+  campanha   Campanha       @relation(fields: [campanhaId], references: [id])
+  ganhadores GanhadorAcao[]
+
+  @@map("acoes_campanha")
+}
+
+// ─── Ganhadores de Ação ───────────────────────────────────────────
+model GanhadorAcao {
+  id               Int        @id @default(autoincrement())
+  acaoId           Int        @map("acao_id")
+  participanteId   Int        @map("participante_id")
+  tipoPacotePremio TipoPacote @map("tipo_pacote_premio")
+  registradoPor    String     @map("registrado_por")
+  dataRegistro     DateTime   @default(now()) @map("data_registro")
+  pacoteId         Int?       @map("pacote_id")
+
+  acao         AcaoCampanha @relation(fields: [acaoId],         references: [id])
+  participante Participante @relation(fields: [participanteId], references: [id])
+
+  @@unique([acaoId, participanteId])
+  @@map("ganhadores_acao")
+}

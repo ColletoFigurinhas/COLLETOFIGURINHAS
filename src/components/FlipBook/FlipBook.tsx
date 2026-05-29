@@ -1,486 +1,518 @@
 'use client'
 
-import { useEffect, useRef, useState, useMemo, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import type { SectionData } from '@/app/album/page'
+import InventarioModal from '@/components/InventarioModal'
+import TrocasModal from '@/components/TrocasModal'
+import PacoteAbertura from '@/components/PacoteAbertura'
+import FigurinhaPreview from '@/components/FigurinhaPreview'
 
-// ============================================================
-// TYPES
-// ============================================================
-type Special = 'golden' | 'silver' | 'legendary' | 'rare'
+// ── Toast ─────────────────────────────────────────────────────────
+type ToastType = 'pacote' | 'troca_recebida' | 'troca_aceita' | 'troca_recusada' | 'troca_cancelada'
+type Toast = { id: number; type: ToastType; message: string }
 
-interface Player {
-  name: string
-  number: number
-  position: string
-  special?: Special
-  collected: boolean
+const TOAST_CFG: Record<ToastType, { icon: string; bg: string; border: string }> = {
+  pacote:          { icon: '🎴', bg: 'linear-gradient(135deg,#b45309,#92400e)', border: '#f59e0b' },
+  troca_recebida:  { icon: '🔄', bg: 'linear-gradient(135deg,#1d4ed8,#1e3a8a)', border: '#60a5fa' },
+  troca_aceita:    { icon: '✅', bg: 'linear-gradient(135deg,#15803d,#14532d)', border: '#4ade80' },
+  troca_recusada:  { icon: '❌', bg: 'linear-gradient(135deg,#b91c1c,#7f1d1d)', border: '#f87171' },
+  troca_cancelada: { icon: '↩️', bg: 'linear-gradient(135deg,#374151,#1f2937)', border: '#9ca3af' },
 }
 
-interface Team {
-  id: string
-  title: string
-  flag: string
-  primary: string
-  secondary: string
-  accent: string
-  textColor: string
-  players: Player[]
-}
-
-// ============================================================
-// ALBUM DATA — FIFA WORLD CUP 2026
-// ============================================================
-const TEAMS: Team[] = [
-  {
-    id: 'brasil', title: 'BRASIL', flag: '🇧🇷',
-    primary: '#009c3b', secondary: '#ffdf00', accent: '#002776', textColor: '#fff',
-    players: [
-      { name: 'Alisson',      number: 1,  position: 'GK',  special: 'golden',    collected: true  },
-      { name: 'Militão',      number: 3,  position: 'DEF',                        collected: true  },
-      { name: 'Marquinhos',   number: 4,  position: 'DEF',                        collected: true  },
-      { name: 'Danilo',       number: 2,  position: 'LAT',                        collected: false },
-      { name: 'Casemiro',     number: 5,  position: 'MID', special: 'silver',     collected: true  },
-      { name: 'Paquetá',      number: 10, position: 'MID',                        collected: false },
-      { name: 'Vinícius Jr.', number: 7,  position: 'ATA', special: 'legendary',  collected: true  },
-      { name: 'Rodrygo',      number: 11, position: 'ATA',                        collected: true  },
-      { name: 'Endrick',      number: 9,  position: 'ATA', special: 'rare',       collected: false },
-      { name: 'Savinho',      number: 17, position: 'ATA',                        collected: true  },
-      { name: 'André',        number: 6,  position: 'MID',                        collected: false },
-      { name: 'Gerson',       number: 8,  position: 'MID',                        collected: true  },
-    ],
-  },
-  {
-    id: 'argentina', title: 'ARGENTINA', flag: '🇦🇷',
-    primary: '#74acdf', secondary: '#ffffff', accent: '#003399', textColor: '#003399',
-    players: [
-      { name: 'E. Martínez',  number: 1,  position: 'GK',  special: 'golden',    collected: true  },
-      { name: 'Molina',       number: 26, position: 'DEF',                        collected: true  },
-      { name: 'C. Romero',    number: 13, position: 'DEF',                        collected: false },
-      { name: 'L. Martínez',  number: 22, position: 'DEF',                        collected: true  },
-      { name: 'Tagliafico',   number: 3,  position: 'DEF',                        collected: false },
-      { name: 'De Paul',      number: 7,  position: 'MID',                        collected: true  },
-      { name: 'Mac Allister', number: 20, position: 'MID',                        collected: true  },
-      { name: 'Messi',        number: 10, position: 'CAM', special: 'legendary',  collected: true  },
-      { name: 'Di María',     number: 11, position: 'ATA',                        collected: false },
-      { name: 'J. Álvarez',   number: 9,  position: 'ATA', special: 'silver',     collected: true  },
-      { name: 'Dybala',       number: 21, position: 'ATA',                        collected: false },
-      { name: 'Almada',       number: 15, position: 'MID',                        collected: true  },
-    ],
-  },
-  {
-    id: 'franca', title: 'FRANÇA', flag: '🇫🇷',
-    primary: '#002395', secondary: '#ed2939', accent: '#4a6acd', textColor: '#fff',
-    players: [
-      { name: 'Maignan',      number: 16, position: 'GK',  special: 'silver',     collected: true  },
-      { name: 'Koundé',       number: 5,  position: 'DEF',                        collected: true  },
-      { name: 'Upamecano',    number: 4,  position: 'DEF',                        collected: false },
-      { name: 'T. Hernández', number: 22, position: 'DEF',                        collected: true  },
-      { name: 'Camavinga',    number: 8,  position: 'MID',                        collected: true  },
-      { name: 'Tchouaméni',   number: 8,  position: 'MID',                        collected: false },
-      { name: 'Griezmann',    number: 7,  position: 'MID', special: 'silver',     collected: true  },
-      { name: 'Mbappé',       number: 10, position: 'ATA', special: 'legendary',  collected: true  },
-      { name: 'Dembelé',      number: 11, position: 'ATA', special: 'golden',     collected: false },
-      { name: 'Giroud',       number: 9,  position: 'ATA',                        collected: true  },
-      { name: 'Rabiot',       number: 14, position: 'MID',                        collected: false },
-      { name: 'Guendouzi',    number: 6,  position: 'MID',                        collected: true  },
-    ],
-  },
-  {
-    id: 'england', title: 'ENGLAND', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-    primary: '#003090', secondary: '#cf091e', accent: '#1a5cbd', textColor: '#fff',
-    players: [
-      { name: 'Pickford',      number: 1,  position: 'GK',                        collected: true  },
-      { name: 'Alexander-A.',  number: 66, position: 'DEF',                       collected: true  },
-      { name: 'Stones',        number: 5,  position: 'DEF',                       collected: false },
-      { name: 'Maguire',       number: 6,  position: 'DEF',                       collected: true  },
-      { name: 'Shaw',          number: 23, position: 'DEF',                       collected: false },
-      { name: 'Rice',          number: 4,  position: 'MID', special: 'silver',    collected: true  },
-      { name: 'Bellingham',    number: 22, position: 'MID', special: 'golden',    collected: true  },
-      { name: 'Saka',          number: 7,  position: 'ATA',                       collected: true  },
-      { name: 'Kane',          number: 9,  position: 'ATA', special: 'golden',    collected: false },
-      { name: 'Rashford',      number: 10, position: 'ATA',                       collected: true  },
-      { name: 'Foden',         number: 47, position: 'MID', special: 'silver',    collected: false },
-      { name: 'Trippier',      number: 12, position: 'DEF',                       collected: true  },
-    ],
-  },
-  {
-    id: 'germany', title: 'ALEMANHA', flag: '🇩🇪',
-    primary: '#1a1a1a', secondary: '#dd0000', accent: '#c8a400', textColor: '#fff',
-    players: [
-      { name: 'Neuer',         number: 1,  position: 'GK',  special: 'silver',    collected: true  },
-      { name: 'Rüdiger',       number: 2,  position: 'DEF',                       collected: true  },
-      { name: 'Süle',          number: 5,  position: 'DEF',                       collected: false },
-      { name: 'Raum',          number: 19, position: 'DEF',                       collected: true  },
-      { name: 'Kimmich',       number: 6,  position: 'MID', special: 'golden',    collected: true  },
-      { name: 'Gündogan',      number: 21, position: 'MID',                       collected: false },
-      { name: 'Müller',        number: 25, position: 'MID', special: 'silver',    collected: true  },
-      { name: 'Havertz',       number: 29, position: 'MID',                       collected: true  },
-      { name: 'Gnabry',        number: 10, position: 'ATA',                       collected: false },
-      { name: 'Wirtz',         number: 10, position: 'MID', special: 'golden',    collected: true  },
-      { name: 'Musiala',       number: 14, position: 'MID', special: 'legendary', collected: true  },
-      { name: 'Sané',          number: 19, position: 'ATA',                       collected: false },
-    ],
-  },
-  {
-    id: 'spain', title: 'ESPANHA', flag: '🇪🇸',
-    primary: '#c60b1e', secondary: '#f1bf00', accent: '#8a0010', textColor: '#fff',
-    players: [
-      { name: 'U. Simón',   number: 1,  position: 'GK',                        collected: true  },
-      { name: 'Carvajal',   number: 2,  position: 'DEF',                        collected: true  },
-      { name: 'Laporte',    number: 14, position: 'DEF',                        collected: false },
-      { name: 'Gayà',       number: 14, position: 'DEF',                        collected: true  },
-      { name: 'Pedri',      number: 26, position: 'MID', special: 'golden',     collected: true  },
-      { name: 'Busquets',   number: 5,  position: 'MID',                        collected: false },
-      { name: 'Gavi',       number: 9,  position: 'MID', special: 'silver',     collected: true  },
-      { name: 'Yamal',      number: 19, position: 'ATA', special: 'legendary',  collected: true  },
-      { name: 'Morata',     number: 7,  position: 'ATA',                        collected: false },
-      { name: 'F. Torres',  number: 20, position: 'ATA',                        collected: true  },
-      { name: 'D. Olmo',    number: 8,  position: 'MID',                        collected: true  },
-      { name: 'Cucurella',  number: 9,  position: 'DEF',                        collected: false },
-    ],
-  },
-  {
-    id: 'portugal', title: 'PORTUGAL', flag: '🇵🇹',
-    primary: '#006600', secondary: '#ff0000', accent: '#004400', textColor: '#fff',
-    players: [
-      { name: 'R. Patrício',  number: 1,  position: 'GK',                        collected: true  },
-      { name: 'Cancelo',      number: 20, position: 'DEF',                        collected: true  },
-      { name: 'R. Dias',      number: 6,  position: 'DEF',                        collected: false },
-      { name: 'Pepe',         number: 3,  position: 'DEF',                        collected: true  },
-      { name: 'Neves',        number: 8,  position: 'MID',                        collected: true  },
-      { name: 'Moutinho',     number: 8,  position: 'MID',                        collected: false },
-      { name: 'B. Fernandes', number: 8,  position: 'MID', special: 'silver',     collected: true  },
-      { name: 'Ronaldo',      number: 7,  position: 'ATA', special: 'legendary',  collected: true  },
-      { name: 'R. Leão',      number: 17, position: 'ATA', special: 'golden',     collected: true  },
-      { name: 'D. Jota',      number: 20, position: 'ATA',                        collected: false },
-      { name: 'J. Félix',     number: 11, position: 'ATA', special: 'golden',     collected: false },
-      { name: 'G. Horta',     number: 9,  position: 'ATA',                        collected: true  },
-    ],
-  },
-  {
-    id: 'morocco', title: 'MARROCOS', flag: '🇲🇦',
-    primary: '#c1272d', secondary: '#006233', accent: '#8a1520', textColor: '#fff',
-    players: [
-      { name: 'Bono',        number: 1,  position: 'GK',  special: 'golden',     collected: true  },
-      { name: 'Hakimi',      number: 2,  position: 'DEF', special: 'silver',      collected: true  },
-      { name: 'Saïss',       number: 5,  position: 'DEF',                         collected: false },
-      { name: 'Amrabat',     number: 4,  position: 'MID', special: 'golden',      collected: true  },
-      { name: 'Ounahi',      number: 8,  position: 'MID',                         collected: true  },
-      { name: 'Ziyech',      number: 7,  position: 'MID',                         collected: false },
-      { name: 'En-Nesyri',   number: 9,  position: 'ATA', special: 'silver',      collected: true  },
-      { name: 'Sabiri',      number: 10, position: 'MID',                         collected: true  },
-      { name: 'Boufal',      number: 11, position: 'ATA',                         collected: false },
-      { name: 'El Yamiq',    number: 3,  position: 'DEF',                         collected: true  },
-      { name: 'Dari',        number: 14, position: 'DEF',                         collected: false },
-      { name: 'Benoun',      number: 5,  position: 'DEF',                         collected: true  },
-    ],
-  },
-]
-
-// ============================================================
-// HELPERS
-// ============================================================
-const POS_ICON: Record<string, string> = {
-  GK: '🧤', DEF: '🛡️', LAT: '🏃', MID: '⚙️', CAM: '🎯', ATA: '⚽',
-}
-
-function initials(name: string) {
-  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
-}
-
-function cardGradient(player: Player, team: Team): string {
-  if (player.special === 'legendary')
-    return `linear-gradient(145deg, ${team.accent}cc 0%, ${team.primary}ee 100%)`
-  if (player.special === 'golden')
-    return 'linear-gradient(145deg, #5a3c0a 0%, #b88a20 45%, #5a3c0a 100%)'
-  if (player.special === 'silver')
-    return 'linear-gradient(145deg, #2e3540 0%, #6a7888 45%, #2e3540 100%)'
-  if (player.special === 'rare')
-    return 'linear-gradient(145deg, #003d34 0%, #007a6a 45%, #003d34 100%)'
-  return `linear-gradient(145deg, ${team.primary} 0%, ${team.accent}ee 100%)`
-}
-
-function badge(s?: Special) {
-  return s === 'legendary' ? '👑' : s === 'golden' ? '⭐' : s === 'silver' ? '🌟' : s === 'rare' ? '💎' : null
-}
-
-// ============================================================
-// PAGE COMPONENTS
-// ============================================================
-function CoverPage() {
+function ToastList({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
   return (
-    <div className="page-cover">
-      <div className="page-cover-bg-texture" />
-      <div className="cover-corner-tl" />
-      <div className="cover-corner-br" />
-      <div className="cover-ribbon">OFICIAL</div>
-      <div className="cover-brand">Panini × FIFA</div>
-      <div className="cover-fifa">FIFA</div>
-      <div className="cover-title">World<br />Cup</div>
-      <div className="cover-world-cup">Copa do Mundo</div>
-      <div className="cover-trophy">🏆</div>
-      <div className="cover-year">2026</div>
-      <div className="cover-stars">
-        {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}
-      </div>
-      <div className="cover-panini-footer">Álbum Oficial de Figurinhas</div>
+    <div style={{
+      position: 'fixed', bottom: 72, right: 16,
+      zIndex: 3000, display: 'flex', flexDirection: 'column-reverse', gap: 8,
+      pointerEvents: 'none',
+    }}>
+      <style>{`
+        @keyframes toast-in { from { opacity:0; transform:translateX(60px) scale(0.9) } to { opacity:1; transform:translateX(0) scale(1) } }
+      `}</style>
+      {toasts.map(t => {
+        const cfg = TOAST_CFG[t.type]
+        return (
+          <div key={t.id} style={{
+            pointerEvents: 'all',
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: cfg.bg,
+            border: `1px solid ${cfg.border}`,
+            borderRadius: 12, padding: '12px 14px',
+            boxShadow: `0 6px 24px rgba(0,0,0,0.5), 0 0 0 1px ${cfg.border}22`,
+            maxWidth: 300, minWidth: 220,
+            animation: 'toast-in 0.3s cubic-bezier(0.2,0.8,0.2,1)',
+          }}>
+            <span style={{ fontSize: 18, flexShrink: 0 }}>{cfg.icon}</span>
+            <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: '#fff', lineHeight: 1.4 }}>
+              {t.message}
+            </span>
+            <button onClick={() => onRemove(t.id)} style={{
+              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6,
+              color: '#fff', width: 22, height: 22, fontSize: 12,
+              cursor: 'pointer', flexShrink: 0, lineHeight: 1,
+            }}>×</button>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-function BackCoverPage() {
-  const bars = [3, 2, 4, 2, 5, 3, 4, 2, 3, 5, 4, 2, 3, 4, 3, 2, 4, 3, 5, 4, 2, 3]
-  return (
-    <div className="page-back-cover">
-      <div className="page-cover-bg-texture" />
-      <div className="back-cover-logo">🏆</div>
-      <div className="back-cover-title">FIFA World Cup 2026™</div>
-      <div className="back-cover-sub">Álbum Oficial Panini</div>
-      <div className="back-cover-qr">📱</div>
-      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', letterSpacing: 2 }}>
-        COLECIONE · TROQUE · COMPLETE
-      </div>
-      <div className="back-cover-barcode">
-        {bars.map((h, i) => (
-          <div key={i} className="back-cover-barcode-bar"
-            style={{ width: i % 3 === 0 ? 3 : 1, height: 28 + h * 2 }} />
-        ))}
-      </div>
-      <div className="back-cover-isbn">ISBN 978-85-01-00000-0 · © 2026 FIFA · © 2026 Panini</div>
-    </div>
-  )
+// ── Constantes ────────────────────────────────────────────────────
+// PAGE_W = 4×123 + 2×10(padding) + 3×6(gap) = 530
+// PAGE_H = cabeçalho(80) + gestor(188) + gap(10) + grid(576) + margem(20) = 874
+const PAGE_W   = 530
+const PAGE_H   = 874
+const PER_PAGE = 12
+const COLS     = 4
+
+// Dimensões das figurinhas (123×188px) — FIG_W=124 para rowH bater exato com o fundo
+const FIG_W = 124
+const FIG_H = 188
+
+// Medidos pixel a pixel no PNG do designer (530×874):
+//   col1 x=13..136 (124px), gap≈3px, grid top=258
+//   gestor x=393..516 (124px), y=21..257 (237px)
+const GRID_TOP     = 258
+const GESTOR_TOP   = 21
+const GESTOR_RIGHT = 13
+const GESTOR_H     = 237
+
+// Páginas por seção — chaves correspondem exatamente ao campo classificacao no banco
+const SECTION_PAGES: Record<string, { gestor: string; normal: string }> = {
+  'COMERCIAL':                  { gestor: '/album/page-02.png', normal: '/album/page-03.png' },
+  'ALMOXARIFADO':               { gestor: '/album/page-04.png', normal: '/album/page-05.png' },
+  'GARANTIA DA QUALIDADE':      { gestor: '/album/page-06.png', normal: '/album/page-07.png' },
+  'MARKETING / TI':             { gestor: '/album/page-08.png', normal: '/album/page-09.png' },
+  'FINANCEIRO':                 { gestor: '/album/page-10.png', normal: '/album/page-11.png' },
+  'COMPRAS':                    { gestor: '/album/page-12.png', normal: '/album/page-13.png' },
+  'MANUTENÇÃO E CONSERVAÇÃO':   { gestor: '/album/page-14.png', normal: '/album/page-15.png' },
+  'RECURSOS HUMANOS':           { gestor: '/album/page-14.png', normal: '/album/page-15.png' },
+  'ESPECIAIS':                  { gestor: '/album/page-16.png', normal: '/album/page-16.png' },
 }
 
-function IntroPage({ onTeamClick }: { onTeamClick: (page: number) => void }) {
-  return (
-    <div className="page-intro">
-      <div className="intro-header">Álbum Oficial</div>
-      <div className="intro-title">Índice das Seleções</div>
-      <div className="intro-list">
-        {TEAMS.map((t, i) => {
-          // Each team occupies 3 pages: section + stickers A + stickers B
-          // Cover=0, Intro=1, then teams start at page 2
-          const teamPage = 2 + i * 3
-          return (
-            <div
-              key={t.id}
-              className="intro-item intro-item-clickable"
-              style={{ borderLeftColor: t.primary, cursor: 'pointer' }}
-              onClick={(e) => { e.stopPropagation(); onTeamClick(teamPage); }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.stopPropagation();
-                  onTeamClick(teamPage);
-                }
-              }}
-              aria-label={`Ir para ${t.title}`}
-            >
-              <span className="intro-item-flag">{t.flag}</span>
-              <span className="intro-item-name">{t.title}</span>
-              <span className="intro-item-page">Pág. {i * 3 + 3}</span>
-              <span className="intro-item-arrow">›</span>
-            </div>
-          )
-        })}
-      </div>
-      <div className="intro-footer">
-        © 2026 FIFA™ – © 2026 Panini Group. Todos os direitos reservados.
-      </div>
-    </div>
-  )
+const SECTION_COLOR: Record<string, string> = {
+  'COMERCIAL':                '#1e3a5f',
+  'ALMOXARIFADO':             '#14532d',
+  'GARANTIA DA QUALIDADE':    '#4c1d95',
+  'MARKETING / TI':           '#7f1d1d',
+  'FINANCEIRO':               '#78350f',
+  'COMPRAS':                  '#7c2d12',
+  'MANUTENÇÃO E CONSERVAÇÃO': '#1e293b',
+  'RECURSOS HUMANOS':         '#831843',
+  'ESPECIAIS':                '#713f12',
 }
 
-function SectionPage({ team }: { team: Team }) {
-  return (
-    <div className="page-section"
-      style={{ background: `linear-gradient(145deg, ${team.primary} 0%, ${team.accent} 100%)`, color: team.textColor }}>
-      <div className="section-bg-pattern" style={{ color: team.textColor }} />
-      <div className="section-bg-glow" />
-      <div className="section-flag">{team.flag}</div>
-      <div className="section-country" style={{ color: team.textColor }}>{team.title}</div>
-      <div className="section-divider" style={{ background: team.secondary }} />
-      <div className="section-subtitle" style={{ color: team.textColor }}>Copa do Mundo FIFA 2026™</div>
-      <div className="section-num-badge" style={{ color: team.textColor }}>
-        {team.players.filter(p => p.collected).length}/{team.players.length}
-      </div>
-    </div>
-  )
+// ── Helpers ───────────────────────────────────────────────────────
+function chunks<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+  return out
 }
 
-function StickerCard({ player, team }: { player: Player; team: Team }) {
-  if (!player.collected) {
-    return (
-      <div className="sticker sticker-empty">
-        <div className="sticker-empty-icon">?</div>
-        <div className="sticker-empty-num">#{player.number}</div>
-      </div>
-    )
-  }
-  const b = badge(player.special)
-  const icon = POS_ICON[player.position] ?? '⚽'
-  const cls = `sticker${player.special ? ` sticker-${player.special}` : ''}`
+function isPageVisible(cur: number, target: number, portrait: boolean, total: number) {
+  if (portrait) return cur === target
+  if (cur === 0) return target === 0
+  if (cur === total - 1) return target === total - 1
+  return target === cur || target === cur + 1
+}
+
+// ── Grid de figurinhas ────────────────────────────────────────────
+type Slot = { id: number; imagemUrl: string | null; tipo?: string }
+
+function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
+  figs: Slot[]; top: number; color: string; maxSlots?: number
+  onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
+}) {
+  const rows    = Math.ceil(maxSlots / COLS)
+  const padSide = 13                                                  // col1 começa em x=13
+  const gap     = 3                                                   // gap medido no PNG
+  const colW    = (PAGE_W - padSide * 2 - gap * (COLS - 1)) / COLS   // ≈ 123.75 → 124px
+  const rowH    = Math.round(colW * FIG_H / FIG_W)                   // = 188px
+
+  const slots: Slot[] = [...figs]
+  while (slots.length < maxSlots) slots.push({ id: -(slots.length + 1), imagemUrl: null })
+
   return (
-    <div className={cls} style={{ background: cardGradient(player, team) }}>
-      <div className="sticker-header">
-        <span className="sticker-number">#{player.number}</span>
-        <span className="sticker-pos">{player.position}</span>
-      </div>
-      <div className="sticker-body">
-        <div className="sticker-bg-initials">{initials(player.name)}</div>
-        <div className="sticker-icon">{icon}</div>
-        {b && <div className="sticker-special-badge">{b}</div>}
-      </div>
-      <div className="sticker-footer">
-        <div className="sticker-name">{player.name}</div>
-        <div className="sticker-flag-row">
-          <span>{team.flag}</span>
-          <span>{team.title}</span>
+    <div style={{
+      position: 'absolute',
+      top, left: padSide, right: padSide,
+      display: 'grid',
+      gridTemplateColumns: `repeat(${COLS}, ${colW}px)`,
+      gridAutoRows: `${rowH}px`,
+      gap,
+    }}>
+      {slots.map(f => (
+        <div key={f.id}
+          onClick={() => f.imagemUrl && onPreview?.({ id: f.id, imagemUrl: f.imagemUrl, classificacao: (f as any).classificacao ?? '' })}
+          style={{
+            borderRadius: 10,
+            overflow: 'hidden',
+            background: f.imagemUrl ? 'transparent' : 'rgba(0,0,0,0.06)',
+            border: f.imagemUrl ? 'none' : '1px dashed rgba(0,0,0,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative',
+            cursor: f.imagemUrl && onPreview ? 'zoom-in' : 'default',
+          }}>
+          {f.imagemUrl ? (
+            <img src={f.imagemUrl} alt="" draggable={false}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          ) : (
+            /* Slot vazio — número da figurinha */
+            f.id > 0 && (
+              <span style={{
+                fontSize: 9, color: 'rgba(0,0,0,0.2)',
+                fontWeight: 700, letterSpacing: 0.5,
+              }}>
+                {f.id}
+              </span>
+            )
+          )}
         </div>
-      </div>
+      ))}
     </div>
   )
 }
 
-function StickerPage({ team, players, label }: { team: Team; players: Player[]; label: string }) {
+// ── Página de seção ───────────────────────────────────────────────
+// isGestorPage = true → usa fundo de gestor (aparece só 1x por seção)
+// isGestorPage = false → usa fundo normal (pode repetir)
+function SectionPage({ section, figs, isGestorPage, onPreview }: {
+  section: string
+  figs: Slot[]
+  isGestorPage: boolean
+  onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
+}) {
+  const pages   = SECTION_PAGES[section]
+  const bg      = pages ? (isGestorPage ? pages.gestor : pages.normal) : ''
+  const color   = SECTION_COLOR[section] ?? '#555'
+
+  // Separa gestor das figurinhas normais (só na página de gestor)
+  const gestor   = isGestorPage ? figs.find(f => f.tipo === 'GESTOR') : null
+  const normFigs = isGestorPage ? figs.filter(f => f.tipo !== 'GESTOR') : figs
+
   return (
-    <div className="page-stickers">
-      <div className="page-header" style={{ borderBottomColor: team.primary }}>
-        <span className="page-header-flag">{team.flag}</span>
-        <span className="page-header-title" style={{ color: team.primary }}>{team.title}</span>
-        <span className="page-header-num">{label}</span>
-      </div>
-      <div className="stickers-grid">
-        {players.map((p, i) => <StickerCard key={i} player={p} team={team} />)}
-      </div>
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+      {bg && (
+        <img src={bg} alt="" draggable={false}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      )}
+
+      {/* Gestor — 123×188 centrado no slot branco (x=362..529, y=0..239) */}
+      {gestor && gestor.imagemUrl && (
+        <div
+          onClick={() => onPreview?.({ id: gestor.id, imagemUrl: gestor.imagemUrl!, classificacao: section })}
+          style={{
+            position: 'absolute',
+            top: 26, right: 6,
+            width: 123, height: 188,
+            borderRadius: 10, overflow: 'hidden',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+            cursor: onPreview ? 'zoom-in' : 'default',
+          }}>
+          <img src={gestor.imagemUrl} alt="" draggable={false}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        </div>
+      )}
+
+      {/* Grid sempre em y=278, sempre 12 slots (4×3) */}
+      <StickerGrid
+        figs={normFigs}
+        top={GRID_TOP}
+        color={color}
+        maxSlots={12}
+        onPreview={onPreview}
+      />
     </div>
   )
 }
 
-function BonusPage() {
+// ── Página de imagem inteira (capa / intro) ───────────────────────
+function FullImagePage({ src }: { src: string }) {
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+      <img src={src} alt="" draggable={false}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+    </div>
+  )
+}
+
+// ── Contracapa ────────────────────────────────────────────────────
+function BackCoverPage() {
   return (
     <div style={{
       width: '100%', height: '100%',
-      background: 'linear-gradient(145deg, #0a0520 0%, #1a0840 100%)',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(155deg, #d96010 0%, #b04a08 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
     }}>
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'repeating-linear-gradient(45deg,rgba(255,255,255,0.015) 0,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 14px)',
-      }} />
-      <div style={{ fontSize: 64, marginBottom: 16 }}>🌟</div>
-      <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 4, color: 'rgba(240,192,64,0.8)', textTransform: 'uppercase', textAlign: 'center' }}>
-        Figurinhas Especiais
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'repeating-linear-gradient(45deg,rgba(0,0,0,0.03) 0,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 16px)' }} />
+      <div style={{ fontSize: 64, marginBottom: 14, filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))' }}>🏆</div>
+      <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 4, color: 'rgba(255,255,255,0.92)', textTransform: 'uppercase', textAlign: 'center' }}>
+        Super Copa 2026
       </div>
-      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>
-        Em Breve
+      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 10, letterSpacing: 3, textTransform: 'uppercase' }}>
+        Álbum Oficial Supermédica
       </div>
     </div>
   )
 }
 
-// ============================================================
-// BUILD PAGES ARRAY
-// ============================================================
-function buildPages(onTeamClick: (page: number) => void): ReactNode[] {
-  const pages: ReactNode[] = []
-  pages.push(<CoverPage key="cover" />)
-  pages.push(<IntroPage key="intro" onTeamClick={onTeamClick} />)
-  TEAMS.forEach((team) => {
-    pages.push(<SectionPage key={`sec-${team.id}`} team={team} />)
-    pages.push(
-      <StickerPage key={`st-${team.id}-a`} team={team}
-        players={team.players.slice(0, 6)} label={`Pág. ${pages.length + 1}`} />
-    )
-    pages.push(
-      <StickerPage key={`st-${team.id}-b`} team={team}
-        players={team.players.slice(6, 12)} label={`Pág. ${pages.length + 1}`} />
-    )
+// ── Índice de páginas ─────────────────────────────────────────────
+type PageInfo = { label: string; sub?: string; bg?: string; color?: string }
+
+function buildPageInfos(sections: SectionData[]): PageInfo[] {
+  const infos: PageInfo[] = []
+  infos.push({ label: 'Capa', bg: '/album/page-01.png' })
+
+  sections.forEach(sec => {
+    const p = SECTION_PAGES[sec.classificacao]
+    const normFigs = sec.figurinhas.filter(f => f.tipo !== 'GESTOR')
+
+    infos.push({ label: sec.classificacao, sub: 'Gestor', bg: p?.gestor })
+
+    const remaining = normFigs.slice(12)
+    chunks(remaining, 12).forEach((_, idx) => {
+      infos.push({ label: sec.classificacao, sub: `Página ${idx + 2}`, bg: p?.normal })
+    })
   })
-  pages.push(<BonusPage key="bonus" />)
-  pages.push(<BackCoverPage key="back-cover" />)
-  // Ensure even page count for proper book
-  if (pages.length % 2 !== 0) {
-    pages.push(<div key="pad" style={{ width: '100%', height: '100%', background: '#06080f' }} />)
-  }
+
+  infos.push({ label: 'Contracapa', bg: '/album/page-17.png' })
+  if (infos.length % 2 !== 0) infos.push({ label: '', color: '#f07020' })
+
+  return infos
+}
+
+function Filmstrip({ infos, current, onGo }: {
+  infos: PageInfo[]; current: number; onGo: (i: number) => void
+}) {
+  const stripRef    = useRef<HTMLDivElement>(null)
+  const itemRefs    = useRef<(HTMLDivElement | null)[]>([])
+
+  // Auto-scroll para manter a página atual visível
+  useEffect(() => {
+    const el = itemRefs.current[current]
+    if (el && stripRef.current) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [current])
+
+  const TH_W = 56
+  const TH_H = Math.round(TH_W * PAGE_H / PAGE_W)
+
+  return (
+    <div ref={stripRef} style={{
+      position: 'fixed', left: 0, top: 44, bottom: 0,
+      width: 72, zIndex: 500,
+      background: 'rgba(10,10,18,0.92)', backdropFilter: 'blur(8px)',
+      borderRight: '1px solid rgba(255,255,255,0.07)',
+      overflowY: 'auto', overflowX: 'hidden',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 6, padding: '8px 0 16px',
+      scrollbarWidth: 'thin',
+      scrollbarColor: 'rgba(255,255,255,0.1) transparent',
+    }}>
+      {infos.map((info, i) => {
+        const active = i === current || i === current + 1
+        return (
+          <div
+            key={i}
+            ref={el => { itemRefs.current[i] = el }}
+            onClick={() => onGo(i)}
+            title={`${info.label}${info.sub ? ' · ' + info.sub : ''}`}
+            style={{
+              width: TH_W, height: TH_H, flexShrink: 0,
+              borderRadius: 5, overflow: 'hidden', cursor: 'pointer',
+              position: 'relative',
+              border: active ? '2px solid #f5c800' : '2px solid rgba(255,255,255,0.08)',
+              boxShadow: active ? '0 0 10px rgba(245,200,0,0.4)' : 'none',
+              background: info.color ?? '#1a1a2a',
+              transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ''}
+          >
+            {info.bg && (
+              <img src={info.bg} alt="" draggable={false}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
+
+            {/* Gradiente + número */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: 2, left: 0, right: 0,
+              textAlign: 'center',
+              fontSize: 7, fontWeight: 900, color: active ? '#f5c800' : 'rgba(255,255,255,0.7)',
+              textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+            }}>
+              {i + 1}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Monta array de páginas a partir das seções ────────────────────
+function buildPages(sections: SectionData[], onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void) {
+  const pages: React.ReactNode[] = []
+
+  pages.push(<FullImagePage key="cover" src="/album/page-01.png" />)
+
+  sections.forEach(sec => {
+    const SLOTS = 12
+
+    const gestor   = sec.figurinhas.find(f => f.tipo === 'GESTOR')
+    const normFigs = sec.figurinhas.filter(f => f.tipo !== 'GESTOR')
+
+    const gestorPageFigs = normFigs.slice(0, SLOTS)
+    pages.push(
+      <SectionPage
+        key={`${sec.classificacao}-gestor`}
+        section={sec.classificacao}
+        figs={gestor ? [gestor, ...gestorPageFigs] : gestorPageFigs}
+        isGestorPage={true}
+        onPreview={onPreview}
+      />
+    )
+
+    const remaining = normFigs.slice(SLOTS)
+    chunks(remaining, SLOTS).forEach((group, idx) => {
+      pages.push(
+        <SectionPage
+          key={`${sec.classificacao}-p${idx}`}
+          section={sec.classificacao}
+          figs={group}
+          isGestorPage={false}
+          onPreview={onPreview}
+        />
+      )
+    })
+  })
+
+  // Capa traseira
+  pages.push(<FullImagePage key="contracapa" src="/album/page-17.png" />)
+
+  if (pages.length % 2 !== 0)
+    pages.push(<div key="pad" style={{ width: '100%', height: '100%', background: '#f07020' }} />)
+
   return pages
 }
 
-// ============================================================
-// CONSTANTS
-// ============================================================
-const PAGE_W = 450
-const PAGE_H = 620
+// ── Componente principal ──────────────────────────────────────────
+export default function FlipBook({ sections }: { sections: SectionData[] }) {
+  const bookRef      = useRef<HTMLDivElement>(null)
+  const flipRef      = useRef<any>(null)
+  const curRef       = useRef(0)
+  const rapidTarget  = useRef(-1)
+  const bookState    = useRef('read')
+  const mouseDownPos = useRef({ x: 0, y: 0 })
 
-// ============================================================
-// HELPERS FOR NAVIGATION
-// ============================================================
-function isPageVisible(currentPage: number, target: number, isPortrait: boolean, total: number) {
-  if (isPortrait) {
-    return currentPage === target
-  }
-  if (currentPage === 0) {
-    return target === 0
-  }
-  if (currentPage === total - 1) {
-    return target === total - 1
-  }
-  return target === currentPage || target === currentPage + 1
-}
+  const [cur,           setCur]          = useState(0)
+  const [loading,       setLoading]      = useState(true)
+  const [fadeOut,       setFadeOut]      = useState(false)
+  const [scale,         setScale]        = useState(1)
+  const [isPortrait,    setIsPortrait]   = useState(false)
+  const [inventarioOpen, setInventarioOpen] = useState(false)
+  const [trocasOpen,     setTrocasOpen]     = useState(false)
+  const [trocasBadge,    setTrocasBadge]    = useState(0)
+  const [pacotesOpen,    setPacotesOpen]    = useState(false)
+  const [pacotesBadge,   setPacotesBadge]   = useState(0)
+  const [toasts,         setToasts]         = useState<Toast[]>([])
+  const [preview,        setPreview]        = useState<{ id: number; imagemUrl: string; classificacao: string } | null>(null)
 
-// ============================================================
-// MAIN COMPONENT
-// ============================================================
-export default function FlipBook() {
-  const bookRef       = useRef<HTMLDivElement>(null)
-  const flipRef       = useRef<any>(null)
-  const curRef        = useRef(0)          // mirrors `cur` but always up-to-date
-  const rapidTarget   = useRef(-1)         // -1 = idle; >=0 = destination page
-  const bookStateRef  = useRef('read')     // tracks page-flip state ('read', 'flipping', etc.)
-  const [cur,       setCur]    = useState(0)
-  const [loading,   setLoading]  = useState(true)
-  const [fadeOut,   setFadeOut]  = useState(false)
-  const [scale,     setScale]    = useState(1)
-  const [isPortrait, setIsPortrait] = useState(false)
+  const toastIdRef       = useRef(0)
+  const isFirstPollRef   = useRef(true)
+  const prevPacotesRef   = useRef(0)
+  const prevReceivedIds  = useRef<number[]>([])
+  const prevSentStatuses = useRef<{ id: number; status: string; nome: string }[]>([])
 
-  // ── Rapid-flip navigation ─────────────────────────────────────
-  // Captured once by buildPages via navRef.current.
-  const navRef = useRef((targetPage: number) => {
-    const pf = flipRef.current
-    if (!pf) return
+  const totalFigs = sections.reduce((s, sec) => s + sec.figurinhas.length, 0)
 
-    const isPort = pf.getOrientation() === 'portrait'
-    if (isPageVisible(curRef.current, targetPage, isPort, total)) {
-      rapidTarget.current = -1
-      try { pf.getSettings().flippingTime = 900 } catch {}
-      return
+  const addToast = useCallback((type: ToastType, message: string) => {
+    const id = ++toastIdRef.current
+    setToasts(prev => [...prev.slice(-4), { id, type, message }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 6000)
+  }, [])
+
+  const removeToast = useCallback((id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
+
+  // Polling de badges a cada 10s com notificações de eventos
+  useEffect(() => {
+    function poll() {
+      // ── Pacotes ──
+      fetch('/api/pacotes')
+        .then(r => r.json())
+        .then(data => {
+          if (!Array.isArray(data)) return
+          const count = data.length
+          if (!isFirstPollRef.current && count > prevPacotesRef.current) {
+            const n = count - prevPacotesRef.current
+            addToast('pacote', `Você recebeu ${n > 1 ? `${n} novos pacotes` : 'um novo pacote'}!`)
+          }
+          prevPacotesRef.current = count
+          setPacotesBadge(count)
+        })
+        .catch(() => {})
+
+      // ── Trocas ──
+      fetch('/api/trocas')
+        .then(r => r.json())
+        .then(data => {
+          const recebidas: any[] = data.recebidas ?? []
+          const enviadas:  any[] = data.enviadas  ?? []
+
+          if (!isFirstPollRef.current) {
+            // Novas propostas recebidas pendentes
+            recebidas
+              .filter(t => t.status === 'PENDENTE' && !prevReceivedIds.current.includes(t.id))
+              .forEach(t => addToast('troca_recebida', `Nova proposta de ${t.solicitante.nome}!`))
+
+            // Status mudou nas trocas enviadas
+            enviadas.forEach(t => {
+              const prev = prevSentStatuses.current.find(p => p.id === t.id)
+              if (!prev || prev.status !== 'PENDENTE') return
+              if (t.status === 'ACEITA')
+                addToast('troca_aceita',    `Troca aceita por ${t.destinatario.nome}! ✨`)
+              else if (t.status === 'RECUSADA')
+                addToast('troca_recusada',  `Troca recusada por ${t.destinatario.nome}.`)
+              else if (t.status.startsWith('CANCELADA'))
+                addToast('troca_cancelada', `Troca com ${t.destinatario.nome} foi cancelada.`)
+            })
+          }
+
+          // Atualiza refs
+          prevReceivedIds.current  = recebidas.filter(t => t.status === 'PENDENTE').map(t => t.id)
+          prevSentStatuses.current = enviadas.map(t => ({ id: t.id, status: t.status, nome: t.destinatario.nome }))
+          setTrocasBadge(recebidas.filter(t => t.status === 'PENDENTE').length)
+
+          if (isFirstPollRef.current) isFirstPollRef.current = false
+        })
+        .catch(() => {})
     }
 
-    rapidTarget.current = targetPage
-    try { pf.getSettings().flippingTime = 240 } catch {}
-
-    // If the book is currently idle ('read'), start the transition immediately.
-    // Otherwise, when the current flip completes, changeState handler will continue.
-    if (bookStateRef.current === 'read') {
-      targetPage > curRef.current ? pf.flipNext('bottom') : pf.flipPrev('bottom')
-    }
-  })
-
-  const pages     = useMemo(() => buildPages(navRef.current), [])
+    poll()
+    const interval = setInterval(poll, 10000)
+    return () => clearInterval(interval)
+  }, [])
+  const pages     = useMemo(() => buildPages(sections, setPreview), [sections])
+  const pageInfos = useMemo(() => buildPageInfos(sections), [sections])
   const total     = pages.length
-  const collected = TEAMS.reduce((a, t) => a + t.players.filter(p => p.collected).length, 0)
-  const allCards  = TEAMS.reduce((a, t) => a + t.players.length, 0)
   const progress  = total > 1 ? (cur / (total - 1)) * 100 : 0
 
-  // Responsive scale
+  // Escala responsiva
   useEffect(() => {
     const calc = () => {
       const vw = window.innerWidth
       const vh = window.innerHeight - 140
-      const s  = Math.min(1, vw / (PAGE_W * 2 + 60), vh / (PAGE_H + 40))
-      setScale(Math.max(0.3, s))
+      setScale(Math.max(0.3, Math.min(1, vw / (PAGE_W * 2 + 60), vh / (PAGE_H + 40))))
       setIsPortrait(vw < 600)
     }
     calc()
@@ -488,13 +520,29 @@ export default function FlipBook() {
     return () => window.removeEventListener('resize', calc)
   }, [])
 
-  // Center alignment offset for closed book in landscape mode
+  // Centralização da capa e contracapa no modo paisagem
   const translationX = useMemo(() => {
     if (isPortrait) return 0
     if (cur === 0) return -PAGE_W / 2
     if (cur === total - 1) return PAGE_W / 2
     return 0
   }, [cur, total, isPortrait])
+
+  // Navegação rápida
+  const navRef = useRef((target: number) => {
+    const pf = flipRef.current
+    if (!pf) return
+    const isPort = pf.getOrientation() === 'portrait'
+    if (isPageVisible(curRef.current, target, isPort, total)) {
+      rapidTarget.current = -1
+      try { pf.getSettings().flippingTime = 900 } catch {}
+      return
+    }
+    rapidTarget.current = target
+    try { pf.getSettings().flippingTime = 240 } catch {}
+    if (bookState.current === 'read')
+      target > curRef.current ? pf.flipNext('bottom') : pf.flipPrev('bottom')
+  })
 
   // Init page-flip
   useEffect(() => {
@@ -504,45 +552,31 @@ export default function FlipBook() {
     const init = async () => {
       try {
         const mod = await import('page-flip')
-        const PF: any = (mod as any).PageFlip
-          ?? (mod as any).default?.PageFlip
-          ?? (mod as any).default
+        const PF: any = (mod as any).PageFlip ?? (mod as any).default?.PageFlip ?? (mod as any).default
 
         pf = new PF(bookRef.current!, {
-          width: PAGE_W,
-          height: PAGE_H,
-          size: 'fixed',
-          showCover: true,
+          width: PAGE_W, height: PAGE_H,
+          size: 'fixed', showCover: true,
           usePortrait: window.innerWidth < 600,
-          drawShadow: true,
-          flippingTime: 900,
-          maxShadowOpacity: 0.85,
-          useMouseEvents: true,
-          swipeDistance: 30,
-          clickEventForward: true,
-          mobileScrollSupport: false,
-          startZIndex: 1,
-          autoSize: false,
-          disableFlipByClick: true,
+          drawShadow: true, flippingTime: 900,
+          maxShadowOpacity: 0.85, useMouseEvents: true,
+          swipeDistance: 30, clickEventForward: true,
+          mobileScrollSupport: false, startZIndex: 1,
+          autoSize: false, disableFlipByClick: true,
         })
 
-        const els = bookRef.current!.querySelectorAll('[data-pb-page]')
-        pf.loadFromHTML(els)
+        pf.loadFromHTML(bookRef.current!.querySelectorAll('[data-pb-page]'))
 
         pf.on('flip', (e: any) => {
-          const page = typeof e.data === 'number' ? e.data : 0
-          setCur(page)
-          curRef.current = page
+          const p = typeof e.data === 'number' ? e.data : 0
+          setCur(p); curRef.current = p
         })
 
         pf.on('changeState', (e: any) => {
           const state = e.data
-          const page = pf.getCurrentPageIndex()
-          setCur(page)
-          curRef.current = page
-          bookStateRef.current = state
+          const page  = pf.getCurrentPageIndex()
+          setCur(page); curRef.current = page; bookState.current = state
 
-          // Cancel rapid flipping if user interacts manually (drags or opens corner)
           if (state === 'user_fold' || state === 'fold_corner') {
             if (rapidTarget.current >= 0) {
               rapidTarget.current = -1
@@ -551,30 +585,23 @@ export default function FlipBook() {
           }
 
           if (state === 'read') {
-            const target = rapidTarget.current
-            if (target < 0) return
-
+            const t = rapidTarget.current
+            if (t < 0) return
             const isPort = pf.getOrientation() === 'portrait'
-            if (isPageVisible(page, target, isPort, total)) {
+            if (isPageVisible(page, t, isPort, total)) {
               rapidTarget.current = -1
               try { pf.getSettings().flippingTime = 900 } catch {}
               return
             }
-
-            const diff = target - page
             setTimeout(() => {
-              if (rapidTarget.current < 0) return // cancelled
-              diff > 0 ? pf.flipNext('bottom') : pf.flipPrev('bottom')
+              if (rapidTarget.current < 0) return
+              t > page ? pf.flipNext('bottom') : pf.flipPrev('bottom')
             }, 0)
           }
         })
 
         pf.on('init', () => {
-          try {
-            const idx = pf.getCurrentPageIndex?.() ?? 0
-            curRef.current = idx
-            setCur(idx)
-          } catch {}
+          try { const idx = pf.getCurrentPageIndex?.() ?? 0; curRef.current = idx; setCur(idx) } catch {}
           setFadeOut(true)
           setTimeout(() => setLoading(false), 600)
         })
@@ -588,16 +615,25 @@ export default function FlipBook() {
     }
 
     const t = setTimeout(init, 150)
-    return () => {
-      clearTimeout(t)
-      try { pf?.destroy() } catch {}
-      flipRef.current = null
-    }
+    return () => { clearTimeout(t); try { pf?.destroy() } catch {}; flipRef.current = null }
   }, [total]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
-      {/* Loading */}
+      {inventarioOpen && <InventarioModal onClose={() => setInventarioOpen(false)} />}
+      {trocasOpen     && <TrocasModal onClose={() => { setTrocasOpen(false); setTrocasBadge(0) }} />}
+      {pacotesOpen    && <PacoteAbertura onClose={() => { setPacotesOpen(false); setPacotesBadge(0) }} />}
+      <ToastList toasts={toasts} onRemove={removeToast} />
+      {preview && (
+        <FigurinhaPreview
+          id={preview.id}
+          imagemUrl={preview.imagemUrl}
+          classificacao={preview.classificacao}
+          onClose={() => setPreview(null)}
+        />
+      )}
+      <Filmstrip infos={pageInfos} current={cur} onGo={i => navRef.current(i)} />
+
       {loading && (
         <div className={`loading-screen${fadeOut ? ' fade-out' : ''}`}>
           <div className="loading-book">📖</div>
@@ -607,32 +643,86 @@ export default function FlipBook() {
       )}
 
       <div className="album-scene">
-        {/* Header */}
         <header className="album-header">
-          <div className="album-header-title">⚽ Álbum FIFA 2026</div>
-          <div className="album-header-badge">
-            <div className="album-header-dot" />
-            <span>{collected} / {allCards} figurinhas</span>
+          <div className="album-header-title">⚽ Supermédica · Super Copa 2026</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button onClick={() => setPacotesOpen(true)} style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+              color: 'rgba(240,192,64,0.8)', background: 'transparent',
+              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 6,
+              padding: '4px 10px', cursor: 'pointer', position: 'relative',
+            }}>
+              Pacotes
+              {pacotesBadge > 0 && (
+                <span style={{
+                  position: 'absolute', top: -6, right: -6,
+                  background: '#f07020', color: '#fff',
+                  fontSize: 8, fontWeight: 900, borderRadius: 10,
+                  padding: '1px 5px', lineHeight: 1.4,
+                }}>
+                  {pacotesBadge}
+                </span>
+              )}
+            </button>
+            <button onClick={() => setInventarioOpen(true)} style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+              color: 'rgba(240,192,64,0.8)', background: 'transparent',
+              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 6,
+              padding: '4px 10px', cursor: 'pointer',
+            }}>
+              Inventário
+            </button>
+            <button onClick={() => setTrocasOpen(true)} style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+              color: 'rgba(240,192,64,0.8)', background: 'transparent',
+              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 6,
+              padding: '4px 10px', cursor: 'pointer',
+              position: 'relative',
+            }}>
+              Trocas
+              {trocasBadge > 0 && (
+                <span style={{
+                  position: 'absolute', top: -6, right: -6,
+                  background: '#f0c040', color: '#000',
+                  fontSize: 8, fontWeight: 900, borderRadius: 10,
+                  padding: '1px 5px', lineHeight: 1.4,
+                }}>
+                  {trocasBadge}
+                </span>
+              )}
+            </button>
+            <div className="album-header-badge">
+              <div className="album-header-dot" />
+              <span>{totalFigs} figurinhas</span>
+            </div>
           </div>
         </header>
 
-        {/* Book */}
         <div className="book-wrapper">
-          <div 
-            className="book-scale-root" 
-            style={{ 
+          <div
+            className="book-scale-root"
+            style={{
               transform: `scale(${scale}) translateX(${translationX}px)`,
-              transition: 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
+              transition: 'transform 0.5s cubic-bezier(0.2,0.8,0.2,1)',
+            }}
+            onMouseDown={e => { mouseDownPos.current = { x: e.clientX, y: e.clientY } }}
+            onClick={e => {
+              const pf = flipRef.current
+              if (!pf || bookState.current !== 'read') return
+              const dx = Math.abs(e.clientX - mouseDownPos.current.x)
+              const dy = Math.abs(e.clientY - mouseDownPos.current.y)
+              if (dx > 8 || dy > 8) return  // foi arrastar, não clique
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+              const relX = (e.clientX - rect.left) / rect.width
+              if (relX < 0.5) pf.flipPrev('bottom')
+              else pf.flipNext('bottom')
             }}
           >
             <div ref={bookRef} style={{ width: PAGE_W * 2, height: PAGE_H }}>
               {pages.map((content, i) => (
-                <div
-                  key={i}
-                  data-pb-page=""
+                <div key={i} data-pb-page=""
                   data-density={i === 0 || i === total - 1 ? 'hard' : 'soft'}
-                  style={{ width: PAGE_W, height: PAGE_H }}
-                >
+                  style={{ width: PAGE_W, height: PAGE_H }}>
                   <div className="page-inner">{content}</div>
                 </div>
               ))}
@@ -640,36 +730,18 @@ export default function FlipBook() {
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className="progress-bar-wrap">
           <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
         </div>
 
-        {/* Controls */}
         <div className="album-controls">
-          <button id="btn-first" className="ctrl-btn ctrl-btn-sm"
-            onClick={() => navRef.current(0)} title="Capa" aria-label="Ir para o início">
-            ⏮
-          </button>
-
-          <button id="btn-prev" className="ctrl-btn"
-            onClick={() => flipRef.current?.flipPrev('top')}
-            disabled={cur === 0} aria-label="Página anterior">
-            ◀
-          </button>
-
+          <button className="ctrl-btn ctrl-btn-sm" onClick={() => navRef.current(0)} title="Início">⏮</button>
+          <button className="ctrl-btn" onClick={() => flipRef.current?.flipPrev('top')}
+            disabled={cur === 0}>◀</button>
           <span className="page-counter">{cur + 1} / {total}</span>
-
-          <button id="btn-next" className="ctrl-btn"
-            onClick={() => flipRef.current?.flipNext('top')}
-            disabled={cur >= total - 1} aria-label="Próxima página">
-            ▶
-          </button>
-
-          <button id="btn-last" className="ctrl-btn ctrl-btn-sm"
-            onClick={() => navRef.current(total - 1)} title="Contracapa" aria-label="Ir para o final">
-            ⏭
-          </button>
+          <button className="ctrl-btn" onClick={() => flipRef.current?.flipNext('top')}
+            disabled={cur >= total - 1}>▶</button>
+          <button className="ctrl-btn ctrl-btn-sm" onClick={() => navRef.current(total - 1)} title="Fim">⏭</button>
         </div>
       </div>
     </>

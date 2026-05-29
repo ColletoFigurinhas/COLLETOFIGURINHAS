@@ -6,16 +6,20 @@
 :root {
   --font-primary: 'Outfit', sans-serif;
 
-  /* Dark scene */
-  --color-bg:         #06080f;
-  --color-bg-mid:     #0d1220;
+  /* Fundo quente claro */
+  --color-bg:         #2a1f14;
+  --color-bg-mid:     #3a2a1a;
   --color-surface:    rgba(255,255,255,0.03);
 
-  /* Gold palette */
-  --color-gold:       #f0c040;
-  --color-gold-light: #ffd966;
-  --color-gold-dim:   rgba(240,192,64,0.15);
-  --color-gold-dark:  #b8902c;
+  /* Verde e Amarelo — Brasil */
+  --color-gold:       #f5c800;
+  --color-gold-light: #ffe535;
+  --color-gold-dim:   rgba(245,200,0,0.18);
+  --color-gold-dark:  #c9a000;
+
+  --color-verde:      #009c3b;
+  --color-verde-light:#00c44a;
+  --color-verde-dim:  rgba(0,156,59,0.15);
 
   /* Paper */
   --color-paper:      #f4eedc;
@@ -59,40 +63,39 @@ html, body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 20%, #1c1540 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, #0a1a30 0%, transparent 50%),
-    #06080f;
+    radial-gradient(ellipse 80% 55% at 50% 0%,   rgba(0,156,59,0.22)   0%, transparent 65%),
+    radial-gradient(ellipse 55% 40% at 100% 100%, rgba(245,200,0,0.18)  0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 0%   85%,  rgba(0,100,40,0.12)   0%, transparent 55%),
+    #1a2218;
   overflow: hidden;
 }
 
-/* Atmospheric particles */
+/* Pontilhado amarelo */
 .album-scene::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle, rgba(240,192,64,0.08) 1px, transparent 1px);
-  background-size: 80px 80px;
-  animation: scene-drift 30s linear infinite;
+  background-image: radial-gradient(circle, rgba(245,200,0,0.07) 1px, transparent 1px);
+  background-size: 72px 72px;
+  animation: scene-drift 40s linear infinite;
   pointer-events: none;
-  opacity: 0.4;
 }
 
 @keyframes scene-drift {
   0%   { transform: translate(0, 0); }
-  100% { transform: translate(80px, 80px); }
+  100% { transform: translate(72px, 72px); }
 }
 
-/* Glow under book */
+/* Glow amarelo sob o livro */
 .album-scene::after {
   content: '';
   position: absolute;
-  bottom: 8%;
+  bottom: 6%;
   left: 50%;
   transform: translateX(-50%);
   width: 55%;
   height: 80px;
-  background: radial-gradient(ellipse, rgba(240,192,64,0.07) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(245,200,0,0.1) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -177,7 +180,7 @@ html, body {
 }
 
 /* ============================================================
-   COVER PAGE
+   COVER PAGE (legacy — kept for reference)
    ============================================================ */
 .page-cover {
   width: 100%;
@@ -911,8 +914,8 @@ html, body {
   justify-content: center;
   width: 44px; height: 44px;
   border-radius: 50%;
-  background: rgba(240,192,64,0.08);
-  border: 1px solid rgba(240,192,64,0.25);
+  background: rgba(0,156,59,0.12);
+  border: 1px solid rgba(0,156,59,0.4);
   color: var(--color-gold);
   font-size: 18px;
   cursor: pointer;
@@ -921,8 +924,9 @@ html, body {
   user-select: none;
 }
 .ctrl-btn:hover {
-  background: rgba(240,192,64,0.18);
-  border-color: var(--color-gold);
+  background: rgba(0,156,59,0.28);
+  border-color: var(--color-verde-light);
+  color: #fff;
   transform: scale(1.1);
 }
 .ctrl-btn:active { transform: scale(0.95); }
@@ -966,7 +970,7 @@ html, body {
 }
 .progress-bar-fill {
   height: 100%;
-  background: var(--color-gold);
+  background: linear-gradient(90deg, var(--color-verde) 0%, var(--color-gold) 100%);
   border-radius: 2px;
   transition: width 0.4s ease;
 }

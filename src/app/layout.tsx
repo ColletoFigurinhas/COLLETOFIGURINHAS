@@ -10,9 +10,8 @@ const outfit = Outfit({
 })
 
 export const metadata: Metadata = {
-  title: 'Álbum Panini FIFA 2026 — Coleção Oficial',
-  description: 'Colecionador digital de figurinhas estilo Panini com efeito 3D de virada de páginas. Copa do Mundo FIFA 2026.',
-  keywords: ['panini', 'álbum', 'figurinhas', 'FIFA', 'Copa do Mundo', '2026', '3D', 'flipbook'],
+  title: 'Álbum Oficial Supermédica',
+  description: 'Álbum Oficial Supermédica — Super Copa 2026',
 }
 
 export default function RootLayout({
