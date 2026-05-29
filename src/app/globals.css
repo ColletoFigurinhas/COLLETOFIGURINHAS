@@ -62,6 +62,8 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  contain: paint;
   background:
     radial-gradient(ellipse 80% 55% at 50% 0%,   rgba(0,156,59,0.22)   0%, transparent 65%),
     radial-gradient(ellipse 55% 40% at 100% 100%, rgba(245,200,0,0.18)  0%, transparent 60%),
@@ -1038,8 +1040,60 @@ html, body {
 }
 
 /* ============================================================
-   RESPONSIVE HELPERS
+   SAFE AREA (notch / home bar do iPhone)
    ============================================================ */
-@media (max-width: 600px) {
+.album-header {
+  padding-top:    max(14px, env(safe-area-inset-top));
+  padding-left:   max(28px, env(safe-area-inset-left));
+  padding-right:  max(28px, env(safe-area-inset-right));
+}
+
+.album-controls {
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  padding-left:   max(24px, env(safe-area-inset-left));
+  padding-right:  max(24px, env(safe-area-inset-right));
+}
+
+/* ============================================================
+   MOBILE  (≤ 599 px)
+   ============================================================ */
+@media (max-width: 599px) {
+  /* Header compacto */
+  .album-header {
+    padding-top:   max(10px, env(safe-area-inset-top));
+    padding-left:  max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: 8px;
+  }
+  .album-header-title {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
   .album-header-badge { display: none; }
+
+  /* Botões de nav na barra de controles maiores para o dedo */
+  .ctrl-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+  .ctrl-btn-sm {
+    width: 42px;
+    height: 42px;
+    font-size: 16px;
+  }
+  .album-controls {
+    gap: 6px;
+    padding-top: 10px;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  /* Barra de progresso: deslocada para não conflitar com a barra de controles maior */
+  .progress-bar-wrap {
+    bottom: 80px;
+    width: 55%;
+  }
+
+  /* Toasts menores, sem sobrepor controles */
+  .toast-list { bottom: 90px !important; right: 10px !important; }
 }

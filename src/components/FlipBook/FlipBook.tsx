@@ -19,9 +19,13 @@ const TOAST_CFG: Record<ToastType, { icon: string; bg: string; border: string }>
   troca_cancelada: { icon: '↩️', bg: 'linear-gradient(135deg,#374151,#1f2937)', border: '#9ca3af' },
 }
 
-function ToastList({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: number) => void }) {
+function ToastList({ toasts, onRemove, onNavigate }: {
+  toasts: Toast[]
+  onRemove: (id: number) => void
+  onNavigate: (type: ToastType) => void
+}) {
   return (
-    <div style={{
+    <div className="toast-list" style={{
       position: 'fixed', bottom: 72, right: 16,
       zIndex: 3000, display: 'flex', flexDirection: 'column-reverse', gap: 8,
       pointerEvents: 'none',
@@ -32,25 +36,33 @@ function ToastList({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: numbe
       {toasts.map(t => {
         const cfg = TOAST_CFG[t.type]
         return (
-          <div key={t.id} style={{
-            pointerEvents: 'all',
-            display: 'flex', alignItems: 'center', gap: 10,
-            background: cfg.bg,
-            border: `1px solid ${cfg.border}`,
-            borderRadius: 12, padding: '12px 14px',
-            boxShadow: `0 6px 24px rgba(0,0,0,0.5), 0 0 0 1px ${cfg.border}22`,
-            maxWidth: 300, minWidth: 220,
-            animation: 'toast-in 0.3s cubic-bezier(0.2,0.8,0.2,1)',
-          }}>
+          <div
+            key={t.id}
+            onClick={() => { onNavigate(t.type); onRemove(t.id) }}
+            style={{
+              pointerEvents: 'all',
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: cfg.bg,
+              border: `1px solid ${cfg.border}`,
+              borderRadius: 12, padding: '12px 14px',
+              boxShadow: `0 6px 24px rgba(0,0,0,0.5), 0 0 0 1px ${cfg.border}22`,
+              maxWidth: 300, minWidth: 220,
+              animation: 'toast-in 0.3s cubic-bezier(0.2,0.8,0.2,1)',
+              cursor: 'pointer',
+            }}
+          >
             <span style={{ fontSize: 18, flexShrink: 0 }}>{cfg.icon}</span>
             <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: '#fff', lineHeight: 1.4 }}>
               {t.message}
             </span>
-            <button onClick={() => onRemove(t.id)} style={{
-              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6,
-              color: '#fff', width: 22, height: 22, fontSize: 12,
-              cursor: 'pointer', flexShrink: 0, lineHeight: 1,
-            }}>×</button>
+            <button
+              onClick={e => { e.stopPropagation(); onRemove(t.id) }}
+              style={{
+                background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6,
+                color: '#fff', width: 22, height: 22, fontSize: 12,
+                cursor: 'pointer', flexShrink: 0, lineHeight: 1,
+              }}
+            >×</button>
           </div>
         )
       })}
@@ -109,7 +121,6 @@ function chunks<T>(arr: T[], size: number): T[][] {
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
   return out
 }
-
 function isPageVisible(cur: number, target: number, portrait: boolean, total: number) {
   if (portrait) return cur === target
   if (cur === 0) return target === 0
@@ -144,11 +155,11 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
     }}>
       {slots.map(f => (
         <div key={f.id}
-          onClick={() => f.imagemUrl && onPreview?.({ id: f.id, imagemUrl: f.imagemUrl, classificacao: (f as any).classificacao ?? '' })}
+          onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
           style={{
             borderRadius: 10,
             overflow: 'hidden',
-            background: f.imagemUrl ? 'transparent' : 'rgba(0,0,0,0.06)',
+            background: f.imagemUrl ? '#fff' : 'rgba(0,0,0,0.06)',
             border: f.imagemUrl ? 'none' : '1px dashed rgba(0,0,0,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative',
@@ -201,7 +212,7 @@ function SectionPage({ section, figs, isGestorPage, onPreview }: {
       {/* Gestor — 123×188 centrado no slot branco (x=362..529, y=0..239) */}
       {gestor && gestor.imagemUrl && (
         <div
-          onClick={() => onPreview?.({ id: gestor.id, imagemUrl: gestor.imagemUrl!, classificacao: section })}
+          onClick={e => { e.stopPropagation(); onPreview?.({ id: gestor.id, imagemUrl: gestor.imagemUrl!, classificacao: section }) }}
           style={{
             position: 'absolute',
             top: 26, right: 6,
@@ -259,47 +270,21 @@ function BackCoverPage() {
   )
 }
 
-// ── Índice de páginas ─────────────────────────────────────────────
-type PageInfo = { label: string; sub?: string; bg?: string; color?: string }
-
-function buildPageInfos(sections: SectionData[]): PageInfo[] {
-  const infos: PageInfo[] = []
-  infos.push({ label: 'Capa', bg: '/album/page-01.png' })
-
-  sections.forEach(sec => {
-    const p = SECTION_PAGES[sec.classificacao]
-    const normFigs = sec.figurinhas.filter(f => f.tipo !== 'GESTOR')
-
-    infos.push({ label: sec.classificacao, sub: 'Gestor', bg: p?.gestor })
-
-    const remaining = normFigs.slice(12)
-    chunks(remaining, 12).forEach((_, idx) => {
-      infos.push({ label: sec.classificacao, sub: `Página ${idx + 2}`, bg: p?.normal })
-    })
-  })
-
-  infos.push({ label: 'Contracapa', bg: '/album/page-17.png' })
-  if (infos.length % 2 !== 0) infos.push({ label: '', color: '#f07020' })
-
-  return infos
-}
-
-function Filmstrip({ infos, current, onGo }: {
-  infos: PageInfo[]; current: number; onGo: (i: number) => void
+// ── Filmstrip ─────────────────────────────────────────────────────
+function Filmstrip({ pages, current, onGo }: {
+  pages: React.ReactNode[]; current: number; onGo: (i: number) => void
 }) {
-  const stripRef    = useRef<HTMLDivElement>(null)
-  const itemRefs    = useRef<(HTMLDivElement | null)[]>([])
+  const stripRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  // Auto-scroll para manter a página atual visível
   useEffect(() => {
     const el = itemRefs.current[current]
-    if (el && stripRef.current) {
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-    }
+    if (el && stripRef.current) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [current])
 
-  const TH_W = 56
-  const TH_H = Math.round(TH_W * PAGE_H / PAGE_W)
+  const TH_W   = 56
+  const TH_H   = Math.round(TH_W * PAGE_H / PAGE_W)
+  const pgScale = TH_W / PAGE_W
 
   return (
     <div ref={stripRef} style={{
@@ -313,41 +298,46 @@ function Filmstrip({ infos, current, onGo }: {
       scrollbarWidth: 'thin',
       scrollbarColor: 'rgba(255,255,255,0.1) transparent',
     }}>
-      {infos.map((info, i) => {
+      {pages.map((page, i) => {
         const active = i === current || i === current + 1
         return (
           <div
             key={i}
             ref={el => { itemRefs.current[i] = el }}
             onClick={() => onGo(i)}
-            title={`${info.label}${info.sub ? ' · ' + info.sub : ''}`}
             style={{
               width: TH_W, height: TH_H, flexShrink: 0,
               borderRadius: 5, overflow: 'hidden', cursor: 'pointer',
               position: 'relative',
               border: active ? '2px solid #f5c800' : '2px solid rgba(255,255,255,0.08)',
               boxShadow: active ? '0 0 10px rgba(245,200,0,0.4)' : 'none',
-              background: info.color ?? '#1a1a2a',
               transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
             }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ''}
           >
-            {info.bg && (
-              <img src={info.bg} alt="" draggable={false}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
+            {/* Página real escalada */}
+            <div style={{
+              width: PAGE_W, height: PAGE_H,
+              transform: `scale(${pgScale})`,
+              transformOrigin: 'top left',
+              pointerEvents: 'none', userSelect: 'none',
+            }}>
+              {page}
+            </div>
 
-            {/* Gradiente + número */}
+            {/* Número + gradiente */}
             <div style={{
               position: 'absolute', inset: 0,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 45%)',
+              pointerEvents: 'none',
             }} />
             <div style={{
               position: 'absolute', bottom: 2, left: 0, right: 0,
-              textAlign: 'center',
-              fontSize: 7, fontWeight: 900, color: active ? '#f5c800' : 'rgba(255,255,255,0.7)',
+              textAlign: 'center', fontSize: 7, fontWeight: 900,
+              color: active ? '#f5c800' : 'rgba(255,255,255,0.7)',
               textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+              pointerEvents: 'none',
             }}>
               {i + 1}
             </div>
@@ -395,17 +385,98 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
     })
   })
 
-  // Capa traseira
   pages.push(<FullImagePage key="contracapa" src="/album/page-17.png" />)
 
-  if (pages.length % 2 !== 0)
+  if (pages.length % 2 !== 0) {
     pages.push(<div key="pad" style={{ width: '100%', height: '100%', background: '#f07020' }} />)
+  }
 
   return pages
 }
 
+// ── Filmstrip mobile (com páginas reais) ──────────────────────────
+function MobileFilmstrip({ pages, current, onGo, onClose }: {
+  pages: React.ReactNode[]
+  current: number
+  onGo: (i: number) => void
+  onClose: () => void
+}) {
+  const TH_W   = 62
+  const TH_H   = Math.round(TH_W * PAGE_H / PAGE_W)
+  const pgScale = TH_W / PAGE_W
+
+  return (
+    <>
+      {/* Backdrop clicável para fechar */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 498,
+          background: 'rgba(0,0,0,0.4)',
+        }}
+      />
+
+      {/* Painel lateral */}
+      <div style={{
+        position: 'fixed', left: 0, top: 0, bottom: 0,
+        width: 78, zIndex: 499,
+        background: 'rgba(8,10,18,0.97)',
+        backdropFilter: 'blur(10px)',
+        borderRight: '1px solid rgba(255,255,255,0.08)',
+        overflowY: 'auto', overflowX: 'hidden',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 5, padding: '60px 8px 20px',
+        scrollbarWidth: 'none',
+      }}>
+        {pages.map((page, i) => {
+          const active = i === current
+          return (
+            <div
+              key={i}
+              onClick={() => { onGo(i); onClose() }}
+              style={{
+                width: TH_W, height: TH_H,
+                borderRadius: 4, overflow: 'hidden',
+                cursor: 'pointer', flexShrink: 0,
+                position: 'relative',
+                border: active
+                  ? '2px solid #f5c800'
+                  : '2px solid rgba(255,255,255,0.07)',
+                boxShadow: active ? '0 0 10px rgba(245,200,0,0.45)' : 'none',
+                transition: 'border-color 0.15s, box-shadow 0.15s',
+              }}
+            >
+              {/* Página real escalada — pointer-events none para não disparar cliques internos */}
+              <div style={{
+                width: PAGE_W, height: PAGE_H,
+                transform: `scale(${pgScale})`,
+                transformOrigin: 'top left',
+                pointerEvents: 'none',
+                userSelect: 'none',
+              }}>
+                {page}
+              </div>
+
+              {/* Número da página */}
+              <div style={{
+                position: 'absolute', bottom: 1, right: 2,
+                fontSize: 6, fontWeight: 900,
+                color: active ? '#f5c800' : 'rgba(255,255,255,0.55)',
+                textShadow: '0 1px 3px rgba(0,0,0,1)',
+                lineHeight: 1,
+              }}>
+                {i + 1}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
 // ── Componente principal ──────────────────────────────────────────
-export default function FlipBook({ sections }: { sections: SectionData[] }) {
+export default function FlipBook({ sections, nomeUsuario, matricula }: { sections: SectionData[]; nomeUsuario?: string; matricula?: string }) {
   const bookRef      = useRef<HTMLDivElement>(null)
   const flipRef      = useRef<any>(null)
   const curRef       = useRef(0)
@@ -417,14 +488,16 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
   const [loading,       setLoading]      = useState(true)
   const [fadeOut,       setFadeOut]      = useState(false)
   const [scale,         setScale]        = useState(1)
-  const [isPortrait,    setIsPortrait]   = useState(false)
-  const [inventarioOpen, setInventarioOpen] = useState(false)
-  const [trocasOpen,     setTrocasOpen]     = useState(false)
-  const [trocasBadge,    setTrocasBadge]    = useState(0)
-  const [pacotesOpen,    setPacotesOpen]    = useState(false)
-  const [pacotesBadge,   setPacotesBadge]   = useState(0)
-  const [toasts,         setToasts]         = useState<Toast[]>([])
-  const [preview,        setPreview]        = useState<{ id: number; imagemUrl: string; classificacao: string } | null>(null)
+  // Componente só existe no cliente (dynamic ssr:false), então window já existe aqui
+  const [isPortrait,    setIsPortrait]   = useState(() => window.innerWidth < 600)
+  const [inventarioOpen,   setInventarioOpen]   = useState(false)
+  const [trocasOpen,       setTrocasOpen]       = useState(false)
+  const [trocasBadge,      setTrocasBadge]      = useState(0)
+  const [pacotesOpen,      setPacotesOpen]      = useState(false)
+  const [pacotesBadge,     setPacotesBadge]     = useState(0)
+  const [toasts,           setToasts]           = useState<Toast[]>([])
+  const [preview,          setPreview]          = useState<{ id: number; imagemUrl: string; classificacao: string } | null>(null)
+  const [filmstripMobile,  setFilmstripMobile]  = useState(false)
 
   const toastIdRef       = useRef(0)
   const isFirstPollRef   = useRef(true)
@@ -502,8 +575,7 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
     const interval = setInterval(poll, 10000)
     return () => clearInterval(interval)
   }, [])
-  const pages     = useMemo(() => buildPages(sections, setPreview), [sections])
-  const pageInfos = useMemo(() => buildPageInfos(sections), [sections])
+  const pages = useMemo(() => buildPages(sections, setPreview), [sections])
   const total     = pages.length
   const progress  = total > 1 ? (cur / (total - 1)) * 100 : 0
 
@@ -512,17 +584,22 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
     const calc = () => {
       const vw = window.innerWidth
       const vh = window.innerHeight - 140
-      setScale(Math.max(0.3, Math.min(1, vw / (PAGE_W * 2 + 60), vh / (PAGE_H + 40))))
-      setIsPortrait(vw < 600)
+      const portrait = vw < 600
+      // O container do livro é sempre PAGE_W*2. Em portrait queremos que
+      // UMA página (PAGE_W) caiba na tela; o overflow da segunda é clipado pelo CSS.
+      const targetW = portrait ? PAGE_W + 20 : PAGE_W * 2 + 60
+      const availW  = portrait ? vw : vw - 72   // desconta filmstrip no desktop
+      setScale(Math.max(0.3, Math.min(1, availW / targetW, vh / (PAGE_H + 40))))
+      setIsPortrait(portrait)
     }
     calc()
     window.addEventListener('resize', calc)
     return () => window.removeEventListener('resize', calc)
   }, [])
 
-  // Centralização da capa e contracapa no modo paisagem
+  // Centralização da página ativa
   const translationX = useMemo(() => {
-    if (isPortrait) return 0
+    if (isPortrait) return 0  // container já é PAGE_W, sem translação necessária
     if (cur === 0) return -PAGE_W / 2
     if (cur === total - 1) return PAGE_W / 2
     return 0
@@ -554,15 +631,21 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
         const mod = await import('page-flip')
         const PF: any = (mod as any).PageFlip ?? (mod as any).default?.PageFlip ?? (mod as any).default
 
+        const portrait = window.innerWidth < 600
         pf = new PF(bookRef.current!, {
           width: PAGE_W, height: PAGE_H,
           size: 'fixed', showCover: true,
-          usePortrait: window.innerWidth < 600,
-          drawShadow: true, flippingTime: 900,
-          maxShadowOpacity: 0.85, useMouseEvents: true,
-          swipeDistance: 30, clickEventForward: true,
+          usePortrait: portrait,
+          drawShadow: true, flippingTime: portrait ? 700 : 900,
+          maxShadowOpacity: 0.85,
+          // No mobile desabilitamos o drag interno — swipe é feito por nós
+          useMouseEvents: !portrait,
+          swipeDistance: portrait ? 999999 : 30,
+          clickEventForward: true,
           mobileScrollSupport: false, startZIndex: 1,
-          autoSize: false, disableFlipByClick: true,
+          // Em portrait o boundsRect.left é negativo, fazendo flipPrev({x:10}) cair
+          // no centro do livro e falhar na verificação de corner — desativamos no mobile.
+          autoSize: false, disableFlipByClick: !portrait,
         })
 
         pf.loadFromHTML(bookRef.current!.querySelectorAll('[data-pb-page]'))
@@ -616,14 +699,17 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
 
     const t = setTimeout(init, 150)
     return () => { clearTimeout(t); try { pf?.destroy() } catch {}; flipRef.current = null }
-  }, [total]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [total, isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
       {inventarioOpen && <InventarioModal onClose={() => setInventarioOpen(false)} />}
       {trocasOpen     && <TrocasModal onClose={() => { setTrocasOpen(false); setTrocasBadge(0) }} />}
       {pacotesOpen    && <PacoteAbertura onClose={() => { setPacotesOpen(false); setPacotesBadge(0) }} />}
-      <ToastList toasts={toasts} onRemove={removeToast} />
+      <ToastList toasts={toasts} onRemove={removeToast} onNavigate={type => {
+        if (type === 'pacote') { setPacotesOpen(true) }
+        else { setTrocasOpen(true); setTrocasBadge(0) }
+      }} />
       {preview && (
         <FigurinhaPreview
           id={preview.id}
@@ -632,7 +718,15 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
           onClose={() => setPreview(null)}
         />
       )}
-      <Filmstrip infos={pageInfos} current={cur} onGo={i => navRef.current(i)} />
+      {!isPortrait && <Filmstrip pages={pages} current={cur} onGo={i => navRef.current(i)} />}
+      {isPortrait && filmstripMobile && (
+        <MobileFilmstrip
+          pages={pages}
+          current={cur}
+          onGo={i => navRef.current(i)}
+          onClose={() => setFilmstripMobile(false)}
+        />
+      )}
 
       {loading && (
         <div className={`loading-screen${fadeOut ? ' fade-out' : ''}`}>
@@ -644,15 +738,37 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
 
       <div className="album-scene">
         <header className="album-header">
-          <div className="album-header-title">⚽ Supermédica · Super Copa 2026</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isPortrait && (
+              <button
+                onClick={() => setFilmstripMobile(f => !f)}
+                style={{
+                  background: filmstripMobile ? 'rgba(245,200,0,0.18)' : 'transparent',
+                  border: `1px solid ${filmstripMobile ? 'rgba(245,200,0,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                  borderRadius: 7, color: filmstripMobile ? '#f5c800' : 'rgba(255,255,255,0.5)',
+                  fontSize: 16, width: 36, height: 36,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+                title="Páginas"
+              >
+                ▤
+              </button>
+            )}
+            <div className="album-header-title">⚽ Supermédica · Super Copa 2026</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isPortrait ? 6 : 10 }}>
             <button onClick={() => setPacotesOpen(true)} style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-              color: 'rgba(240,192,64,0.8)', background: 'transparent',
-              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 6,
-              padding: '4px 10px', cursor: 'pointer', position: 'relative',
+              fontSize: isPortrait ? 18 : 9,
+              fontWeight: 700, letterSpacing: isPortrait ? 0 : 2,
+              textTransform: 'uppercase',
+              color: 'rgba(240,192,64,0.9)', background: 'transparent',
+              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
+              padding: isPortrait ? '8px 10px' : '4px 10px',
+              minHeight: 40, cursor: 'pointer', position: 'relative',
+              display: 'flex', alignItems: 'center', gap: 4,
             }}>
-              Pacotes
+              {isPortrait ? '🎴' : 'Pacotes'}
               {pacotesBadge > 0 && (
                 <span style={{
                   position: 'absolute', top: -6, right: -6,
@@ -665,21 +781,26 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
               )}
             </button>
             <button onClick={() => setInventarioOpen(true)} style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-              color: 'rgba(240,192,64,0.8)', background: 'transparent',
-              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 6,
-              padding: '4px 10px', cursor: 'pointer',
+              fontSize: isPortrait ? 18 : 9,
+              fontWeight: 700, letterSpacing: isPortrait ? 0 : 2,
+              textTransform: 'uppercase',
+              color: 'rgba(240,192,64,0.9)', background: 'transparent',
+              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
+              padding: isPortrait ? '8px 10px' : '4px 10px',
+              minHeight: 40, cursor: 'pointer',
             }}>
-              Inventário
+              {isPortrait ? '📋' : 'Inventário'}
             </button>
             <button onClick={() => setTrocasOpen(true)} style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-              color: 'rgba(240,192,64,0.8)', background: 'transparent',
-              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 6,
-              padding: '4px 10px', cursor: 'pointer',
-              position: 'relative',
+              fontSize: isPortrait ? 18 : 9,
+              fontWeight: 700, letterSpacing: isPortrait ? 0 : 2,
+              textTransform: 'uppercase',
+              color: 'rgba(240,192,64,0.9)', background: 'transparent',
+              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
+              padding: isPortrait ? '8px 10px' : '4px 10px',
+              minHeight: 40, cursor: 'pointer', position: 'relative',
             }}>
-              Trocas
+              {isPortrait ? '🔄' : 'Trocas'}
               {trocasBadge > 0 && (
                 <span style={{
                   position: 'absolute', top: -6, right: -6,
@@ -693,7 +814,16 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
             </button>
             <div className="album-header-badge">
               <div className="album-header-dot" />
-              <span>{totalFigs} figurinhas</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                <span style={{ maxWidth: isPortrait ? 90 : 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {nomeUsuario ? nomeUsuario.split(' ').slice(0, 2).join(' ') : `${totalFigs} figurinhas`}
+                </span>
+                {matricula && (
+                  <span style={{ fontSize: 8, letterSpacing: 1, color: 'rgba(255,255,255,0.25)' }}>
+                    #{matricula}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -706,19 +836,31 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
               transition: 'transform 0.5s cubic-bezier(0.2,0.8,0.2,1)',
             }}
             onMouseDown={e => { mouseDownPos.current = { x: e.clientX, y: e.clientY } }}
+            onTouchStart={e => { mouseDownPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
+            onTouchEnd={e => {
+              if (!isPortrait) return
+              const pf = flipRef.current
+              if (!pf || bookState.current !== 'read') return
+              const dx = e.changedTouches[0].clientX - mouseDownPos.current.x
+              const dy = Math.abs(e.changedTouches[0].clientY - mouseDownPos.current.y)
+              if (Math.abs(dx) < 30 || dy > 60) return
+              if (dx < 0) pf.flipNext('bottom')
+              else pf.flipPrev('bottom')
+            }}
             onClick={e => {
+              if (isPortrait) return  // mobile usa swipe/botões
               const pf = flipRef.current
               if (!pf || bookState.current !== 'read') return
               const dx = Math.abs(e.clientX - mouseDownPos.current.x)
               const dy = Math.abs(e.clientY - mouseDownPos.current.y)
-              if (dx > 8 || dy > 8) return  // foi arrastar, não clique
+              if (dx > 8 || dy > 8) return
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
               const relX = (e.clientX - rect.left) / rect.width
               if (relX < 0.5) pf.flipPrev('bottom')
               else pf.flipNext('bottom')
             }}
           >
-            <div ref={bookRef} style={{ width: PAGE_W * 2, height: PAGE_H }}>
+            <div ref={bookRef} style={{ width: isPortrait ? PAGE_W : PAGE_W * 2, height: PAGE_H }}>
               {pages.map((content, i) => (
                 <div key={i} data-pb-page=""
                   data-density={i === 0 || i === total - 1 ? 'hard' : 'soft'}
@@ -736,11 +878,9 @@ export default function FlipBook({ sections }: { sections: SectionData[] }) {
 
         <div className="album-controls">
           <button className="ctrl-btn ctrl-btn-sm" onClick={() => navRef.current(0)} title="Início">⏮</button>
-          <button className="ctrl-btn" onClick={() => flipRef.current?.flipPrev('top')}
-            disabled={cur === 0}>◀</button>
+          <button className="ctrl-btn" onClick={() => flipRef.current?.flipPrev('top')} disabled={cur === 0}>◀</button>
           <span className="page-counter">{cur + 1} / {total}</span>
-          <button className="ctrl-btn" onClick={() => flipRef.current?.flipNext('top')}
-            disabled={cur >= total - 1}>▶</button>
+          <button className="ctrl-btn" onClick={() => flipRef.current?.flipNext('top')} disabled={cur >= total - 1}>▶</button>
           <button className="ctrl-btn ctrl-btn-sm" onClick={() => navRef.current(total - 1)} title="Fim">⏭</button>
         </div>
       </div>
