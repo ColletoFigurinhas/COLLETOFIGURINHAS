@@ -27,8 +27,8 @@ const CLASSIFICACAO: Record<string, string> = {
   'tI':            'MARKETING / TI',
   'financeiro':    'FINANCEIRO',
   'compras':       'COMPRAS',
-  'manutenção':    'MANUTENÇÃO E CONSERVAÇÃO',
-  'rh':            'RECURSOS HUMANOS',
+  'manutenção':    'RH / SERVIÇOS GERAIS',
+  'rh':            'RH / SERVIÇOS GERAIS',
   'Especiais':     'ESPECIAIS',
 }
 
@@ -36,7 +36,7 @@ const CLASSIFICACAO: Record<string, string> = {
 const ORDEM_SECOES = [
   'COMERCIAL', 'ALMOXARIFADO', 'GARANTIA DA QUALIDADE',
   'MARKETING / TI', 'FINANCEIRO', 'COMPRAS',
-  'MANUTENÇÃO E CONSERVAÇÃO', 'RECURSOS HUMANOS', 'ESPECIAIS',
+  'RH / SERVIÇOS GERAIS', 'ESPECIAIS',
 ]
 
 const ORIGEM  = path.resolve('Album Copa', 'Figuras')

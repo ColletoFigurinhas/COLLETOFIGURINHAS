@@ -133,7 +133,7 @@ export default function RecuperarSenhaPage() {
           <div>
             <label style={lbl} htmlFor="matricula">Matrícula</label>
             <input
-              id="matricula" name="matricula" type="text" placeholder="Ex: 00931"
+              id="matricula" name="matricula" type="text" placeholder="Sua matrícula"
               value={matricula} onChange={e => setMatricula(e.target.value)}
               style={inp}
             />

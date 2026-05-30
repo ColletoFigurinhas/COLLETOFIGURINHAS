@@ -3,9 +3,9 @@ import { verifySession } from '@/lib/dal'
 import InventarioClient from './InventarioClient'
 
 const ORDEM_SECOES = [
-  'Comercial', 'Almoxarifado', 'Garantia da Qualidade',
-  'Marketing', 'Tecnologia da Informação', 'Financeiro',
-  'Compras', 'Manutenção e Conservação', 'Recursos Humanos', 'Especiais',
+  'COMERCIAL', 'ALMOXARIFADO', 'GARANTIA DA QUALIDADE',
+  'MARKETING / TI', 'FINANCEIRO', 'COMPRAS',
+  'RH / SERVIÇOS GERAIS', 'ESPECIAIS',
 ]
 
 export type FigurinhaInventario = {

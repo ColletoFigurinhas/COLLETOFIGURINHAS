@@ -13,8 +13,7 @@ const SECTION_COLOR: Record<string, string> = {
   'MARKETING / TI':           '#7f1d1d',
   'FINANCEIRO':               '#78350f',
   'COMPRAS':                  '#7c2d12',
-  'MANUTENÇÃO E CONSERVAÇÃO': '#1e293b',
-  'RECURSOS HUMANOS':         '#831843',
+  'RH / SERVIÇOS GERAIS':     '#831843',
   'ESPECIAIS':                '#713f12',
 }
 
@@ -127,7 +126,7 @@ function ModalTroca({ fig, onClose, onSucesso }: {
                 ref={inputRef}
                 value={matricula}
                 onChange={e => setMatricula(e.target.value)}
-                placeholder="Ex: 931 ou 00931"
+                placeholder="Sua matrícula"
                 maxLength={10}
                 style={{
                   width: '100%', height: 40, borderRadius: 8, boxSizing: 'border-box',

@@ -8,16 +8,14 @@ type Filtro = 'todas' | 'tenho' | 'repetidas' | 'faltam'
 
 // ── Cores por seção ───────────────────────────────────────────────
 const SECTION_COLOR: Record<string, string> = {
-  'Comercial':                '#1e40af',
-  'Almoxarifado':             '#166534',
-  'Garantia da Qualidade':    '#5b21b6',
-  'Marketing':                '#991b1b',
-  'Tecnologia da Informação': '#155e75',
-  'Financeiro':               '#92400e',
-  'Compras':                  '#9a3412',
-  'Manutenção e Conservação': '#334155',
-  'Recursos Humanos':         '#9d174d',
-  'Especiais':                '#b45309',
+  'COMERCIAL':             '#1e3a5f',
+  'ALMOXARIFADO':          '#14532d',
+  'GARANTIA DA QUALIDADE': '#4c1d95',
+  'MARKETING / TI':        '#7f1d1d',
+  'FINANCEIRO':            '#78350f',
+  'COMPRAS':               '#7c2d12',
+  'RH / SERVIÇOS GERAIS':  '#831843',
+  'ESPECIAIS':             '#713f12',
 }
 
 // ── Card de figurinha ─────────────────────────────────────────────
@@ -58,15 +56,16 @@ function FigurinhaCard({ fig }: { fig: FigurinhaInventario }) {
         />
       )}
 
-      {/* Número da figurinha */}
+      {/* Código da figurinha — canto superior esquerdo */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'rgba(0,0,0,0.55)',
-        padding: '3px 6px',
-        fontSize: 9,
-        color: 'rgba(255,255,255,0.7)',
-        letterSpacing: 1,
-        textAlign: 'center',
+        position: 'absolute', top: 4, left: 4,
+        background: 'rgba(0,0,0,0.65)',
+        borderRadius: 4,
+        padding: '2px 5px',
+        fontSize: 8,
+        fontWeight: 700,
+        color: 'rgba(255,255,255,0.8)',
+        letterSpacing: 0.5,
       }}>
         #{fig.id}
       </div>

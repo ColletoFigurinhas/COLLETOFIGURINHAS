@@ -42,6 +42,74 @@ export type PrimeiroAcessoState = { errors?: PrimeiroAcessoErrors }             
 export type RecuperarState      = { errors?: RecuperarErrors; codigoEnviado?: true; codigoDebug?: string; emailFalhou?: boolean } | undefined
 export type CodigoState         = { errors?: CodigoErrors; ok?: true }              | undefined
 
+// ── Verificar matrícula (step 1 do novo login) ────────────────────
+export async function verificarMatricula(matriculaRaw: string): Promise<
+  { ok: false; error: string } |
+  { ok: true; temSenha: boolean; nome: string }
+> {
+  const matricula = matriculaRaw.replace(/\D/g, '').padStart(5, '0')
+  if (!matricula || matricula === '00000') return { ok: false, error: 'Informe a matrícula.' }
+
+  const validacao = await validarMatriculaNoErp(matricula)
+  if (!validacao.ok) {
+    const msg: Record<string, string> = {
+      nao_encontrado: 'Matrícula não encontrada. Verifique com o RH.',
+      suspenso:       'Seu acesso está suspenso. Contate o RH.',
+      inativo:        'Seu vínculo com a empresa está encerrado.',
+      erro_api:       'Não foi possível validar. Tente novamente.',
+    }
+    return { ok: false, error: msg[validacao.motivo] ?? 'Erro ao validar matrícula.' }
+  }
+
+  const participante = await db.participante.findFirst({ where: { matricula } })
+  if (participante && !participante.ativo) return { ok: false, error: 'Sua participação na campanha foi encerrada.' }
+
+  return {
+    ok: true,
+    temSenha: !!(participante?.senha),
+    nome: participante?.nome ?? validacao.funcionario.nome,
+  }
+}
+
+// ── Login com senha (step 2a) ─────────────────────────────────────
+export async function loginComSenha(matriculaRaw: string, senha: string): Promise<{ error: string } | void> {
+  if (!senha) return { error: 'Informe a senha.' }
+  const matricula = matriculaRaw.replace(/\D/g, '').padStart(5, '0')
+
+  const participante = await db.participante.findFirst({ where: { matricula } })
+  if (!participante?.senha) return { error: 'Conta não encontrada.' }
+
+  const ok = await bcrypt.compare(senha, participante.senha)
+  if (!ok) return { error: 'Senha incorreta.' }
+
+  await createSession({ userId: participante.id, matricula, nome: participante.nome, role: participante.role })
+  redirect('/album')
+}
+
+// ── Cadastrar acesso (step 2b — primeiro acesso) ──────────────────
+export async function cadastrar(matriculaRaw: string, email: string, senha: string): Promise<{ error: string } | void> {
+  if (!email || !senha) return { error: 'Preencha todos os campos.' }
+  const matricula = matriculaRaw.replace(/\D/g, '').padStart(5, '0')
+
+  const validacao = await validarMatriculaNoErp(matricula)
+  if (!validacao.ok) return { error: 'Matrícula inválida.' }
+
+  let participante = await db.participante.findFirst({ where: { matricula } })
+  if (!participante) {
+    participante = await db.participante.create({
+      data: { matricula, nome: validacao.funcionario.nome },
+    })
+  }
+
+  await db.participante.update({
+    where: { id: participante.id },
+    data:  { email, senha: await bcrypt.hash(senha, 10) },
+  })
+
+  await createSession({ userId: participante.id, matricula, nome: participante.nome, role: participante.role })
+  redirect('/album')
+}
+
 // ── Login ─────────────────────────────────────────────────────────
 export async function login(_state: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = LoginSchema.safeParse({
