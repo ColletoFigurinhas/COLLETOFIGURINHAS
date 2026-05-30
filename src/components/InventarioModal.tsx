@@ -202,14 +202,6 @@ function FigurinhaCard({ fig, onTrocar }: { fig: Figurinha; onTrocar: (fig: Figu
         </div>
       )}
 
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'rgba(0,0,0,0.65)', padding: '3px 6px',
-        fontSize: 9, color: 'rgba(255,255,255,0.7)', textAlign: 'center', letterSpacing: 1,
-      }}>
-        #{fig.id}
-      </div>
-
       {/* Overlay TROCAR ao hover */}
       <div className="trocar-overlay" style={{
         position: 'absolute', inset: 0,

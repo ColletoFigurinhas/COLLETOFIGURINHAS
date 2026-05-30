@@ -51,14 +51,17 @@ function SelecaoPacote({ pacotes, onSelect, onClose }: { pacotes:Pacote[]; onSel
 }
 
 // ── Abertura com arrastar ─────────────────────────────────────────
-type Phase = 'idle' | 'dragging' | 'completing' | 'split' | 'burst' | 'grid' | 'done'
+type Phase = 'idle' | 'dragging' | 'completing' | 'split' | 'done'
 
 function AberturaAnimation({ pacote, onClose }: { pacote:Pacote; onClose:()=>void }) {
   const [phase,    setPhase]    = useState<Phase>('idle')
   const [progress, setProgress] = useState(0)   // 0–1
   const [dir,      setDir]      = useState<'right'|'left'>('right')
   const [figurinhas, setFigurinhas] = useState<Figurinha[]>([])
-  const [flipped,    setFlipped]    = useState<boolean[]>([])
+  const [indiceAtual, setIndiceAtual] = useState(0)
+  const [revelada, setRevelada] = useState(false)
+  const [efeitoAtual, setEfeitoAtual] = useState<'padrao'|'especial'|'premio'>('padrao')
+  const [efeitoTick, setEfeitoTick] = useState(0)
   const [erro,       setErro]       = useState('')
 
   const packRef    = useRef<HTMLDivElement>(null)
@@ -93,17 +96,11 @@ function AberturaAnimation({ pacote, onClose }: { pacote:Pacote; onClose:()=>voi
     if (!data.ok) { setErro(data.error ?? 'Erro'); setPhase('idle'); fetchedRef.current = false; return }
 
     setFigurinhas(data.figurinhas)
-    setFlipped(new Array(data.figurinhas.length).fill(false))
+    setIndiceAtual(0)
+    setRevelada(false)
 
     setTimeout(() => setPhase('split'),  700)
-    setTimeout(() => setPhase('burst'),  1400)
-    setTimeout(() => setPhase('grid'),   2200)
-    setTimeout(() => {
-      setPhase('done')
-      data.figurinhas.forEach((_:Figurinha, i:number) => {
-        setTimeout(() => setFlipped(prev => { const n=[...prev]; n[i]=true; return n }), i*90)
-      })
-    }, 2800)
+    setTimeout(() => setPhase('done'), 1450)
   }, [pacote.id])
 
   const onStart = useCallback((clientX: number) => {
@@ -163,6 +160,35 @@ function AberturaAnimation({ pacote, onClose }: { pacote:Pacote; onClose:()=>voi
 
   // Posição X do laser em % do pack (0=esquerda, 100=direita)
   const laserPct = dir === 'right' ? progress * 100 : 100 - progress * 100
+  const figurinhaAtual = figurinhas[indiceAtual]
+  const tierAtual: 'padrao'|'especial'|'premio' = pacote.tipo === 'PREMIUM'
+    ? 'premio'
+    : figurinhaAtual?.classificacao === 'ESPECIAIS'
+      ? 'especial'
+      : 'padrao'
+  const auraColor = tierAtual === 'especial'
+    ? 'rgba(250,204,21,0.95)'
+    : tierAtual === 'premio'
+      ? 'rgba(255,165,0,0.92)'
+      : 'rgba(120,200,255,0.82)'
+
+  const revelarOuAvancar = () => {
+    if (!figurinhaAtual) return
+    if (!revelada) {
+      setEfeitoAtual(tierAtual)
+      setEfeitoTick(v => v + 1)
+      setRevelada(true)
+      return
+    }
+
+    if (indiceAtual < figurinhas.length - 1) {
+      setIndiceAtual(v => v + 1)
+      setRevelada(false)
+      return
+    }
+
+    onClose()
+  }
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:2000, background:'rgba(0,0,0,0.93)', backdropFilter:'blur(12px)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
@@ -178,6 +204,14 @@ function AberturaAnimation({ pacote, onClose }: { pacote:Pacote; onClose:()=>voi
         @keyframes card-burst    { 0%{transform:translate(0,0) rotate(0deg) scale(0.05);opacity:0} 30%{opacity:1} 100%{transform:translate(var(--bx),var(--by)) rotate(var(--br)) scale(1);opacity:1} }
         @keyframes card-to-grid  { from{transform:translate(var(--bx),var(--by)) rotate(var(--br))} to{transform:translate(var(--gx),var(--gy)) rotate(0deg)} }
         @keyframes card-flip-in  { 0%{transform:translate(var(--gx),var(--gy)) rotateY(90deg) scale(0.9)} 100%{transform:translate(var(--gx),var(--gy)) rotateY(0deg) scale(1)} }
+        @keyframes reveal-pop    { 0%{transform:translateY(18px) scale(0.84);opacity:0} 60%{transform:translateY(-6px) scale(1.04);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
+        @keyframes aura-pulse    { 0%,100%{transform:scale(0.96);opacity:0.55} 50%{transform:scale(1.06);opacity:1} }
+        @keyframes sparkle-spin  { from{transform:rotate(0deg) translateX(128px) rotate(0deg)} to{transform:rotate(360deg) translateX(128px) rotate(-360deg)} }
+        @keyframes fx-ring-padrao   { 0%{transform:scale(0.7);opacity:1} 100%{transform:scale(1.45);opacity:0} }
+        @keyframes fx-ring-especial { 0%{transform:scale(0.65);opacity:1} 100%{transform:scale(1.6);opacity:0} }
+        @keyframes fx-ring-premio   { 0%{transform:scale(0.6);opacity:1} 100%{transform:scale(1.85);opacity:0} }
+        @keyframes fx-stars         { 0%{transform:scale(0.2) rotate(0deg);opacity:1} 100%{transform:scale(1.6) rotate(200deg);opacity:0} }
+        @keyframes card-rotate      { 0%{transform:rotateY(0deg)} 100%{transform:rotateY(180deg)} }
       `}</style>
 
       {/* ── Pack ── */}
@@ -282,48 +316,156 @@ function AberturaAnimation({ pacote, onClose }: { pacote:Pacote; onClose:()=>voi
         </div>
       )}
 
-      {/* ── Cartas ── */}
-      {(phase==='burst'||phase==='grid'||phase==='done') && figurinhas.length>0 && (() => {
-        const CW=100, CH=140, GAP=10
-        const COLS=Math.min(figurinhas.length,7), ROWS=Math.ceil(figurinhas.length/COLS)
-        const tW=COLS*CW+(COLS-1)*GAP, tH=ROWS*CH+(ROWS-1)*GAP
-        return (
-          <div style={{ position:'relative', width:'100vw', height:'80vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            {figurinhas.map((fig,i) => {
-              const col=i%COLS, row=Math.floor(i/COLS)
-              const gx=col*(CW+GAP)-tW/2+CW/2, gy=row*(CH+GAP)-tH/2+CH/2
-              const bx=((i%5)-2)*90, by=-70-(i%4)*55, br=((i%7)-3)*24
-              return (
-                <div key={fig.id} style={{ position:'absolute', width:CW, height:CH, borderRadius:8, perspective:800,
-                  '--bx':`${bx}px`,'--by':`${by}px`,'--br':`${br}deg`,
-                  '--gx':`${gx}px`,'--gy':`${gy}px`,
-                  animation: phase==='burst' ? `card-burst 0.55s cubic-bezier(0.2,0.8,0.2,1) ${i*38}ms both`
-                    : phase==='grid' ? `card-to-grid 0.5s ease-out ${i*16}ms both`
-                    : flipped[i] ? `card-flip-in 0.35s ease-out both`
-                    : `card-to-grid 0.5s ease-out ${i*16}ms both`,
-                } as React.CSSProperties}>
-                  <div style={{ position:'absolute', inset:0, borderRadius:8, background:cfg.versoColor, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 6px 24px rgba(0,0,0,0.7)${cfg.cardGlow?`, ${cfg.cardGlow}`:''}`, opacity:flipped[i]?0:1, transition:'opacity 0.15s' }}>
-                    <span style={{ fontSize:30 }}>{cfg.versoEmoji}</span>
-                  </div>
-                  <div style={{ position:'absolute', inset:0, borderRadius:8, overflow:'hidden', opacity:flipped[i]?1:0, transition:'opacity 0.15s 0.15s', boxShadow:`0 6px 24px rgba(0,0,0,0.7)${cfg.cardGlow?`, ${cfg.cardGlow}`:''}` }}>
-                    {fig.imagemUrl
-                      ? <img src={fig.imagemUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
-                      : <div style={{ width:'100%', height:'100%', background:'#222' }}/>
-                    }
-                    <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'rgba(0,0,0,0.65)', padding:'3px 5px', fontSize:8, color:'rgba(255,255,255,0.85)', textAlign:'center' }}>#{fig.id}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )
-      })()}
+      {/* ── Reveal uma figurinha por vez ── */}
+      {phase==='done' && figurinhas.length>0 && (
+        <div style={{
+          position:'relative',
+          display:'flex',
+          flexDirection:'column',
+          alignItems:'center',
+          gap:16,
+        }}>
+          {(tierAtual === 'especial' || tierAtual === 'premio') && (
+            <>
+              <div key={`aura-${efeitoTick}`} style={{
+                position:'absolute',
+                width:250,
+                height:250,
+                borderRadius:'50%',
+                background:`radial-gradient(circle, ${auraColor} 0%, rgba(0,0,0,0) 65%)`,
+                filter:'blur(10px)',
+                animation:'aura-pulse 1.3s ease-in-out infinite',
+                pointerEvents:'none',
+              }} />
+              <div key={`spark-${efeitoTick}`} style={{
+                position:'absolute',
+                top:'50%',
+                left:'50%',
+                width:8,
+                height:8,
+                borderRadius:'50%',
+                background:auraColor,
+                boxShadow:`0 0 12px ${auraColor}`,
+                transform:'translate(-50%, -50%)',
+                animation:'sparkle-spin 1.8s linear infinite',
+                pointerEvents:'none',
+              }} />
+            </>
+          )}
 
-      {phase==='done' && (
-        <button onClick={onClose} style={{ position:'absolute', bottom:28, background:'linear-gradient(135deg,#009c3b,#006b29)', border:'none', borderRadius:10, color:'#f5c800', fontSize:11, fontWeight:800, letterSpacing:3, textTransform:'uppercase', padding:'12px 32px', cursor:'pointer', boxShadow:'0 4px 20px rgba(0,156,59,0.4)' }}>
-          Fechar · {figurinhas.length} figurinhas recebidas
-        </button>
+          {revelada && (
+            <div
+              key={`fx-${efeitoAtual}-${efeitoTick}`}
+              style={{
+                position:'absolute',
+                width:240,
+                height:320,
+                borderRadius:24,
+                border: efeitoAtual === 'premio'
+                  ? '2px solid rgba(255,165,0,0.85)'
+                  : efeitoAtual === 'especial'
+                    ? '2px solid rgba(250,204,21,0.85)'
+                    : '2px solid rgba(120,200,255,0.85)',
+                boxShadow: efeitoAtual === 'premio'
+                  ? '0 0 38px rgba(255,165,0,0.85)'
+                  : efeitoAtual === 'especial'
+                    ? '0 0 28px rgba(250,204,21,0.7)'
+                    : '0 0 22px rgba(120,200,255,0.6)',
+                animation: efeitoAtual === 'premio'
+                  ? 'fx-ring-premio 0.7s ease-out forwards'
+                  : efeitoAtual === 'especial'
+                    ? 'fx-ring-especial 0.6s ease-out forwards'
+                    : 'fx-ring-padrao 0.5s ease-out forwards',
+                pointerEvents:'none',
+              }}
+            />
+          )}
+
+          {revelada && (tierAtual === 'especial' || tierAtual === 'premio') && (
+            <div
+              key={`stars-${efeitoTick}`}
+              style={{
+                position:'absolute',
+                top:'50%',
+                left:'50%',
+                width:10,
+                height:10,
+                borderRadius:'50%',
+                background: tierAtual === 'premio' ? 'rgba(255,165,0,1)' : 'rgba(250,204,21,1)',
+                boxShadow: tierAtual === 'premio'
+                  ? '0 0 16px rgba(255,165,0,0.95)'
+                  : '0 0 14px rgba(250,204,21,0.9)',
+                animation:'fx-stars 0.9s ease-out forwards',
+                pointerEvents:'none',
+              }}
+            />
+          )}
+
+          <div style={{
+            width:180,
+            height:252,
+            borderRadius:12,
+            position:'relative',
+            overflow:'hidden',
+            boxShadow:`0 10px 30px rgba(0,0,0,0.75)${cfg.cardGlow?`, ${cfg.cardGlow}`:''}`,
+            border: tierAtual === 'especial'
+              ? '1.5px solid rgba(250,204,21,0.85)'
+              : '1px solid rgba(255,255,255,0.15)',
+            background:'#111',
+            animation:'reveal-pop 0.45s ease-out',
+            cursor:'pointer',
+            perspective:1000,
+          }} onClick={revelarOuAvancar}>
+            <div style={{
+              position:'absolute',
+              inset:0,
+              transformStyle:'preserve-3d',
+              transform: revelada ? 'rotateY(180deg)' : 'rotateY(0deg)',
+              transition:'transform 0.55s cubic-bezier(0.2,0.8,0.2,1)',
+            }}>
+              <div style={{
+                position:'absolute',
+                inset:0,
+                borderRadius:12,
+                backfaceVisibility:'hidden',
+                background:cfg.versoColor,
+                display:'flex',
+                alignItems:'center',
+                justifyContent:'center',
+              }}>
+                <span style={{ fontSize:46 }}>{cfg.versoEmoji}</span>
+              </div>
+              <div style={{
+                position:'absolute',
+                inset:0,
+                borderRadius:12,
+                backfaceVisibility:'hidden',
+                transform:'rotateY(180deg)',
+                overflow:'hidden',
+              }}>
+                {figurinhaAtual?.imagemUrl
+                  ? <img key={figurinhaAtual.id} src={figurinhaAtual.imagemUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
+                  : <div style={{ width:'100%', height:'100%', background:'#222' }}/>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            fontSize:10,
+            color: tierAtual === 'especial' ? 'rgba(250,204,21,0.92)' : tierAtual === 'premio' ? 'rgba(255,180,0,0.92)' : 'rgba(255,255,255,0.65)',
+            letterSpacing:2,
+            textTransform:'uppercase',
+          }}>
+            {!revelada
+              ? `Clique para revelar · ${indiceAtual + 1}/${figurinhas.length}`
+              : indiceAtual < figurinhas.length - 1
+                ? `Clique para próxima · ${indiceAtual + 1}/${figurinhas.length}`
+                : `Clique para fechar · ${indiceAtual + 1}/${figurinhas.length}`}
+          </div>
+        </div>
       )}
+
       {erro && <div style={{ color:'#f87171', fontSize:12, marginTop:16 }}>{erro}</div>}
     </div>
   )

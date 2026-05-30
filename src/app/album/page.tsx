@@ -23,7 +23,7 @@ export type FigurinhaSlot = {
 export type SectionData = { classificacao: string; figurinhas: FigurinhaSlot[] }
 
 export default async function AlbumPage() {
-  const { userId } = await verifySession()
+  const { userId, nome, matricula } = await verifySession()
 
   const [todasFigurinhas, albumItens] = await Promise.all([
     db.figurinha.findMany({
@@ -58,5 +58,5 @@ export default async function AlbumPage() {
     }))
     .filter(s => s.figurinhas.length > 0)
 
-  return <AlbumClient sections={sections} />
+  return <AlbumClient sections={sections} nomeUsuario={nome} matricula={matricula} />
 }

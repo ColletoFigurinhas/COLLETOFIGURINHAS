@@ -8,6 +8,14 @@ const FlipBook = dynamic(
   { ssr: false }
 )
 
-export default function AlbumClient({ sections }: { sections: SectionData[] }) {
-  return <FlipBook sections={sections} />
+export default function AlbumClient({
+  sections,
+  nomeUsuario,
+  matricula,
+}: {
+  sections: SectionData[]
+  nomeUsuario: string
+  matricula: string
+}) {
+  return <FlipBook sections={sections} nomeUsuario={nomeUsuario} matricula={matricula} />
 }
