@@ -32,14 +32,18 @@ export async function POST(request: Request) {
     select: { id: true },
   })
 
-  // Embaralha e seleciona figurinhas normais
+  // Para cada slot: 10% de chance de ser especial, senão normal
   const shuffled = [...normais].sort(() => Math.random() - 0.5)
-  let picks = shuffled.slice(0, qtd)
+  let normalIdx = 0
+  const picks: { id: number }[] = []
 
-  // Chance de incluir 1 especial (substitui a última normal)
-  if (especiais.length > 0 && Math.random() < campanha.chanceEspecial) {
-    const esp = especiais[Math.floor(Math.random() * especiais.length)]
-    picks = [...picks.slice(0, qtd - 1), esp]
+  for (let i = 0; i < qtd; i++) {
+    if (especiais.length > 0 && Math.random() < campanha.chanceEspecial) {
+      picks.push(especiais[Math.floor(Math.random() * especiais.length)])
+    } else {
+      picks.push(shuffled[normalIdx % shuffled.length])
+      normalIdx++
+    }
   }
 
   const pacote = await db.pacote.create({

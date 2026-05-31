@@ -499,6 +499,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
   const [toasts,           setToasts]           = useState<Toast[]>([])
   const [preview,          setPreview]          = useState<{ id: number; imagemUrl: string; classificacao: string } | null>(null)
   const [filmstripMobile,  setFilmstripMobile]  = useState(false)
+  const [mobileMenuOpen,   setMobileMenuOpen]   = useState(false)
 
   const toastIdRef       = useRef(0)
   const isFirstPollRef   = useRef(true)
@@ -702,6 +703,19 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
     return () => { clearTimeout(t); try { pf?.destroy() } catch {}; flipRef.current = null }
   }, [total, isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const btnDesktop: React.CSSProperties = {
+    fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+    color: 'rgba(240,192,64,0.9)', background: 'transparent',
+    border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
+    padding: '4px 10px', minHeight: 40, cursor: 'pointer', position: 'relative',
+    display: 'flex', alignItems: 'center', gap: 4,
+  }
+  const badge = (bg: string, color: string): React.CSSProperties => ({
+    position: 'absolute', top: -6, right: -6,
+    background: bg, color, fontSize: 8, fontWeight: 900,
+    borderRadius: 10, padding: '1px 5px', lineHeight: 1.4,
+  })
+
   return (
     <>
       {inventarioOpen && <InventarioModal onClose={() => setInventarioOpen(false)} />}
@@ -739,6 +753,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
 
       <div className="album-scene">
         <header className="album-header">
+          {/* ── Esquerda ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {isPortrait && (
               <button
@@ -749,120 +764,158 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
                   borderRadius: 7, color: filmstripMobile ? '#f5c800' : 'rgba(255,255,255,0.5)',
                   fontSize: 16, width: 36, height: 36,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.2s', flexShrink: 0,
                 }}
-                title="Páginas"
-              >
-                ▤
-              </button>
+              >▤</button>
             )}
             <div className="album-header-title">⚽ Supermédica · Super Copa 2026</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: isPortrait ? 6 : 10 }}>
-            <button onClick={() => setPacotesOpen(true)} style={{
-              fontSize: 9,
-              fontWeight: 700, letterSpacing: 2,
-              textTransform: 'uppercase',
-              color: 'rgba(240,192,64,0.9)', background: 'transparent',
-              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
-              padding: isPortrait ? '8px 10px' : '4px 10px',
-              minHeight: 40, cursor: 'pointer', position: 'relative',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}>
-              Pacotes
-              {pacotesBadge > 0 && (
-                <span style={{
-                  position: 'absolute', top: -6, right: -6,
-                  background: '#f07020', color: '#fff',
-                  fontSize: 8, fontWeight: 900, borderRadius: 10,
-                  padding: '1px 5px', lineHeight: 1.4,
-                }}>
-                  {pacotesBadge}
-                </span>
-              )}
-            </button>
-            <button onClick={() => setInventarioOpen(true)} style={{
-              fontSize: 9,
-              fontWeight: 700, letterSpacing: 2,
-              textTransform: 'uppercase',
-              color: 'rgba(240,192,64,0.9)', background: 'transparent',
-              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
-              padding: isPortrait ? '8px 10px' : '4px 10px',
-              minHeight: 40, cursor: 'pointer',
-            }}>
-              Inventário
-            </button>
-            <button onClick={() => setTrocasOpen(true)} style={{
-              fontSize: 9,
-              fontWeight: 700, letterSpacing: 2,
-              textTransform: 'uppercase',
-              color: 'rgba(240,192,64,0.9)', background: 'transparent',
-              border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
-              padding: isPortrait ? '8px 10px' : '4px 10px',
-              minHeight: 40, cursor: 'pointer', position: 'relative',
-            }}>
-              Trocas
-              {trocasBadge > 0 && (
-                <span style={{
-                  position: 'absolute', top: -6, right: -6,
-                  background: '#f0c040', color: '#000',
-                  fontSize: 8, fontWeight: 900, borderRadius: 10,
-                  padding: '1px 5px', lineHeight: 1.4,
-                }}>
-                  {trocasBadge}
-                </span>
-              )}
-            </button>
-            <div className="album-header-badge">
-              <div className="album-header-dot" />
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
-                <span style={{ maxWidth: isPortrait ? 90 : 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {nomeUsuario ? nomeUsuario.split(' ').slice(0, 2).join(' ') : `${totalFigs} figurinhas`}
-                </span>
-                {matricula && (
-                  <span style={{ fontSize: 8, letterSpacing: 1, color: 'rgba(255,255,255,0.25)' }}>
-                    #{matricula}
+
+          {/* ── Direita: Desktop ── */}
+          {!isPortrait && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={() => setPacotesOpen(true)} style={btnDesktop}>
+                Pacotes
+                {pacotesBadge > 0 && <span style={badge('#f07020','#fff')}>{pacotesBadge}</span>}
+              </button>
+              <button onClick={() => setInventarioOpen(true)} style={btnDesktop}>Inventário</button>
+              <button onClick={() => setTrocasOpen(true)} style={{ ...btnDesktop, position: 'relative' }}>
+                Trocas
+                {trocasBadge > 0 && <span style={badge('#f0c040','#000')}>{trocasBadge}</span>}
+              </button>
+              <div className="album-header-badge">
+                <div className="album-header-dot" />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                  <span style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {nomeUsuario ? nomeUsuario.split(' ').slice(0, 2).join(' ') : `${totalFigs} figurinhas`}
                   </span>
-                )}
+                  {matricula && <span style={{ fontSize: 8, letterSpacing: 1, color: 'rgba(255,255,255,0.25)' }}>#{matricula}</span>}
+                </div>
+              </div>
+              {isAdmin && (
+                <a href="/admin" style={{ ...btnDesktop, textDecoration: 'none', color: 'rgba(240,192,64,0.7)', borderColor: 'rgba(240,192,64,0.2)', display: 'flex', alignItems: 'center' }}>
+                  Admin
+                </a>
+              )}
+              <button onClick={() => startLogout(() => logout())} disabled={logoutPending} style={{ ...btnDesktop, color: 'rgba(255,255,255,0.45)', borderColor: 'rgba(255,255,255,0.15)' }}>
+                Sair
+              </button>
+            </div>
+          )}
+
+          {/* ── Direita: Mobile — botão menu ── */}
+          {isPortrait && (
+            <button
+              onClick={() => setMobileMenuOpen(o => !o)}
+              style={{
+                position: 'relative',
+                background: mobileMenuOpen ? 'rgba(245,200,0,0.15)' : 'transparent',
+                border: `1px solid ${mobileMenuOpen ? 'rgba(245,200,0,0.45)' : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: 8, color: mobileMenuOpen ? '#f5c800' : 'rgba(255,255,255,0.6)',
+                width: 40, height: 40, fontSize: 18,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, transition: 'all 0.2s',
+              }}
+            >
+              {mobileMenuOpen ? '✕' : '☰'}
+              {/* Badge total no botão */}
+              {(pacotesBadge + trocasBadge) > 0 && !mobileMenuOpen && (
+                <span style={{ ...badge('#f07020','#fff'), top: -5, right: -5 }}>
+                  {pacotesBadge + trocasBadge}
+                </span>
+              )}
+            </button>
+          )}
+        </header>
+
+        {/* ── Menu mobile overlay ── */}
+        {isPortrait && mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 490, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
+            />
+            {/* Painel */}
+            <div style={{
+              position: 'fixed', top: 52, right: 0, bottom: 0,
+              width: 240, zIndex: 491,
+              background: 'rgba(8,12,22,0.98)',
+              borderLeft: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', flexDirection: 'column',
+              padding: '16px 0 24px',
+              overflowY: 'auto',
+            }}>
+              {/* Info do usuário */}
+              <div style={{ padding: '0 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div className="album-header-dot" />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                      {nomeUsuario ? nomeUsuario.split(' ').slice(0, 2).join(' ') : '—'}
+                    </div>
+                    {matricula && <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginTop: 2 }}>#{matricula}</div>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Itens do menu */}
+              {[
+                {
+                  label: 'Pacotes', icon: '🎴', badge: pacotesBadge,
+                  color: '#f5c800', onClick: () => { setPacotesOpen(true); setMobileMenuOpen(false) },
+                },
+                {
+                  label: 'Inventário', icon: '📋', badge: 0,
+                  color: '#f5c800', onClick: () => { setInventarioOpen(true); setMobileMenuOpen(false) },
+                },
+                {
+                  label: 'Trocas', icon: '🔄', badge: trocasBadge,
+                  color: '#f5c800', onClick: () => { setTrocasOpen(true); setTrocasBadge(0); setMobileMenuOpen(false) },
+                },
+                ...(isAdmin ? [{
+                  label: 'Admin', icon: '⚙️', badge: 0,
+                  color: 'rgba(240,192,64,0.7)', onClick: () => { window.location.href = '/admin' },
+                }] : []),
+              ].map(item => (
+                <button key={item.label} onClick={item.onClick} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  background: 'transparent', border: 'none',
+                  padding: '14px 20px', cursor: 'pointer',
+                  position: 'relative', width: '100%', textAlign: 'left',
+                  transition: 'background 0.15s',
+                }}
+                  onTouchStart={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+                  onTouchEnd={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <span style={{ fontSize: 20, width: 28, textAlign: 'center', flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: item.color }}>{item.label}</span>
+                  {item.badge > 0 && (
+                    <span style={{ marginLeft: 'auto', background: '#f07020', color: '#fff', fontSize: 10, fontWeight: 900, borderRadius: 10, padding: '2px 8px' }}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+
+              {/* Separador + Sair */}
+              <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
+                <button
+                  onClick={() => startLogout(() => logout())}
+                  disabled={logoutPending}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    background: 'transparent', border: 'none',
+                    padding: '14px 20px', cursor: 'pointer', width: '100%',
+                  }}
+                >
+                  <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🚪</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f87171' }}>{logoutPending ? 'Saindo…' : 'Sair'}</span>
+                </button>
               </div>
             </div>
-            {isAdmin && (
-              <a href="/admin" style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
-                color: 'rgba(240,192,64,0.7)', background: 'transparent',
-                border: '1px solid rgba(240,192,64,0.2)', borderRadius: 7,
-                padding: isPortrait ? '7px 9px' : '4px 8px',
-                minHeight: 36, cursor: 'pointer', textDecoration: 'none',
-                display: 'flex', alignItems: 'center',
-              }}>
-                Admin
-              </a>
-            )}
-            <button
-              onClick={() => startLogout(() => logout())}
-              disabled={logoutPending}
-              title="Sair"
-              style={{
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 7,
-                color: 'rgba(255,255,255,0.45)',
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: 1.5,
-                textTransform: 'uppercase',
-                padding: isPortrait ? '7px 9px' : '4px 8px',
-                minHeight: 36,
-                cursor: logoutPending ? 'wait' : 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#f87171'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(248,113,113,0.4)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)' }}
-            >
-              Sair
-            </button>
-          </div>
-        </header>
+          </>
+        )}
 
         <div className="book-wrapper">
           <div
