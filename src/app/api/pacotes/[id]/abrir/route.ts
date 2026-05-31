@@ -14,7 +14,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   const pacote = await db.pacote.findFirst({
     where: { id: pacoteId, participanteId: userId, status: 'DISPONIVEL' },
-    include: { figurinhas: { include: { figurinha: { select: { id: true, classificacao: true, imagemUrl: true } } } } },
+    include: { figurinhas: { include: { figurinha: { select: { id: true, classificacao: true, tipo: true, imagemUrl: true } } } } },
   })
 
   if (!pacote) return NextResponse.json({ error: 'Pacote não encontrado' }, { status: 404 })
@@ -45,6 +45,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return pacote.figurinhas.map(pf => ({
       id:            pf.figurinha.id,
       classificacao: pf.figurinha.classificacao,
+      tipo:          pf.figurinha.tipo,
       imagemUrl:     pf.figurinha.imagemUrl,
     }))
   })

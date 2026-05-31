@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo, useCallback, useTransition } from 'react'
+import type { Role } from '@prisma/client'
 import type { SectionData } from '@/app/album/page'
 import InventarioModal from '@/components/InventarioModal'
 import TrocasModal from '@/components/TrocasModal'
@@ -384,11 +385,10 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
     })
   })
 
-  pages.push(<FullImagePage key="contracapa" src="/album/page-17.png" />)
+  if (pages.length % 2 !== 0)
+    pages.push(<div key="pad" style={{ width: '100%', height: '100%', background: '#0a1018' }} />)
 
-  if (pages.length % 2 !== 0) {
-    pages.push(<div key="pad" style={{ width: '100%', height: '100%', background: '#f07020' }} />)
-  }
+  pages.push(<FullImagePage key="contracapa" src="/album/page-17.png" />)
 
   return pages
 }
@@ -475,7 +475,8 @@ function MobileFilmstrip({ pages, current, onGo, onClose }: {
 }
 
 // ── Componente principal ──────────────────────────────────────────
-export default function FlipBook({ sections, nomeUsuario, matricula }: { sections: SectionData[]; nomeUsuario?: string; matricula?: string }) {
+export default function FlipBook({ sections, nomeUsuario, matricula, role }: { sections: SectionData[]; nomeUsuario?: string; matricula?: string; role?: Role }) {
+  const isAdmin = role === 'MARKETING' || role === 'TI' || role === 'ADMIN'
   const [logoutPending, startLogout] = useTransition()
   const bookRef      = useRef<HTMLDivElement>(null)
   const flipRef      = useRef<any>(null)
@@ -825,6 +826,18 @@ export default function FlipBook({ sections, nomeUsuario, matricula }: { section
                 )}
               </div>
             </div>
+            {isAdmin && (
+              <a href="/admin" style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
+                color: 'rgba(240,192,64,0.7)', background: 'transparent',
+                border: '1px solid rgba(240,192,64,0.2)', borderRadius: 7,
+                padding: isPortrait ? '7px 9px' : '4px 8px',
+                minHeight: 36, cursor: 'pointer', textDecoration: 'none',
+                display: 'flex', alignItems: 'center',
+              }}>
+                Admin
+              </a>
+            )}
             <button
               onClick={() => startLogout(() => logout())}
               disabled={logoutPending}
