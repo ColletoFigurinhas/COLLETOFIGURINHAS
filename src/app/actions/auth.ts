@@ -7,6 +7,7 @@ import { db }       from '@/lib/db'
 import { createSession, deleteSession, getSession } from '@/lib/session'
 import { validarMatriculaNoErp }                     from '@/lib/erp'
 import { enviarCodigoRecuperacao }                    from '@/lib/email'
+import { nivelarParticipante }                        from '@/lib/campanha'
 
 // ── Schemas ───────────────────────────────────────────────────────
 const LoginSchema = z.object({
@@ -105,6 +106,12 @@ export async function cadastrar(matriculaRaw: string, email: string, senha: stri
     where: { id: participante.id },
     data:  { email, senha: await bcrypt.hash(senha, 10) },
   })
+
+  // Nivelamento: distribui pacotes de todos os dias úteis desde o início da campanha
+  const campanha = await db.campanha.findFirst({ where: { slug: 'super-copa-2026' } })
+  if (campanha) {
+    await nivelarParticipante(db, campanha.id, participante.id)
+  }
 
   await createSession({ userId: participante.id, matricula, nome: participante.nome, role: participante.role })
   redirect('/album')
