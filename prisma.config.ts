@@ -1,7 +1,9 @@
-import { defineConfig, env } from 'prisma/config'
+import { defineConfig } from 'prisma/config'
 
 export default defineConfig({
   datasource: {
-    url: env('DATABASE_URL'),
+    // Fallback vazio permite prisma generate sem DATABASE_URL no ambiente.
+    // Em runtime e nos comandos de DB (push/migrate), a var real precisa estar set.
+    url: process.env.DATABASE_URL ?? '',
   },
 })
