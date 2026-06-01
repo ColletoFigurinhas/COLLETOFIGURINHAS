@@ -11,6 +11,7 @@ function createPrismaClient() {
     user:     process.env.DB_USER     ?? 'root',
     password: process.env.DB_PASSWORD ?? '',
     database: process.env.DB_NAME     ?? 'album_supermedica',
+    timezone: 'America/Sao_Paulo',
   })
   return new PrismaClient({ adapter })
 }
