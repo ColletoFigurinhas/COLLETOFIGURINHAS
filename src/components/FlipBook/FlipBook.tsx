@@ -386,7 +386,7 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
   })
 
   if (pages.length % 2 !== 0)
-    pages.push(<div key="pad" style={{ width: '100%', height: '100%', background: '#0a1018' }} />)
+    pages.push(<FullImagePage key="pad" src="/album/page-16.png" />)
 
   pages.push(<FullImagePage key="contracapa" src="/album/page-17.png" />)
 
