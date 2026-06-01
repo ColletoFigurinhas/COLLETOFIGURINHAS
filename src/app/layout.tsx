@@ -12,6 +12,10 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'Álbum Oficial Supermédica',
   description: 'Álbum Oficial Supermédica — Super Copa 2026',
+  icons: {
+    icon:  '/album/page-01.png',
+    apple: '/album/page-01.png',
+  },
 }
 
 export default function RootLayout({
