@@ -20,8 +20,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={outfit.variable}>
       <head>
-        <link rel="icon" type="image/png" href="/album/page-01.png" />
-        <link rel="apple-touch-icon" href="/album/page-01.png" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <meta name="theme-color" content="#1a2218" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
