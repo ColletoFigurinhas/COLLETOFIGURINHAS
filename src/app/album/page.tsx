@@ -22,7 +22,11 @@ export type FigurinhaSlot = {
 export type SectionData = { classificacao: string; figurinhas: FigurinhaSlot[] }
 
 export default async function AlbumPage() {
-  const { userId, nome, matricula, role } = await verifySession()
+  const { userId, nome, matricula } = await verifySession()
+
+  // Role sempre lido do banco — evita que sessão desatualizada mostre botão Admin indevidamente
+  const participante = await db.participante.findUnique({ where: { id: userId }, select: { role: true } })
+  const role = participante?.role ?? 'PARTICIPANTE'
 
   const [todasFigurinhas, albumItens] = await Promise.all([
     db.figurinha.findMany({
