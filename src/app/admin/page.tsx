@@ -450,24 +450,28 @@ function AbaFigurinhas() {
 type CartaPremio = { id: number; imagemUrl: string | null; ativo: boolean }
 
 function AbaPacotes() {
-  const [query,         setQuery]         = useState('')
-  const [resultados,    setResultados]    = useState<Participante[]>([])
-  const [searching,     setSearching]     = useState(false)
-  const [sending,       setSending]       = useState<number | null>(null)
-  const [feedback,      setFeedback]      = useState<Feedback | null>(null)
-  const [modal,         setModal]         = useState<{ id: number; nome: string } | null>(null)
-  const [cartasPremio,  setCartasPremio]  = useState<CartaPremio[]>([])
+  const [query,            setQuery]            = useState('')
+  const [resultados,       setResultados]       = useState<Participante[]>([])
+  const [searching,        setSearching]        = useState(false)
+  const [sending,          setSending]          = useState<number | null>(null)
+  const [feedback,         setFeedback]         = useState<Feedback | null>(null)
+  const [modal,            setModal]            = useState<{ id: number; nome: string } | null>(null)
+  const [cartasPremio,     setCartasPremio]     = useState<CartaPremio[]>([])
   const [cartaSelecionada, setCartaSelecionada] = useState<number | null>(null)
-  const [loadingCartas, setLoadingCartas] = useState(false)
+  const [loadingCartas,    setLoadingCartas]    = useState(false)
 
-  async function buscar(e?: React.FormEvent) {
-    e?.preventDefault()
-    if (!query.trim()) return
+  // Busca live com debounce de 300ms
+  useEffect(() => {
+    const q = query.trim()
+    if (!q) { setResultados([]); return }
     setSearching(true)
-    const r = await fetch(`/api/admin/participantes?q=${encodeURIComponent(query.trim())}`)
-    setResultados(await r.json())
-    setSearching(false)
-  }
+    const t = setTimeout(async () => {
+      const r = await fetch(`/api/admin/participantes?q=${encodeURIComponent(q)}`)
+      setResultados(await r.json())
+      setSearching(false)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [query])
 
   async function abrirModalOuro(p: Participante) {
     setModal({ id: p.id, nome: p.nome })
@@ -479,7 +483,7 @@ function AbaPacotes() {
     setLoadingCartas(false)
   }
 
-  async function darPacote(participanteId: number, tipo: 'PLUS' | 'PREMIUM', figurinhaPremioId?: number) {
+  async function darPacote(participanteId: number, tipo: 'PADRAO' | 'PLUS' | 'PREMIUM', figurinhaPremioId?: number) {
     setSending(participanteId)
     const r = await fetch('/api/admin/pacotes', {
       method: 'POST',
@@ -494,32 +498,27 @@ function AbaPacotes() {
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>Distribuir Pacotes</h2>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: 1 }}>
-          Prata = Plus (15 figurinhas) · Ouro = Premium (15 figurinhas + prêmio físico)
+          Padrão = 14 figurinhas · Prata = Plus (15) · Ouro = Premium (15 + prêmio físico)
         </div>
       </div>
 
-      <form onSubmit={buscar} style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+      <div style={{ position: 'relative', marginBottom: 16 }}>
         <input
-          type="text" value={query}
+          type="text" value={query} autoFocus
           onChange={e => setQuery(e.target.value)}
-          placeholder="Nome ou matrícula do participante…"
-          style={{ flex: 1, height: 44, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 13, padding: '0 16px', outline: 'none' }}
+          placeholder="Digite nome ou matrícula para buscar…"
+          style={{ width: '100%', height: 44, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 13, padding: '0 44px 0 16px', outline: 'none', boxSizing: 'border-box' }}
         />
-        <button type="submit" disabled={searching} style={{
-          height: 44, padding: '0 24px', borderRadius: 10, border: 'none',
-          background: 'linear-gradient(135deg,#009c3b,#006b29)',
-          color: '#f5c800', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-          cursor: searching ? 'not-allowed' : 'pointer',
-        }}>
-          {searching ? '…' : 'Buscar'}
-        </button>
-      </form>
+        {searching && (
+          <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>…</span>
+        )}
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {resultados.length === 0 && query && !searching && (
+        {resultados.length === 0 && query.trim() && !searching && (
           <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 32, fontSize: 12 }}>
             Nenhum participante encontrado.
           </div>
@@ -542,16 +541,23 @@ function AbaPacotes() {
               ) : (
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
+                    onClick={() => darPacote(p.id, 'PADRAO')}
+                    disabled={isSending}
+                    style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
+                  >
+                    📦 Padrão
+                  </button>
+                  <button
                     onClick={() => darPacote(p.id, 'PLUS')}
                     disabled={isSending}
-                    style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(192,192,255,0.3)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
+                    style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(192,192,255,0.3)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
                   >
                     🥈 Prata
                   </button>
                   <button
                     onClick={() => abrirModalOuro(p)}
                     disabled={isSending}
-                    style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(245,200,0,0.35)', background: 'rgba(245,200,0,0.07)', color: '#f5c800', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
+                    style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(245,200,0,0.35)', background: 'rgba(245,200,0,0.07)', color: '#f5c800', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
                   >
                     🥇 Ouro
                   </button>
@@ -568,12 +574,9 @@ function AbaPacotes() {
           <div onClick={e => e.stopPropagation()} style={{ background: '#0f1623', border: '1px solid rgba(245,200,0,0.25)', borderRadius: 16, padding: 28, width: 500, maxWidth: '95vw', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,200,0,0.55)', marginBottom: 6 }}>Pacote Ouro — Premium</div>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{modal.nome}</div>
-
             <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
               Selecione a carta prêmio
             </label>
-
-            {/* Grid de cartas PREMIO */}
             <div style={{ flex: 1, overflowY: 'auto', marginBottom: 20 }}>
               {loadingCartas ? (
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 32 }}>Carregando…</div>
@@ -586,24 +589,13 @@ function AbaPacotes() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 10 }}>
                   {cartasPremio.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => setCartaSelecionada(c.id === cartaSelecionada ? null : c.id)}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                        outline: 'none',
-                      }}
-                    >
+                    <button key={c.id} onClick={() => setCartaSelecionada(c.id === cartaSelecionada ? null : c.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, outline: 'none' }}>
                       <div style={{
-                        aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden',
-                        border: cartaSelecionada === c.id
-                          ? '2.5px solid #f5c800'
-                          : '2px solid rgba(255,255,255,0.08)',
-                        boxShadow: cartaSelecionada === c.id
-                          ? '0 0 16px rgba(245,200,0,0.6)'
-                          : 'none',
+                        aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', position: 'relative',
+                        border: cartaSelecionada === c.id ? '2.5px solid #f5c800' : '2px solid rgba(255,255,255,0.08)',
+                        boxShadow: cartaSelecionada === c.id ? '0 0 16px rgba(245,200,0,0.6)' : 'none',
                         transition: 'all 0.15s',
-                        position: 'relative',
                       }}>
                         {c.imagemUrl
                           ? <img src={c.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -618,20 +610,89 @@ function AbaPacotes() {
                 </div>
               )}
             </div>
-
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}>
                 Cancelar
               </button>
-              <button
-                disabled={!cartaSelecionada}
+              <button disabled={!cartaSelecionada}
                 onClick={() => { darPacote(modal.id, 'PREMIUM', cartaSelecionada!); setModal(null) }}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: cartaSelecionada ? 'linear-gradient(135deg,#b45309,#92400e)' : 'rgba(180,83,9,0.2)', color: '#f5c800', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: cartaSelecionada ? 'pointer' : 'not-allowed' }}
-              >
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: cartaSelecionada ? 'linear-gradient(135deg,#b45309,#92400e)' : 'rgba(180,83,9,0.2)', color: '#f5c800', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: cartaSelecionada ? 'pointer' : 'not-allowed' }}>
                 Enviar pacote
               </button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Aba: Log ──────────────────────────────────────────────────────
+type LogEntry = {
+  id: number
+  participanteNome: string
+  matricula: string
+  tipoPacote: string
+  distribuidoPor: string
+  criadoEm: string
+}
+
+function AbaLog() {
+  const [logs,    setLogs]    = useState<LogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/admin/logs').then(r => r.json()).then(d => { setLogs(d); setLoading(false) })
+  }, [])
+
+  const tipoLabel: Record<string, string> = {
+    PADRAO:  '📦 Padrão',
+    PLUS:    '🥈 Prata',
+    PREMIUM: '🥇 Ouro',
+  }
+  const tipoCor: Record<string, string> = {
+    PADRAO:  'rgba(255,255,255,0.55)',
+    PLUS:    '#a5b4fc',
+    PREMIUM: '#f5c800',
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>Log de Distribuições</h2>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: 1 }}>
+          Últimas 200 distribuições manuais
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 48 }}>Carregando…</div>
+      ) : logs.length === 0 ? (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 48 }}>Nenhuma distribuição manual registrada ainda.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {logs.map(l => (
+            <div key={l.id} style={{
+              display: 'grid', gridTemplateColumns: '1fr auto auto',
+              alignItems: 'center', gap: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 10, padding: '12px 16px',
+            }}>
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>{l.participanteNome}</span>
+                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, marginLeft: 8 }}>#{l.matricula}</span>
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: tipoCor[l.tipoPacote] ?? '#fff', whiteSpace: 'nowrap' }}>
+                {tipoLabel[l.tipoPacote] ?? l.tipoPacote}
+              </span>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{l.distribuidoPor}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', marginTop: 2 }}>
+                  {new Date(l.criadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -652,7 +713,7 @@ const sel: React.CSSProperties = {
 }
 
 // ── Página principal ──────────────────────────────────────────────
-type Tab = 'figurinhas' | 'pacotes'
+type Tab = 'figurinhas' | 'pacotes' | 'log'
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('figurinhas')
@@ -660,6 +721,7 @@ export default function AdminPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'figurinhas', label: 'Figurinhas' },
     { id: 'pacotes',    label: 'Pacotes' },
+    { id: 'log',        label: 'Log' },
   ]
 
   return (
@@ -681,6 +743,7 @@ export default function AdminPage() {
 
       {tab === 'figurinhas' && <AbaFigurinhas />}
       {tab === 'pacotes'    && <AbaPacotes />}
+      {tab === 'log'        && <AbaLog />}
     </div>
   )
 }

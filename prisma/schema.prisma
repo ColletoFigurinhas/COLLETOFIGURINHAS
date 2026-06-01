@@ -198,6 +198,20 @@ model AcaoCampanha {
   @@map("acoes_campanha")
 }
 
+// ─── Log de Distribuições Manuais ────────────────────────────────
+model LogDistribuicaoManual {
+  id               Int        @id @default(autoincrement())
+  pacoteId         Int        @map("pacote_id")
+  participanteId   Int        @map("participante_id")
+  participanteNome String     @map("participante_nome")
+  matricula        String
+  tipoPacote       TipoPacote @map("tipo_pacote")
+  distribuidoPor   String     @map("distribuido_por")
+  criadoEm        DateTime   @default(now()) @map("criado_em")
+
+  @@map("logs_distribuicao_manual")
+}
+
 // ─── Ganhadores de Ação ───────────────────────────────────────────
 model GanhadorAcao {
   id               Int        @id @default(autoincrement())

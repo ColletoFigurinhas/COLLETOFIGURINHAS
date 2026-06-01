@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
+import { sortearFigurinhas } from '@/lib/campanha'
 
 const ROLES_PERMITIDOS = ['MARKETING', 'TI', 'ADMIN'] as const
 
@@ -11,49 +12,35 @@ export async function POST(request: Request) {
 
   const { participanteId, tipo, figurinhaPremioId } = await request.json()
 
-  if (!participanteId || !['PLUS', 'PREMIUM'].includes(tipo))
+  if (!participanteId || !['PADRAO', 'PLUS', 'PREMIUM'].includes(tipo))
     return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
 
   if (tipo === 'PREMIUM' && !figurinhaPremioId)
     return NextResponse.json({ error: 'Selecione a carta prêmio.' }, { status: 400 })
 
+  const participante = await db.participante.findFirst({
+    where: { id: participanteId },
+    select: { nome: true, matricula: true },
+  })
+  if (!participante) return NextResponse.json({ error: 'Participante não encontrado.' }, { status: 404 })
+
   const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
-  const qtd = tipo === 'PLUS' ? campanha.stickersPorDiaPlus : campanha.stickersPorDiaPremium
 
-  // Pool de figurinhas normais
-  const normais = await db.figurinha.findMany({
-    where:  { campanhaId: campanha.id, ativo: true, classificacao: { not: 'ESPECIAIS' } },
-    select: { id: true },
-  })
+  const qtd = tipo === 'PADRAO'
+    ? campanha.stickersPorDiaPadrao
+    : tipo === 'PLUS'
+      ? campanha.stickersPorDiaPlus
+      : campanha.stickersPorDiaPremium
 
-  // Especiais (chance configurável na campanha)
-  const especiais = await db.figurinha.findMany({
-    where:  { campanhaId: campanha.id, ativo: true, classificacao: 'ESPECIAIS' },
-    select: { id: true },
-  })
+  const picks = await sortearFigurinhas(db, campanha.id, qtd, campanha.chanceEspecial)
 
-  // Para cada slot: 10% de chance de ser especial, senão normal
-  const shuffled = [...normais].sort(() => Math.random() - 0.5)
-  let normalIdx = 0
-  const picks: { id: number }[] = []
-
-  for (let i = 0; i < qtd; i++) {
-    if (especiais.length > 0 && Math.random() < campanha.chanceEspecial) {
-      picks.push(especiais[Math.floor(Math.random() * especiais.length)])
-    } else {
-      picks.push(shuffled[normalIdx % shuffled.length])
-      normalIdx++
-    }
-  }
-
-  // Para PREMIUM: substitui o último slot pela carta prêmio escolhida
   const cartasPacote = tipo === 'PREMIUM'
     ? [...picks.slice(0, picks.length - 1), { id: figurinhaPremioId }]
     : picks
 
   const pacote = await db.pacote.create({
     data: {
-      campanhaId:    campanha.id,
+      campanhaId:     campanha.id,
       participanteId,
       tipo,
       dataReferencia: new Date(),
@@ -69,6 +56,17 @@ export async function POST(request: Request) {
           },
         },
       } : {}),
+    },
+  })
+
+  await db.logDistribuicaoManual.create({
+    data: {
+      pacoteId:        pacote.id,
+      participanteId,
+      participanteNome: participante.nome,
+      matricula:        participante.matricula,
+      tipoPacote:       tipo,
+      distribuidoPor:   s.nome,
     },
   })
 
