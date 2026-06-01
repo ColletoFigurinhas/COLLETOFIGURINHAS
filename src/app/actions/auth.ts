@@ -252,6 +252,57 @@ export async function verificarCodigo(_state: CodigoState, formData: FormData): 
   return { ok: true }
 }
 
+// ── Enviar código (versão simples — já tem a matrícula) ───────────
+export async function enviarCodigoParaMatricula(matriculaRaw: string): Promise<{ ok: boolean; error?: string; codigoDebug?: string }> {
+  const matricula = matriculaRaw.replace(/\D/g, '').padStart(5, '0')
+  const participante = await db.participante.findFirst({ where: { matricula } })
+
+  if (!participante?.email) return { ok: true } // não revela se existe
+
+  const codigo = Math.floor(100_000 + Math.random() * 900_000).toString()
+  const expiry  = new Date(Date.now() + 60 * 60 * 1000)
+
+  await db.participante.update({
+    where: { id: participante.id },
+    data:  { resetToken: codigo, resetTokenExpiry: expiry },
+  })
+
+  let emailEnviado = false
+  try {
+    await enviarCodigoRecuperacao(participante.email, matricula, codigo)
+    emailEnviado = true
+  } catch (err) {
+    console.error('[Email] Falha:', err)
+  }
+
+  const isDev = process.env.NODE_ENV !== 'production'
+  return { ok: true, ...(isDev && !emailEnviado ? { codigoDebug: codigo } : {}) }
+}
+
+// ── Redefinir senha (versão simples) ──────────────────────────────
+export async function redefinirSenha(matriculaRaw: string, codigo: string, senha: string): Promise<{ ok: boolean; error?: string }> {
+  if (!codigo || !senha || senha.length < 6) return { ok: false, error: 'Preencha todos os campos.' }
+
+  const matricula = matriculaRaw.replace(/\D/g, '').padStart(5, '0')
+  const participante = await db.participante.findFirst({ where: { matricula } })
+
+  if (
+    !participante ||
+    participante.resetToken !== codigo ||
+    !participante.resetTokenExpiry ||
+    participante.resetTokenExpiry < new Date()
+  ) {
+    return { ok: false, error: 'Código inválido ou expirado.' }
+  }
+
+  await db.participante.update({
+    where: { id: participante.id },
+    data:  { senha: await bcrypt.hash(senha, 10), resetToken: null, resetTokenExpiry: null },
+  })
+
+  return { ok: true }
+}
+
 // ── Logout ────────────────────────────────────────────────────────
 export async function logout(): Promise<void> {
   await deleteSession()
