@@ -268,15 +268,23 @@ export async function enviarCodigoParaMatricula(matriculaRaw: string): Promise<{
   })
 
   let emailEnviado = false
+  let emailErro = ''
   try {
     await enviarCodigoRecuperacao(participante.email, matricula, codigo)
     emailEnviado = true
-  } catch (err) {
-    console.error('[Email] Falha:', err)
+  } catch (err: any) {
+    emailErro = err?.message ?? String(err)
+    console.error('[Email] Falha ao enviar código de recuperação:', emailErro)
   }
 
   const isDev = process.env.NODE_ENV !== 'production'
-  return { ok: true, ...(isDev && !emailEnviado ? { codigoDebug: codigo } : {}) }
+
+  if (!emailEnviado) {
+    if (isDev) return { ok: true, codigoDebug: codigo }
+    return { ok: false, error: `Falha ao enviar e-mail: ${emailErro}` }
+  }
+
+  return { ok: true }
 }
 
 // ── Redefinir senha (versão simples) ──────────────────────────────

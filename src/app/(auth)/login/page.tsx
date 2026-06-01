@@ -64,6 +64,7 @@ export default function LoginPage() {
     setStep('recuperar_enviando')
     startTransition(async () => {
       const r = await enviarCodigoParaMatricula(matricula)
+      if (!r.ok) { setErro(r.error ?? 'Erro ao enviar código.'); setStep('senha'); return }
       if (r.codigoDebug) setCodigoDebug(r.codigoDebug)
       setStep('recuperar_codigo')
     })
