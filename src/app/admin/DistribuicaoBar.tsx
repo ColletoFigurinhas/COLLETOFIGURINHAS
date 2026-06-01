@@ -3,11 +3,11 @@
 import { useState, useEffect, useTransition } from 'react'
 import { distribuirPacotesHoje } from '@/app/actions/distribuir'
 
-// Calcula próxima distribuição: 11h horário de Brasília (UTC-3) = 14h UTC, seg-sex
+// Calcula próxima distribuição: 18h horário de Brasília (UTC-3) = 21h UTC, seg-sex
 function proximaDistribuicao(): Date {
   const now  = new Date()
   const next = new Date(now)
-  next.setUTCHours(14, 0, 0, 0) // 11:00 BRT
+  next.setUTCHours(21, 0, 0, 0) // 18:00 BRT
 
   if (now >= next) next.setDate(next.getDate() + 1)
 

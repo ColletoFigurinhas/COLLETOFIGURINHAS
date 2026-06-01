@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { isDiaUtil, sortearFigurinhas } from '@/lib/campanha'
+import { isDiaUtil, sortearFigurinhas, CRON_HOUR_UTC } from '@/lib/campanha'
 
 export async function POST(request: Request) {
   // Autenticação via secret header

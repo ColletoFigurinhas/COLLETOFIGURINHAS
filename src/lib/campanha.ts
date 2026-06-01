@@ -1,5 +1,8 @@
 import type { PrismaClient } from '@prisma/client'
 
+/** Horário da distribuição diária em UTC (18:00 BRT = 21:00 UTC) */
+export const CRON_HOUR_UTC = 21
+
 /** Retorna true se a data for segunda a sexta */
 export function isDiaUtil(date: Date): boolean {
   const d = date.getDay()
@@ -10,7 +13,7 @@ export function isDiaUtil(date: Date): boolean {
 export function diasUteisEntre(inicio: Date, fim: Date): Date[] {
   const dias: Date[] = []
   const cur = new Date(inicio); cur.setHours(0, 0, 0, 0)
-  const end = new Date(fim);   end.setHours(0, 0, 0, 0)
+  const end = new Date(fim);    end.setHours(0, 0, 0, 0)
   while (cur <= end) {
     if (isDiaUtil(cur)) dias.push(new Date(cur))
     cur.setDate(cur.getDate() + 1)
@@ -44,9 +47,15 @@ export async function sortearFigurinhas(
 }
 
 /**
- * Cria pacotes de nivelamento para um participante novo.
- * Recebe um pacote para cada dia útil desde o início da campanha até hoje (inclusive).
- * Retorna a quantidade de pacotes criados.
+ * Calcula os dias que um participante deve receber pacotes ao cadastrar:
+ *
+ * - Dia 1 (data de início da campanha): sempre conta — pacote de lançamento
+ * - Dias 2+ até ontem: sempre contam (distribuições passadas)
+ * - Hoje: só conta se a distribuição das 18h BRT (21h UTC) já rodou
+ *
+ * Assim:
+ *   Cadastro antes das 18h → recebe só os dias passados (sem hoje)
+ *   Cadastro depois das 18h → recebe os dias passados + hoje
  */
 export async function nivelarParticipante(
   db: PrismaClient,
@@ -55,25 +64,49 @@ export async function nivelarParticipante(
 ): Promise<number> {
   const campanha = await db.campanha.findFirstOrThrow({ where: { id: campanhaId } })
 
-  const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+  const agora  = new Date()
+  const hoje   = new Date(agora); hoje.setHours(0, 0, 0, 0)
   const inicio = new Date(campanha.dataInicio); inicio.setHours(0, 0, 0, 0)
   const fim    = new Date(campanha.dataFim);    fim.setHours(0, 0, 0, 0)
 
-  // Campanha ainda não começou
-  if (hoje < inicio) return 0
+  if (hoje < inicio || hoje > fim) return 0
 
-  const ate = hoje < fim ? hoje : fim
-  const dias = diasUteisEntre(inicio, ate)
-  if (dias.length === 0) return 0
+  // ── Dias a distribuir ──────────────────────────────────────────
+  const diasParaDar: Date[] = []
 
-  // Evita duplicata: verifica pacotes que o participante já tem
+  // 1. Dia de início (lançamento) — sempre conta se for dia útil
+  if (isDiaUtil(inicio)) {
+    diasParaDar.push(new Date(inicio))
+  }
+
+  // 2. Dias úteis do dia 2 até ontem — sempre contam
+  if (hoje > inicio) {
+    const diaDois = new Date(inicio); diaDois.setDate(diaDois.getDate() + 1)
+    const ontem   = new Date(hoje);   ontem.setDate(ontem.getDate() - 1)
+    if (diaDois <= ontem) {
+      diasParaDar.push(...diasUteisEntre(diaDois, ontem))
+    }
+  }
+
+  // 3. Hoje — só conta se a distribuição das 18h BRT (21h UTC) já rodou
+  if (isDiaUtil(hoje) && hoje.getTime() !== inicio.getTime()) {
+    const cronHoje = new Date(agora)
+    cronHoje.setUTCHours(CRON_HOUR_UTC, 0, 0, 0)
+    if (agora >= cronHoje) {
+      diasParaDar.push(new Date(hoje))
+    }
+  }
+
+  if (diasParaDar.length === 0) return 0
+
+  // ── Evita duplicatas ───────────────────────────────────────────
   const jaExistem = await db.pacote.findMany({
-    where: { participanteId, campanhaId },
+    where:  { participanteId, campanhaId },
     select: { dataReferencia: true },
   })
   const datasExistentes = new Set(jaExistem.map(p => p.dataReferencia.toISOString().slice(0, 10)))
+  const diasPendentes = diasParaDar.filter(d => !datasExistentes.has(d.toISOString().slice(0, 10)))
 
-  const diasPendentes = dias.filter(d => !datasExistentes.has(d.toISOString().slice(0, 10)))
   if (diasPendentes.length === 0) return 0
 
   for (const dia of diasPendentes) {
