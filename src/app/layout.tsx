@@ -12,10 +12,6 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'Álbum Oficial Supermédica',
   description: 'Álbum Oficial Supermédica — Super Copa 2026',
-  icons: {
-    icon:  '/album/page-01.png',
-    apple: '/album/page-01.png',
-  },
 }
 
 export default function RootLayout({
@@ -24,6 +20,8 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={outfit.variable}>
       <head>
+        <link rel="icon" type="image/png" href="/album/page-01.png" />
+        <link rel="apple-touch-icon" href="/album/page-01.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <meta name="theme-color" content="#1a2218" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
