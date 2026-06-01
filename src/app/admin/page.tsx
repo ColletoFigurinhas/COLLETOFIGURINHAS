@@ -447,14 +447,18 @@ function AbaFigurinhas() {
 }
 
 // ── Aba: Pacotes ──────────────────────────────────────────────────
+type CartaPremio = { id: number; imagemUrl: string | null; ativo: boolean }
+
 function AbaPacotes() {
-  const [query,      setQuery]      = useState('')
-  const [resultados, setResultados] = useState<Participante[]>([])
-  const [searching,  setSearching]  = useState(false)
-  const [sending,    setSending]    = useState<number | null>(null)
-  const [feedback,   setFeedback]   = useState<Feedback | null>(null)
-  const [modal,      setModal]      = useState<{ id: number; nome: string } | null>(null)
-  const [descPremio, setDescPremio] = useState('')
+  const [query,         setQuery]         = useState('')
+  const [resultados,    setResultados]    = useState<Participante[]>([])
+  const [searching,     setSearching]     = useState(false)
+  const [sending,       setSending]       = useState<number | null>(null)
+  const [feedback,      setFeedback]      = useState<Feedback | null>(null)
+  const [modal,         setModal]         = useState<{ id: number; nome: string } | null>(null)
+  const [cartasPremio,  setCartasPremio]  = useState<CartaPremio[]>([])
+  const [cartaSelecionada, setCartaSelecionada] = useState<number | null>(null)
+  const [loadingCartas, setLoadingCartas] = useState(false)
 
   async function buscar(e?: React.FormEvent) {
     e?.preventDefault()
@@ -465,12 +469,22 @@ function AbaPacotes() {
     setSearching(false)
   }
 
-  async function darPacote(participanteId: number, tipo: 'PLUS' | 'PREMIUM', descricao?: string) {
+  async function abrirModalOuro(p: Participante) {
+    setModal({ id: p.id, nome: p.nome })
+    setCartaSelecionada(null)
+    setLoadingCartas(true)
+    const r = await fetch('/api/admin/figurinhas?tipo=PREMIO')
+    const data = await r.json()
+    setCartasPremio(Array.isArray(data) ? data.filter((f: CartaPremio) => f.ativo) : [])
+    setLoadingCartas(false)
+  }
+
+  async function darPacote(participanteId: number, tipo: 'PLUS' | 'PREMIUM', figurinhaPremioId?: number) {
     setSending(participanteId)
     const r = await fetch('/api/admin/pacotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ participanteId, tipo, descricaoPremio: descricao }),
+      body: JSON.stringify({ participanteId, tipo, figurinhaPremioId }),
     })
     const data = await r.json()
     setSending(null)
@@ -535,7 +549,7 @@ function AbaPacotes() {
                     🥈 Prata
                   </button>
                   <button
-                    onClick={() => { setModal({ id: p.id, nome: p.nome }); setDescPremio('') }}
+                    onClick={() => abrirModalOuro(p)}
                     disabled={isSending}
                     style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(245,200,0,0.35)', background: 'rgba(245,200,0,0.07)', color: '#f5c800', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
                   >
@@ -549,30 +563,70 @@ function AbaPacotes() {
       </div>
 
       {modal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setModal(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#0f1623', border: '1px solid rgba(245,200,0,0.25)', borderRadius: 16, padding: 32, width: 420, maxWidth: '90vw' }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,200,0,0.55)', marginBottom: 8 }}>Pacote Ouro — Premium</div>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#0f1623', border: '1px solid rgba(245,200,0,0.25)', borderRadius: 16, padding: 28, width: 500, maxWidth: '95vw', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,200,0,0.55)', marginBottom: 6 }}>Pacote Ouro — Premium</div>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{modal.nome}</div>
-            <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>
-              Prêmio físico
+
+            <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
+              Selecione a carta prêmio
             </label>
-            <input
-              type="text" value={descPremio}
-              onChange={e => setDescPremio(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && descPremio.trim()) { darPacote(modal.id, 'PREMIUM', descPremio); setModal(null) } }}
-              placeholder="Ex: Barra de chocolate Lacta 90g"
-              autoFocus
-              style={{ width: '100%', height: 42, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 13, padding: '0 14px', outline: 'none', boxSizing: 'border-box', marginBottom: 20 }}
-            />
+
+            {/* Grid de cartas PREMIO */}
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: 20 }}>
+              {loadingCartas ? (
+                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 32 }}>Carregando…</div>
+              ) : cartasPremio.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 32 }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Nenhuma carta prêmio cadastrada ainda.</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 6 }}>Vá em Figurinhas → Nova Carta → Tipo: Prêmio</div>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 10 }}>
+                  {cartasPremio.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setCartaSelecionada(c.id === cartaSelecionada ? null : c.id)}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                        outline: 'none',
+                      }}
+                    >
+                      <div style={{
+                        aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden',
+                        border: cartaSelecionada === c.id
+                          ? '2.5px solid #f5c800'
+                          : '2px solid rgba(255,255,255,0.08)',
+                        boxShadow: cartaSelecionada === c.id
+                          ? '0 0 16px rgba(245,200,0,0.6)'
+                          : 'none',
+                        transition: 'all 0.15s',
+                        position: 'relative',
+                      }}>
+                        {c.imagemUrl
+                          ? <img src={c.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          : <div style={{ width: '100%', height: '100%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🏆</div>
+                        }
+                        {cartaSelecionada === c.id && (
+                          <div style={{ position: 'absolute', top: 4, right: 4, background: '#f5c800', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>✓</div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}>
                 Cancelar
               </button>
               <button
-                disabled={!descPremio.trim()}
-                onClick={() => { darPacote(modal.id, 'PREMIUM', descPremio); setModal(null) }}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: descPremio.trim() ? 'linear-gradient(135deg,#b45309,#92400e)' : 'rgba(180,83,9,0.25)', color: '#f5c800', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: descPremio.trim() ? 'pointer' : 'not-allowed' }}
+                disabled={!cartaSelecionada}
+                onClick={() => { darPacote(modal.id, 'PREMIUM', cartaSelecionada!); setModal(null) }}
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: cartaSelecionada ? 'linear-gradient(135deg,#b45309,#92400e)' : 'rgba(180,83,9,0.2)', color: '#f5c800', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: cartaSelecionada ? 'pointer' : 'not-allowed' }}
               >
                 Enviar pacote
               </button>

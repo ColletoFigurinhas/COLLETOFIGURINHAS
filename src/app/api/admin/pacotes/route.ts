@@ -9,13 +9,13 @@ export async function POST(request: Request) {
   if (!s?.userId || !ROLES_PERMITIDOS.includes(s.role as any))
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { participanteId, tipo, descricaoPremio } = await request.json()
+  const { participanteId, tipo, figurinhaPremioId } = await request.json()
 
   if (!participanteId || !['PLUS', 'PREMIUM'].includes(tipo))
     return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
 
-  if (tipo === 'PREMIUM' && !descricaoPremio?.trim())
-    return NextResponse.json({ error: 'Informe o prêmio físico para pacote Ouro.' }, { status: 400 })
+  if (tipo === 'PREMIUM' && !figurinhaPremioId)
+    return NextResponse.json({ error: 'Selecione a carta prêmio.' }, { status: 400 })
 
   const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
   const qtd = tipo === 'PLUS' ? campanha.stickersPorDiaPlus : campanha.stickersPorDiaPremium
@@ -46,6 +46,11 @@ export async function POST(request: Request) {
     }
   }
 
+  // Para PREMIUM: substitui o último slot pela carta prêmio escolhida
+  const cartasPacote = tipo === 'PREMIUM'
+    ? [...picks.slice(0, picks.length - 1), { id: figurinhaPremioId }]
+    : picks
+
   const pacote = await db.pacote.create({
     data: {
       campanhaId:    campanha.id,
@@ -54,12 +59,12 @@ export async function POST(request: Request) {
       dataReferencia: new Date(),
       status:         'DISPONIVEL',
       figurinhas: {
-        create: picks.map(f => ({ figurinhaId: f.id, revelada: false })),
+        create: cartasPacote.map(f => ({ figurinhaId: f.id, revelada: false })),
       },
       ...(tipo === 'PREMIUM' ? {
         premio: {
           create: {
-            descricao:    descricaoPremio.trim(),
+            descricao:    `Carta prêmio #${figurinhaPremioId}`,
             registradoPor: s.nome,
           },
         },

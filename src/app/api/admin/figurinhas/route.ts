@@ -10,12 +10,15 @@ async function auth() {
   return s
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!await auth()) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const tipoFiltro = searchParams.get('tipo')
 
   const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
   const figurinhas = await db.figurinha.findMany({
-    where:   { campanhaId: campanha.id },
+    where:   { campanhaId: campanha.id, ...(tipoFiltro ? { tipo: tipoFiltro } : {}) },
     orderBy: [{ classificacao: 'asc' }, { tipo: 'asc' }, { id: 'asc' }],
     select:  { id: true, classificacao: true, tipo: true, imagemUrl: true, ativo: true },
   })
