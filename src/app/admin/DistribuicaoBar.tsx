@@ -4,12 +4,22 @@ import { useState, useEffect, useTransition } from 'react'
 import { distribuirPacotesHoje } from '@/app/actions/distribuir'
 
 // Calcula próxima distribuição: 18h horário de Brasília (UTC-3) = 21h UTC, seg-sex
-function proximaDistribuicao(): Date {
+// Pula o dia de início da campanha (coberto pelo nivelamento no login)
+function proximaDistribuicao(dataInicio: string | null): Date {
   const now  = new Date()
   const next = new Date(now)
   next.setUTCHours(21, 0, 0, 0) // 18:00 BRT
 
   if (now >= next) next.setDate(next.getDate() + 1)
+
+  // Pula o dia 1 da campanha
+  if (dataInicio) {
+    const inicioDia = new Date(dataInicio)
+    inicioDia.setUTCHours(0, 0, 0, 0)
+    const nextDia = new Date(next)
+    nextDia.setUTCHours(0, 0, 0, 0)
+    if (nextDia.getTime() === inicioDia.getTime()) next.setDate(next.getDate() + 1)
+  }
 
   // Pula fim de semana
   while (next.getUTCDay() === 0 || next.getUTCDay() === 6) {
@@ -30,8 +40,8 @@ function formatData(d: Date): string {
   return d.toLocaleString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', timeZone:'America/Sao_Paulo' })
 }
 
-export default function DistribuicaoBar() {
-  const [prox,       setProx]       = useState<Date>(proximaDistribuicao)
+export default function DistribuicaoBar({ dataInicioCampanha }: { dataInicioCampanha: string | null }) {
+  const [prox,       setProx]       = useState<Date>(() => proximaDistribuicao(dataInicioCampanha))
   const [countdown,  setCountdown]  = useState('')
   const [resultado,  setResultado]  = useState<{ distribuidos: number; jaReceberam: number } | null>(null)
   const [erro,       setErro]       = useState('')
@@ -39,7 +49,7 @@ export default function DistribuicaoBar() {
 
   useEffect(() => {
     const tick = () => {
-      const next = proximaDistribuicao()
+      const next = proximaDistribuicao(dataInicioCampanha)
       setProx(next)
       setCountdown(formatCountdown(next.getTime() - Date.now()))
     }

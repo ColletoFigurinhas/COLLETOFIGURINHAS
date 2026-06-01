@@ -1,9 +1,11 @@
 import { verifyRole } from '@/lib/dal'
 import Link from 'next/link'
 import DistribuicaoBar from './DistribuicaoBar'
+import { db } from '@/lib/db'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await verifyRole('MARKETING', 'TI', 'ADMIN')
+  const campanha = await db.campanha.findFirst({ where: { slug: 'super-copa-2026' }, select: { dataInicio: true } })
 
   return (
     <>
@@ -25,7 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </header>
 
         {/* Barra de distribuição */}
-        <DistribuicaoBar />
+        <DistribuicaoBar dataInicioCampanha={campanha?.dataInicio?.toISOString() ?? null} />
 
         <main style={{ padding: '28px 24px', maxWidth: 960, margin: '0 auto' }}>
           {children}
