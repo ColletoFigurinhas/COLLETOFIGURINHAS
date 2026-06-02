@@ -33,11 +33,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       })
       if (!itemB || itemB.quantidade < 1) throw new Error('Você não tem essa figurinha')
 
-      // Remove da coleção de A a figurinha ofertada
-      await tx.albumItem.update({
-        where: { participanteId_figurinhaId: { participanteId: troca.solicitanteId, figurinhaId: troca.figurinhaOfertadaId } },
-        data: { quantidade: { decrement: 1 } },
-      })
+      // Remove da coleção de A a figurinha ofertada (deleta se era a última)
+      if (itemA.quantidade === 1) {
+        await tx.albumItem.delete({
+          where: { participanteId_figurinhaId: { participanteId: troca.solicitanteId, figurinhaId: troca.figurinhaOfertadaId } },
+        })
+      } else {
+        await tx.albumItem.update({
+          where: { participanteId_figurinhaId: { participanteId: troca.solicitanteId, figurinhaId: troca.figurinhaOfertadaId } },
+          data: { quantidade: { decrement: 1 } },
+        })
+      }
 
       // Adiciona para A a figurinha de B
       await tx.albumItem.upsert({
@@ -46,11 +52,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         update: { quantidade: { increment: 1 } },
       })
 
-      // Remove da coleção de B a figurinha oferecida
-      await tx.albumItem.update({
-        where: { participanteId_figurinhaId: { participanteId: session.userId, figurinhaId: figurinhaRecebidaId } },
-        data: { quantidade: { decrement: 1 } },
-      })
+      // Remove da coleção de B a figurinha oferecida (deleta se era a última)
+      if (itemB.quantidade === 1) {
+        await tx.albumItem.delete({
+          where: { participanteId_figurinhaId: { participanteId: session.userId, figurinhaId: figurinhaRecebidaId } },
+        })
+      } else {
+        await tx.albumItem.update({
+          where: { participanteId_figurinhaId: { participanteId: session.userId, figurinhaId: figurinhaRecebidaId } },
+          data: { quantidade: { decrement: 1 } },
+        })
+      }
 
       // Adiciona para B a figurinha de A
       await tx.albumItem.upsert({

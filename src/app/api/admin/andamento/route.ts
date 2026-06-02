@@ -21,6 +21,7 @@ export async function GET() {
         nome:     true,
         matricula: true,
         albumItens: {
+          where:  { quantidade: { gt: 0 } },
           select: { figurinhaId: true, quantidade: true },
         },
       },

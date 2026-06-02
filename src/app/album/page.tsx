@@ -35,7 +35,7 @@ export default async function AlbumPage() {
       orderBy: { id: 'asc' },
     }),
     db.albumItem.findMany({
-      where:  { participanteId: userId },
+      where:  { participanteId: userId, quantidade: { gt: 0 } },
       select: { figurinhaId: true },
     }),
   ])
