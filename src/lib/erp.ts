@@ -38,8 +38,13 @@ export async function validarMatriculaNoErp(matricula: string): Promise<ErpValid
     })
 
     if (res.status === 404) return { ok: false, motivo: 'nao_encontrado' }
-    if (res.status === 403) return { ok: false, motivo: 'nao_permitido' }
-    if (!res.ok) throw new Error(`ERP respondeu ${res.status}`)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      if (res.status === 403 && String(body?.message ?? '').toLowerCase().includes('não permitido')) {
+        return { ok: false, motivo: 'nao_permitido' }
+      }
+      throw new Error(`ERP respondeu ${res.status}`)
+    }
 
     const data = await res.json()
     const tipo  = Number(data.tipo ?? 1)
