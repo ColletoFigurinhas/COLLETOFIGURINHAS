@@ -55,6 +55,7 @@ export async function verificarMatricula(matriculaRaw: string): Promise<
   if (!validacao.ok) {
     const msg: Record<string, string> = {
       nao_encontrado: 'Matrícula não encontrada. Verifique com o RH.',
+      nao_permitido:  'Funcionário não permitido.',
       suspenso:       'Seu acesso está suspenso. Contate o RH.',
       inativo:        'Seu vínculo com a empresa está encerrado.',
       erro_api:       'Não foi possível validar. Tente novamente.',
@@ -134,6 +135,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   if (!validacao.ok) {
     const msg: Record<string, string> = {
       nao_encontrado: 'Matrícula não encontrada. Verifique com o RH.',
+      nao_permitido:  'Funcionário não permitido.',
       suspenso:       'Seu acesso está suspenso. Contate o RH.',
       inativo:        'Seu vínculo com a empresa está encerrado.',
       erro_api:       'Não foi possível validar. Tente novamente.',

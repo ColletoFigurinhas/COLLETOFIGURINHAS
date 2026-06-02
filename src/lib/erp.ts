@@ -9,7 +9,7 @@ export type ErpFuncionario = {
 
 export type ErpValidacao =
   | { ok: true;  funcionario: ErpFuncionario }
-  | { ok: false; motivo: 'nao_encontrado' | 'suspenso' | 'inativo' | 'erro_api' }
+  | { ok: false; motivo: 'nao_encontrado' | 'nao_permitido' | 'suspenso' | 'inativo' | 'erro_api' }
 
 /**
  * Valida matrícula na API v4 do Farol.
@@ -38,6 +38,7 @@ export async function validarMatriculaNoErp(matricula: string): Promise<ErpValid
     })
 
     if (res.status === 404) return { ok: false, motivo: 'nao_encontrado' }
+    if (res.status === 403) return { ok: false, motivo: 'nao_permitido' }
     if (!res.ok) throw new Error(`ERP respondeu ${res.status}`)
 
     const data = await res.json()
