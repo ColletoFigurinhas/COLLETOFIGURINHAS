@@ -46,3 +46,4 @@ next-env.d.ts
 *.mp4
 public/figuras/**/*.png
 tmp/campanha_pages/
+tmp/*-prod.mjs
