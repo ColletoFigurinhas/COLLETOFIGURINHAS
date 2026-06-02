@@ -712,8 +712,215 @@ const sel: React.CSSProperties = {
   outline: 'none', cursor: 'pointer',
 }
 
+// ── Aba: Andamento ────────────────────────────────────────────────
+type ParticipanteAndamento = {
+  id: number
+  nome: string
+  matricula: string
+  totalColetado: number
+  totalFigurinhas: number
+  percentualGeral: number
+  trocasEnviadas: number
+  trocasRecebidas: number
+  porDepartamento: { classificacao: string; coletado: number; total: number; percentual: number }[]
+}
+
+const COR_DEPTO: Record<string, string> = {
+  'COMERCIAL':           '#60a5fa',
+  'ALMOXARIFADO':        '#34d399',
+  'GARANTIA DA QUALIDADE': '#f59e0b',
+  'MARKETING / TI':      '#c084fc',
+  'FINANCEIRO':          '#f87171',
+  'COMPRAS':             '#fb923c',
+  'RH / SERVIÇOS GERAIS': '#38bdf8',
+  'ESPECIAIS':           '#f5c800',
+}
+
+function BarraProgresso({ valor, cor, height = 6 }: { valor: number; cor: string; height?: number }) {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: height, overflow: 'hidden', height }}>
+      <div style={{
+        width: `${valor}%`, height: '100%', borderRadius: height,
+        background: cor, transition: 'width 0.4s ease',
+      }} />
+    </div>
+  )
+}
+
+function AbaAndamento() {
+  const [dados,     setDados]     = useState<{ totalFigurinhas: number; participantes: ParticipanteAndamento[] } | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [selecionado, setSelecionado] = useState<ParticipanteAndamento | null>(null)
+  const [busca,     setBusca]     = useState('')
+
+  useEffect(() => {
+    fetch('/api/admin/andamento')
+      .then(r => r.json())
+      .then(d => { setDados(d); setLoading(false) })
+  }, [])
+
+  const lista = (dados?.participantes ?? []).filter(p =>
+    !busca.trim() ||
+    p.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    p.matricula.includes(busca)
+  )
+
+  if (loading) return (
+    <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 48 }}>Carregando…</div>
+  )
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>Andamento dos Álbuns</h2>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: 1 }}>
+            {lista.length} participante{lista.length !== 1 ? 's' : ''} · {dados?.totalFigurinhas ?? 0} figurinhas no álbum
+          </div>
+        </div>
+        <input
+          type="text" value={busca}
+          onChange={e => setBusca(e.target.value)}
+          placeholder="Buscar por nome ou matrícula…"
+          style={{ height: 38, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 12, padding: '0 14px', outline: 'none', width: 240 }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {lista.map(p => (
+          <button
+            key={p.id}
+            onClick={() => setSelecionado(p)}
+            style={{
+              display: 'grid', gridTemplateColumns: '1fr 80px 50px 50px 64px',
+              alignItems: 'center', gap: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 12, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(245,200,0,0.3)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)')}
+          >
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{p.nome}</div>
+              <div style={{ marginTop: 6 }}>
+                <BarraProgresso valor={p.percentualGeral} cor='#009c3b' height={5} />
+              </div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: 1 }}>
+                #{p.matricula}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: p.percentualGeral >= 80 ? '#4ade80' : p.percentualGeral >= 50 ? '#f5c800' : 'rgba(255,255,255,0.6)' }}>
+                {p.percentualGeral}%
+              </div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: 0.5 }}>
+                {p.totalColetado}/{p.totalFigurinhas}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#34d399' }}>{p.trocasEnviadas}</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: 0.5 }}>enviadas</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#60a5fa' }}>{p.trocasRecebidas}</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: 0.5 }}>recebidas</div>
+            </div>
+            <div style={{ textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
+              ver detalhes →
+            </div>
+          </button>
+        ))}
+
+        {lista.length === 0 && (
+          <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 48, fontSize: 12 }}>
+            Nenhum participante encontrado.
+          </div>
+        )}
+      </div>
+
+      {/* Modal detalhe */}
+      {selecionado && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setSelecionado(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#0f1623', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: 32, width: 560, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}
+          >
+            {/* Cabeçalho */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,200,0,0.5)', marginBottom: 4 }}>
+                Detalhes do álbum
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>{selecionado.nome}</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginTop: 2 }}>#{selecionado.matricula}</div>
+            </div>
+
+            {/* Resumo geral */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 28 }}>
+              {[
+                { label: 'Progresso geral', valor: `${selecionado.percentualGeral}%`,                                  cor: selecionado.percentualGeral >= 80 ? '#4ade80' : selecionado.percentualGeral >= 50 ? '#f5c800' : '#fff' },
+                { label: 'Figurinhas',      valor: `${selecionado.totalColetado}/${selecionado.totalFigurinhas}`,       cor: '#fff' },
+                { label: 'Trocas enviadas', valor: String(selecionado.trocasEnviadas),                                 cor: '#34d399' },
+                { label: 'Trocas recebidas',valor: String(selecionado.trocasRecebidas),                                cor: '#60a5fa' },
+              ].map(item => (
+                <div key={item.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: item.cor }}>{item.valor}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{item.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Barra geral */}
+            <div style={{ marginBottom: 28 }}>
+              <BarraProgresso valor={selecionado.percentualGeral} cor='#009c3b' height={8} />
+            </div>
+
+            {/* Por departamento */}
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 14 }}>
+              Por Departamento
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {selecionado.porDepartamento
+                .slice()
+                .sort((a, b) => b.percentual - a.percentual)
+                .map(d => {
+                  const cor = COR_DEPTO[d.classificacao] ?? '#94a3b8'
+                  return (
+                    <div key={d.classificacao}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: cor, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>{d.classificacao}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{d.coletado}/{d.total}</span>
+                          <span style={{ fontSize: 13, fontWeight: 900, color: cor, minWidth: 38, textAlign: 'right' }}>{d.percentual}%</span>
+                        </div>
+                      </div>
+                      <BarraProgresso valor={d.percentual} cor={cor} height={5} />
+                    </div>
+                  )
+                })}
+            </div>
+
+            <button
+              onClick={() => setSelecionado(null)}
+              style={{ marginTop: 28, width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Página principal ──────────────────────────────────────────────
-type Tab = 'figurinhas' | 'pacotes' | 'log'
+type Tab = 'figurinhas' | 'pacotes' | 'log' | 'andamento'
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('figurinhas')
@@ -722,6 +929,7 @@ export default function AdminPage() {
     { id: 'figurinhas', label: 'Figurinhas' },
     { id: 'pacotes',    label: 'Pacotes' },
     { id: 'log',        label: 'Log' },
+    { id: 'andamento',  label: 'Andamento' },
   ]
 
   return (
@@ -744,6 +952,7 @@ export default function AdminPage() {
       {tab === 'figurinhas' && <AbaFigurinhas />}
       {tab === 'pacotes'    && <AbaPacotes />}
       {tab === 'log'        && <AbaLog />}
+      {tab === 'andamento'  && <AbaAndamento />}
     </div>
   )
 }
