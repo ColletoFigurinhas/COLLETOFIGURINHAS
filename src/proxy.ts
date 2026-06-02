@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { decryptEdge } from '@/lib/session-edge'
 
-const PUBLIC_PATHS  = ['/login', '/recuperar-senha', '/recuperar-senha-confirm']
+const PUBLIC_PATHS  = ['/login', '/recuperar-senha', '/recuperar-senha-confirm', '/api/cron']
 const ADMIN_PATHS   = ['/admin']
 
 export async function proxy(req: NextRequest) {
