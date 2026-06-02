@@ -1,22 +1,16 @@
 import 'server-only'
-import nodemailer from 'nodemailer'
-
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST,
-  port:   Number(process.env.SMTP_PORT ?? 587),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
 
 export async function enviarCodigoRecuperacao(para: string, matricula: string, codigo: string) {
-  await transporter.sendMail({
-    from:    process.env.SMTP_FROM ?? `"Supermédica - Super Copa 2026" <${process.env.SMTP_USER}>`,
-    to:      para,
-    subject: `${codigo} é seu código de acesso — Álbum Super Copa 2026`,
-    html: `<!DOCTYPE html>
+  const apiUrl = process.env.COPA_API_URL
+  const apiKey = process.env.COPA_API_KEY
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('COPA_API_URL ou COPA_API_KEY não configurados')
+  }
+
+  const assunto = `${codigo} é seu código de acesso — Álbum Super Copa 2026`
+
+  const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0d1117;font-family:'Segoe UI',Arial,sans-serif">
@@ -27,13 +21,13 @@ export async function enviarCodigoRecuperacao(para: string, matricula: string, c
         <!-- Header -->
         <tr><td style="background:linear-gradient(135deg,#0a1a0f,#0f2a18);border-radius:16px 16px 0 0;padding:32px 32px 24px;text-align:center;border:1px solid #1a3a20;border-bottom:none">
           <div style="font-size:10px;letter-spacing:5px;text-transform:uppercase;color:#f5c800;margin-bottom:6px">Supermédica</div>
-          <div style="font-size:22px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#ffffff">⚽ Super Copa 2026</div>
+          <div style="font-size:22px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#ffffff">&#x26BD; Super Copa 2026</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;letter-spacing:1px">Álbum Oficial de Figurinhas</div>
         </td></tr>
 
         <!-- Body -->
         <tr><td style="background:#111827;padding:32px;border:1px solid #1f2937;border-top:none;border-bottom:none">
-          <p style="margin:0 0 8px;font-size:16px;font-weight:700;color:#ffffff">Olá! 👋</p>
+          <p style="margin:0 0 8px;font-size:16px;font-weight:700;color:#ffffff">Olá! &#x1F44B;</p>
           <p style="margin:0 0 24px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.6">
             Recebemos uma solicitação para redefinir a senha da matrícula
             <strong style="color:#f5c800">#${matricula}</strong>.<br>
@@ -45,7 +39,7 @@ export async function enviarCodigoRecuperacao(para: string, matricula: string, c
             <tr><td style="background:linear-gradient(135deg,#0a1f0f,#0f2d18);border:1px solid rgba(245,200,0,0.35);border-radius:12px;padding:28px;text-align:center">
               <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(245,200,0,0.6);margin-bottom:12px">Seu código de acesso</div>
               <div style="font-size:48px;font-weight:900;letter-spacing:12px;color:#f5c800;text-shadow:0 0 30px rgba(245,200,0,0.4)">${codigo}</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:12px">⏱ Válido por <strong style="color:rgba(255,255,255,0.6)">1 hora</strong></div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:12px">&#x23F1; Válido por <strong style="color:rgba(255,255,255,0.6)">1 hora</strong></div>
             </td></tr>
           </table>
 
@@ -66,6 +60,19 @@ export async function enviarCodigoRecuperacao(para: string, matricula: string, c
     </td></tr>
   </table>
 </body>
-</html>`,
+</html>`
+
+  const res = await fetch(`${apiUrl}/album/enviar-email-recuperacao`, {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ para, matricula, assunto, html }),
   })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Farol email API retornou ${res.status}: ${body}`)
+  }
 }
