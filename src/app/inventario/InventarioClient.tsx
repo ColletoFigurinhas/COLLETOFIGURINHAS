@@ -18,11 +18,23 @@ const SECTION_COLOR: Record<string, string> = {
   'ESPECIAIS':             '#713f12',
 }
 
+// ── Cores alternadas (xadrez 4 colunas) ──────────────────────────
+const COLS_INV = 4
+function corXadrez(i: number): 'VERDE' | 'AMARELO' {
+  return (Math.floor(i / COLS_INV) + i % COLS_INV) % 2 === 0 ? 'VERDE' : 'AMARELO'
+}
+function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
+  const base = (url.split('/').pop() ?? '').replace(/\.[^.]+$/, '')
+  return `/figuras/${cor}/${base}.png`
+}
+
 // ── Card de figurinha ─────────────────────────────────────────────
-function FigurinhaCard({ fig }: { fig: FigurinhaInventario }) {
+function FigurinhaCard({ fig, index }: { fig: FigurinhaInventario; index: number }) {
   const tem       = fig.quantidade >= 1
   const repetida  = fig.quantidade >= 2
   const color     = SECTION_COLOR[fig.classificacao] ?? '#333'
+  const cor       = corXadrez(index)
+  const src       = tem && fig.imagemUrl ? urlComCor(fig.imagemUrl, cor) : fig.imagemUrl
 
   return (
     <div style={{
@@ -46,7 +58,9 @@ function FigurinhaCard({ fig }: { fig: FigurinhaInventario }) {
       {/* Imagem */}
       {fig.imagemUrl && (
         <img
-          src={fig.imagemUrl} alt={`#${fig.id}`}
+          src={src ?? fig.imagemUrl}
+          onError={e => { if (src && src !== fig.imagemUrl) (e.currentTarget as HTMLImageElement).src = fig.imagemUrl! }}
+          alt={`#${fig.id}`}
           draggable={false}
           style={{
             width: '100%', height: '100%', objectFit: 'cover', display: 'block',
@@ -226,7 +240,7 @@ export default function InventarioClient({ secoes, premios = [] }: { secoes: Sec
                 gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
                 gap: 8,
               }}>
-                {figs.map(fig => <FigurinhaCard key={fig.id} fig={fig} />)}
+                {figs.map((fig, i) => <FigurinhaCard key={fig.id} fig={fig} index={i} />)}
               </div>
             </div>
           )

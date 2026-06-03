@@ -115,6 +115,17 @@ const SECTION_COLOR: Record<string, string> = {
   'ESPECIAIS':                '#713f12',
 }
 
+// ── Cores alternadas (xadrez 4 colunas) ──────────────────────────
+function corXadrez(globalIndex: number): 'VERDE' | 'AMARELO' {
+  const row = Math.floor(globalIndex / COLS)
+  const col = globalIndex % COLS
+  return (row + col) % 2 === 0 ? 'VERDE' : 'AMARELO'
+}
+function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
+  const baseName = (url.split('/').pop() ?? '').replace(/\.[^.]+$/, '')
+  return `/figuras/${cor}/${baseName}.png`
+}
+
 // ── Helpers ───────────────────────────────────────────────────────
 function chunks<T>(arr: T[], size: number): T[][] {
   const out: T[][] = []
@@ -131,15 +142,14 @@ function isPageVisible(cur: number, target: number, portrait: boolean, total: nu
 // ── Grid de figurinhas ────────────────────────────────────────────
 type Slot = { id: number; imagemUrl: string | null; tipo?: string }
 
-function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
-  figs: Slot[]; top: number; color: string; maxSlots?: number
+function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, indexOffset = 0, onPreview }: {
+  figs: Slot[]; top: number; color: string; maxSlots?: number; indexOffset?: number
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
-  const rows    = Math.ceil(maxSlots / COLS)
-  const padSide = 13                                                  // col1 começa em x=13
-  const gap     = 3                                                   // gap medido no PNG
-  const colW    = (PAGE_W - padSide * 2 - gap * (COLS - 1)) / COLS   // ≈ 123.75 → 124px
-  const rowH    = Math.round(colW * FIG_H / FIG_W)                   // = 188px
+  const padSide = 13
+  const gap     = 3
+  const colW    = (PAGE_W - padSide * 2 - gap * (COLS - 1)) / COLS
+  const rowH    = Math.round(colW * FIG_H / FIG_W)
 
   const slots: Slot[] = [...figs]
   while (slots.length < maxSlots) slots.push({ id: -(slots.length + 1), imagemUrl: null })
@@ -153,34 +163,37 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
       gridAutoRows: `${rowH}px`,
       gap,
     }}>
-      {slots.map(f => (
-        <div key={f.id}
-          onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
-          style={{
-            borderRadius: 10,
-            overflow: 'hidden',
-            background: f.imagemUrl ? '#fff' : 'rgba(0,0,0,0.06)',
-            border: f.imagemUrl ? 'none' : '1px dashed rgba(0,0,0,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative',
-            cursor: f.imagemUrl && onPreview ? 'zoom-in' : 'default',
-          }}>
-          {f.imagemUrl ? (
-            <img src={f.imagemUrl} alt="" draggable={false}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          ) : (
-            /* Slot vazio — número da figurinha */
-            f.id > 0 && (
-              <span style={{
-                fontSize: 9, color: 'rgba(0,0,0,0.2)',
-                fontWeight: 700, letterSpacing: 0.5,
-              }}>
-                {f.id}
-              </span>
-            )
-          )}
-        </div>
-      ))}
+      {slots.map((f, i) => {
+        const cor        = f.tipo === 'FUNCIONARIO' ? corXadrez(indexOffset + i) : null
+        const displayUrl = f.imagemUrl && cor ? urlComCor(f.imagemUrl, cor) : f.imagemUrl
+        return (
+          <div key={f.id}
+            onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
+            style={{
+              borderRadius: 10, overflow: 'hidden',
+              background: f.imagemUrl ? '#fff' : 'rgba(0,0,0,0.06)',
+              border: f.imagemUrl ? 'none' : '1px dashed rgba(0,0,0,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative',
+              cursor: f.imagemUrl && onPreview ? 'zoom-in' : 'default',
+            }}>
+            {f.imagemUrl ? (
+              <img
+                src={displayUrl ?? f.imagemUrl}
+                onError={e => { (e.currentTarget as HTMLImageElement).src = f.imagemUrl! }}
+                alt="" draggable={false}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              f.id > 0 && (
+                <span style={{ fontSize: 9, color: 'rgba(0,0,0,0.2)', fontWeight: 700, letterSpacing: 0.5 }}>
+                  {f.id}
+                </span>
+              )
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -188,17 +201,17 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
 // ── Página de seção ───────────────────────────────────────────────
 // isGestorPage = true → usa fundo de gestor (aparece só 1x por seção)
 // isGestorPage = false → usa fundo normal (pode repetir)
-function SectionPage({ section, figs, isGestorPage, onPreview }: {
+function SectionPage({ section, figs, isGestorPage, indexOffset = 0, onPreview }: {
   section: string
   figs: Slot[]
   isGestorPage: boolean
+  indexOffset?: number
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
   const pages   = SECTION_PAGES[section]
   const bg      = pages ? (isGestorPage ? pages.gestor : pages.normal) : ''
   const color   = SECTION_COLOR[section] ?? '#555'
 
-  // Separa gestor das figurinhas normais (só na página de gestor)
   const gestor   = isGestorPage ? figs.find(f => f.tipo === 'GESTOR') : null
   const normFigs = isGestorPage ? figs.filter(f => f.tipo !== 'GESTOR') : figs
 
@@ -232,6 +245,7 @@ function SectionPage({ section, figs, isGestorPage, onPreview }: {
         top={GRID_TOP}
         color={color}
         maxSlots={12}
+        indexOffset={indexOffset}
         onPreview={onPreview}
       />
     </div>
@@ -367,6 +381,7 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
         section={sec.classificacao}
         figs={gestor ? [gestor, ...gestorPageFigs] : gestorPageFigs}
         isGestorPage={true}
+        indexOffset={0}
         onPreview={onPreview}
       />
     )
@@ -379,6 +394,7 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
           section={sec.classificacao}
           figs={group}
           isGestorPage={false}
+          indexOffset={(idx + 1) * SLOTS}
           onPreview={onPreview}
         />
       )

@@ -224,10 +224,21 @@ function ModalTroca({ fig, onClose, onSucesso }: {
   )
 }
 
+// ── Cores alternadas (xadrez 4 colunas) ──────────────────────────
+function corXadrez(i: number): 'VERDE' | 'AMARELO' {
+  return (Math.floor(i / 4) + i % 4) % 2 === 0 ? 'VERDE' : 'AMARELO'
+}
+function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
+  const base = (url.split('/').pop() ?? '').replace(/\.[^.]+$/, '')
+  return `/figuras/${cor}/${base}.png`
+}
+
 // ── Card de figurinha ─────────────────────────────────────────────
-function FigurinhaCard({ fig, onTrocar }: { fig: Figurinha; onTrocar: (fig: Figurinha) => void }) {
+function FigurinhaCard({ fig, index, onTrocar }: { fig: Figurinha; index: number; onTrocar: (fig: Figurinha) => void }) {
   const repetida = fig.quantidade >= 2
   const color = SECTION_COLOR[fig.classificacao] ?? '#333'
+  const cor   = corXadrez(index)
+  const src   = fig.imagemUrl ? urlComCor(fig.imagemUrl, cor) : null
 
   return (
     <div
@@ -241,8 +252,12 @@ function FigurinhaCard({ fig, onTrocar }: { fig: Figurinha; onTrocar: (fig: Figu
       }}
     >
       {fig.imagemUrl && (
-        <img src={fig.imagemUrl} alt={`#${fig.id}`} draggable={false}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <img
+          src={src ?? fig.imagemUrl}
+          onError={e => { if (src) (e.currentTarget as HTMLImageElement).src = fig.imagemUrl! }}
+          alt={`#${fig.id}`} draggable={false}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
       )}
 
       {fig.quantidade > 1 && (
@@ -399,7 +414,7 @@ export default function InventarioModal({ onClose }: { onClose: () => void }) {
                       </span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
-                      {sec.figurinhas.map(fig => <FigurinhaCard key={fig.id} fig={fig} onTrocar={setFigPreview} />)}
+                      {sec.figurinhas.map((fig, i) => <FigurinhaCard key={fig.id} fig={fig} index={i} onTrocar={setFigPreview} />)}
                     </div>
                   </div>
                 )
