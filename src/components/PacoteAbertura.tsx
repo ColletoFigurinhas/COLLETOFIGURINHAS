@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 type Figurinha = { id: number; classificacao: string; tipo: string; imagemUrl: string | null }
 type Pacote    = { id: number; tipo: 'PADRAO' | 'PLUS' | 'PREMIUM'; dataReferencia: string }
-type Tier      = 'padrao' | 'gestor' | 'especial' | 'premio'
+type Tier      = 'padrao' | 'gestor' | 'especial' | 'premio' | 'premio_prata' | 'premio_ouro'
 
 const PACK_IMG: Record<string, string> = {
   PADRAO:  '/pacotes/pacote-normal.png',
@@ -62,12 +62,32 @@ const TIER: Record<Tier, {
     shadow: '0 0 65px rgba(249,115,22,0.95), 0 0 130px rgba(249,115,22,0.4), 0 28px 80px rgba(0,0,0,0.95)',
     bgGlow: 'rgba(249,115,22,0.25)', entrance: 'enter-slam',
   },
+  premio_prata: {
+    colors: ['#f1f5f9','#94a3b8','#e2e8f0','#fff','#cbd5e1','#bfdbfe'],
+    primary: '#cbd5e1', glow: 'rgba(203,213,225,0.95)',
+    label: '🥈  PRÊMIO PRATA', labelColor: '#f1f5f9',
+    rings: 3, particles: 30,
+    border: '2px solid #94a3b8',
+    shadow: '0 0 55px rgba(203,213,225,0.9), 0 0 110px rgba(148,163,184,0.4), 0 24px 70px rgba(0,0,0,0.95)',
+    bgGlow: 'rgba(203,213,225,0.18)', entrance: 'enter-silver',
+  },
+  premio_ouro: {
+    colors: ['#fbbf24','#f59e0b','#fde68a','#fff','#fed7aa','#facc15','#fb923c'],
+    primary: '#f59e0b', glow: 'rgba(245,158,11,1)',
+    label: '🥇  PRÊMIO OURO', labelColor: '#fde68a',
+    rings: 5, particles: 46,
+    border: '2px solid #f59e0b',
+    shadow: '0 0 75px rgba(245,158,11,1), 0 0 150px rgba(245,158,11,0.5), 0 30px 90px rgba(0,0,0,0.98)',
+    bgGlow: 'rgba(245,158,11,0.28)', entrance: 'enter-gold',
+  },
 }
 
 function getTier(f: Figurinha): Tier {
-  if (f.tipo === 'PREMIO')   return 'premio'
-  if (f.tipo === 'ESPECIAL') return 'especial'
-  if (f.tipo === 'GESTOR')   return 'gestor'
+  if (f.tipo === 'PREMIO OURO')  return 'premio_ouro'
+  if (f.tipo === 'PREMIO PRATA') return 'premio_prata'
+  if (f.tipo === 'PREMIO')       return 'premio'
+  if (f.tipo === 'ESPECIAL')     return 'especial'
+  if (f.tipo === 'GESTOR')       return 'gestor'
   return 'padrao'
 }
 
@@ -78,6 +98,8 @@ const ANIM_CSS = `
   @keyframes enter-bounce { from{transform:translateY(-140px) scale(0.75) rotate(-4deg);opacity:0} 55%{transform:translateY(12px) scale(1.07) rotate(1deg)} 75%{transform:translateY(-5px) scale(0.97)} to{transform:translateY(0) scale(1) rotate(0deg);opacity:1} }
   @keyframes enter-zoom   { from{transform:scale(0.1) rotate(-8deg);opacity:0} 55%{transform:scale(1.1) rotate(2deg)} 75%{transform:scale(0.96)} to{transform:scale(1) rotate(0deg);opacity:1} }
   @keyframes enter-slam   { from{transform:translateY(-380px) scale(0.6) rotate(6deg);opacity:0} 50%{transform:translateY(18px) scale(1.12) rotate(-1deg);opacity:1} 68%{transform:translateY(-7px) scale(0.95)} 84%{transform:translateY(4px) scale(1.03)} to{transform:translateY(0) scale(1) rotate(0deg);opacity:1} }
+  @keyframes enter-silver { from{transform:translateX(-80px) scale(0.85);opacity:0;filter:brightness(2.5)} 45%{transform:translateX(6px) scale(1.05);filter:brightness(1.3)} 70%{transform:translateX(-3px) scale(0.98)} to{transform:translateX(0) scale(1);opacity:1;filter:brightness(1)} }
+  @keyframes enter-gold   { from{transform:translateY(-500px) scale(0.5) rotate(-8deg);opacity:0} 42%{transform:translateY(24px) scale(1.18) rotate(2deg);opacity:1} 60%{transform:translateY(-10px) scale(0.93) rotate(-1deg)} 78%{transform:translateY(6px) scale(1.05)} to{transform:translateY(0) scale(1) rotate(0deg);opacity:1} }
   /* Saída universal */
   @keyframes card-exit    { from{transform:translateX(0) scale(1);opacity:1} to{transform:translateX(-100px) scale(0.82);opacity:0} }
   /* Efeitos */
@@ -95,6 +117,10 @@ const ANIM_CSS = `
   @keyframes label-in     { from{transform:translateY(-20px) scale(0.7);opacity:0} 65%{transform:translateY(3px) scale(1.06)} to{transform:translateY(0) scale(1);opacity:1} }
   @keyframes hue-cycle    { from{filter:hue-rotate(0deg) brightness(1.4)} to{filter:hue-rotate(360deg) brightness(1.4)} }
   @keyframes rainbow-border{ 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
+  @keyframes silver-border { 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
+  @keyframes gold-border   { 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
+  @keyframes silver-shine  { 0%,100%{opacity:0;transform:translateX(-100%) skewX(-20deg)} 40%,60%{opacity:0.65;transform:translateX(200%) skewX(-20deg)} }
+  @keyframes gold-shine    { 0%,100%{opacity:0;transform:translateX(-100%) skewX(-20deg)} 35%,55%{opacity:0.9;transform:translateX(200%) skewX(-20deg)} }
   /* Pack */
   @keyframes pack-float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
   @keyframes pack-top-fly { to{transform:translateY(-380px) rotate(-22deg);opacity:0} }
@@ -186,7 +212,14 @@ function Orbit({ color, n, r, speed }: { color: string; n: number; r: number; sp
 }
 
 // ── Confetti ──────────────────────────────────────────────────────
-function Confetti() {
+const CONFETTI_COLORS: Record<string, string[]> = {
+  premio:       ['#fb923c','#fbbf24','#ef4444','#fff','#fed7aa','#fde68a','#f472b6'],
+  premio_prata: ['#f1f5f9','#94a3b8','#e2e8f0','#fff','#cbd5e1','#bfdbfe','#dde9f8'],
+  premio_ouro:  ['#fbbf24','#f59e0b','#fde68a','#fff','#fed7aa','#facc15','#fb923c'],
+}
+
+function Confetti({ tier }: { tier: Tier }) {
+  const colors = CONFETTI_COLORS[tier] ?? CONFETTI_COLORS.premio
   const pieces = useMemo(() =>
     Array.from({ length: 55 }, (_, i) => ({
       x: Math.random() * 100,
@@ -195,8 +228,9 @@ function Confetti() {
       del: Math.random() * 0.7,
       w: 7 + Math.random() * 8,
       h: 4 + Math.random() * 3,
-      color: ['#fb923c','#fbbf24','#ef4444','#fff','#fed7aa','#fde68a','#f472b6'][i % 7],
-    })), [])
+      color: colors[i % colors.length],
+    })), // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tier])
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 2005 }}>
       {pieces.map((p, i) => (
@@ -280,10 +314,10 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
     setShowFx(true)
     setShowFlash(true)
     setTimeout(() => setShowFlash(false), 420)
-    if (t === 'premio') {
+    if (t === 'premio' || t === 'premio_prata' || t === 'premio_ouro') {
       setShowShake(true); setShowConfetti(true)
-      setTimeout(() => setShowShake(false), 600)
-      setTimeout(() => setShowConfetti(false), 3200)
+      setTimeout(() => setShowShake(false), t === 'premio_ouro' ? 800 : 600)
+      setTimeout(() => setShowConfetti(false), t === 'premio_ouro' ? 4000 : 3200)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, phase])
@@ -365,7 +399,7 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
   return (
     <>
       <style>{ANIM_CSS}</style>
-      {showConfetti && <Confetti />}
+      {showConfetti && <Confetti tier={tier} />}
 
       <div style={{
         position: 'fixed', inset: 0, zIndex: 2000,
@@ -417,11 +451,11 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
             onClick={avancar}>
 
             {/* Raios */}
-            {(tier === 'gestor' || tier === 'especial' || tier === 'premio') && (
-              <Rays color={tcfg.primary} n={tier === 'premio' ? 22 : 14} speed={tier === 'premio' ? '3.5s' : '6s'} />
+            {(tier === 'gestor' || tier === 'especial' || tier === 'premio' || tier === 'premio_prata' || tier === 'premio_ouro') && (
+              <Rays color={tcfg.primary} n={tier === 'premio' ? 22 : tier === 'premio_prata' ? 18 : tier === 'premio_ouro' ? 28 : 14} speed={tier === 'premio' ? '3.5s' : tier === 'premio_prata' ? '4.5s' : tier === 'premio_ouro' ? '2.8s' : '6s'} />
             )}
-            {(tier === 'especial' || tier === 'premio') && (
-              <Rays color={tcfg.colors[2]} n={10} speed={tier === 'especial' ? '9s' : '5s'} />
+            {(tier === 'especial' || tier === 'premio' || tier === 'premio_prata' || tier === 'premio_ouro') && (
+              <Rays color={tcfg.colors[2]} n={tier === 'premio_ouro' ? 14 : 10} speed={tier === 'especial' ? '9s' : tier === 'premio_prata' ? '7s' : tier === 'premio_ouro' ? '4s' : '5s'} />
             )}
 
             {/* Aura */}
@@ -430,9 +464,11 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
             )}
 
             {/* Órbitas */}
-            {tier === 'gestor'  && <Orbit color="#fde68a" n={5} r={155} speed={2.8} />}
-            {tier === 'especial' && <><Orbit color="#c084fc" n={7} r={165} speed={2.5} /><Orbit color="#34d399" n={4} r={195} speed={3.5} /></>}
-            {tier === 'premio'  && <><Orbit color="#fb923c" n={9} r={175} speed={2} /><Orbit color="#fff" n={5} r={210} speed={3.2} /></>}
+            {tier === 'gestor'       && <Orbit color="#fde68a" n={5} r={155} speed={2.8} />}
+            {tier === 'especial'     && <><Orbit color="#c084fc" n={7} r={165} speed={2.5} /><Orbit color="#34d399" n={4} r={195} speed={3.5} /></>}
+            {tier === 'premio'       && <><Orbit color="#fb923c" n={9} r={175} speed={2} /><Orbit color="#fff" n={5} r={210} speed={3.2} /></>}
+            {tier === 'premio_prata' && <><Orbit color="#e2e8f0" n={7} r={165} speed={2.4} /><Orbit color="#94a3b8" n={4} r={200} speed={3.8} /></>}
+            {tier === 'premio_ouro'  && <><Orbit color="#fbbf24" n={11} r={180} speed={1.8} /><Orbit color="#fff" n={6} r={215} speed={2.8} /><Orbit color="#f97316" n={4} r={240} speed={4} /></>}
 
             {/* Partículas e rings ao aparecer */}
             {showFx && <Rings tier={tier} tick={fxTick} />}
@@ -444,22 +480,46 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
               style={{
                 width: 188, height: 262, borderRadius: 14,
                 overflow: 'hidden', position: 'relative', zIndex: 10,
-                border: tcfg.border, boxShadow: tcfg.shadow,
+                boxShadow: tcfg.shadow,
+                border: ['especial','premio_prata','premio_ouro'].includes(tier) ? 'none' : tcfg.border,
                 cursor: 'pointer',
                 animation: leaving
                   ? 'card-exit 0.19s ease-in forwards'
                   : `${tcfg.entrance} 0.6s cubic-bezier(0.2,0.8,0.2,1)`,
                 ...(tier === 'especial' ? {
-                  border: 'none',
                   backgroundImage: 'linear-gradient(#0a0a0a,#0a0a0a), linear-gradient(90deg,#c084fc,#f472b6,#fbbf24,#34d399,#60a5fa,#c084fc)',
+                  backgroundOrigin: 'border-box', backgroundClip: 'padding-box,border-box',
+                  outline: '2px solid transparent',
+                } : tier === 'premio_prata' ? {
+                  backgroundImage: 'linear-gradient(#0a0a0a,#0a0a0a), linear-gradient(90deg,#94a3b8,#e2e8f0,#f8fafc,#cbd5e1,#94a3b8,#bfdbfe,#94a3b8)',
+                  backgroundOrigin: 'border-box', backgroundClip: 'padding-box,border-box',
+                  outline: '2px solid transparent',
+                } : tier === 'premio_ouro' ? {
+                  backgroundImage: 'linear-gradient(#0a0a0a,#0a0a0a), linear-gradient(90deg,#f59e0b,#fde68a,#fff,#fbbf24,#f97316,#fde68a,#f59e0b)',
                   backgroundOrigin: 'border-box', backgroundClip: 'padding-box,border-box',
                   outline: '2px solid transparent',
                 } : {}),
               }}
             >
-              {/* Borda rainbow animada para especial */}
+              {/* Borda animada por tier */}
               {tier === 'especial' && (
                 <div style={{ position: 'absolute', inset: -2, zIndex: -1, borderRadius: 16, background: 'linear-gradient(90deg,#c084fc,#f472b6,#fbbf24,#34d399,#60a5fa,#c084fc)', backgroundSize: '300% 100%', animation: 'rainbow-border 2.5s linear infinite' }} />
+              )}
+              {tier === 'premio_prata' && (
+                <>
+                  <div style={{ position: 'absolute', inset: -2, zIndex: -1, borderRadius: 16, background: 'linear-gradient(90deg,#94a3b8,#e2e8f0,#f8fafc,#cbd5e1,#94a3b8,#bfdbfe,#94a3b8)', backgroundSize: '300% 100%', animation: 'silver-border 3s linear infinite' }} />
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 1, borderRadius: 14, overflow: 'hidden', pointerEvents: 'none' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '45%', height: '100%', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.55),transparent)', animation: 'silver-shine 2.8s ease-in-out infinite' }} />
+                  </div>
+                </>
+              )}
+              {tier === 'premio_ouro' && (
+                <>
+                  <div style={{ position: 'absolute', inset: -2, zIndex: -1, borderRadius: 16, background: 'linear-gradient(90deg,#f59e0b,#fde68a,#fff,#fbbf24,#f97316,#fde68a,#f59e0b)', backgroundSize: '300% 100%', animation: 'gold-border 2s linear infinite' }} />
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 1, borderRadius: 14, overflow: 'hidden', pointerEvents: 'none' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '45%', height: '100%', background: 'linear-gradient(90deg,transparent,rgba(255,215,0,0.7),transparent)', animation: 'gold-shine 2.2s ease-in-out infinite' }} />
+                  </div>
+                </>
               )}
 
               {fig.imagemUrl
@@ -474,7 +534,7 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
                 marginTop: 12, fontSize: tier === 'premio' ? 14 : 11,
                 fontWeight: 900, letterSpacing: 4.5, textTransform: 'uppercase',
                 color: tcfg.labelColor, textShadow: `0 0 18px ${tcfg.glow}, 0 0 40px ${tcfg.glow}`,
-                animation: `label-in 0.45s cubic-bezier(0.2,0.8,0.2,1)${tier === 'especial' ? ', hue-cycle 3s linear infinite' : ''}`,
+                animation: `label-in 0.45s cubic-bezier(0.2,0.8,0.2,1)${tier === 'especial' || tier === 'premio_ouro' ? ', hue-cycle 3s linear infinite' : ''}`,
               }}>
                 {tcfg.label}
               </div>
