@@ -69,6 +69,18 @@ function AbaFigurinhas() {
   const [deletandoId, setDeletandoId] = useState<number | null>(null)
   const [deleteErr,   setDeleteErr]   = useState<string>('')
 
+  async function uploadErroMsg(res: Response): Promise<string> {
+    if (res.status === 413) return 'Arquivo muito grande — aumente client_max_body_size no nginx (ex: 20m).'
+    if (res.status === 401) return 'Sessão expirada — faça login novamente.'
+    const text = await res.text().catch(() => '')
+    try {
+      const j = JSON.parse(text)
+      return `(${res.status}) ${j.detail ?? j.error ?? text || 'erro desconhecido'}`
+    } catch {
+      return `(${res.status}) ${text.slice(0, 200) || 'erro desconhecido'}`
+    }
+  }
+
   async function handleDeletar(id: number) {
     setDeleteErr('')
     const r = await fetch(`/api/admin/figurinhas/${id}`, { method: 'DELETE' })
@@ -109,8 +121,7 @@ function AbaFigurinhas() {
         const fd = new FormData(); fd.append('file', editFile); fd.append('folder', folder)
         const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
         if (!up.ok) {
-          const e = await up.json().catch(() => ({}))
-          setEditErr(`Falha no upload (${up.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setEditErr(`Falha no upload — ${await uploadErroMsg(up)}`)
           setEditUploading(false); return
         }
         imagemUrl = (await up.json()).url
@@ -162,8 +173,7 @@ function AbaFigurinhas() {
         const fdV = new FormData(); fdV.append('file', fileVerde!); fdV.append('folder', 'VERDE')
         const upV = await fetch('/api/admin/upload', { method: 'POST', body: fdV })
         if (!upV.ok) {
-          const e = await upV.json().catch(() => ({}))
-          setErrForm(`Falha no upload VERDE (${upV.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setErrForm(`Falha no upload VERDE — ${await uploadErroMsg(upV)}`)
           setUploading(false); return
         }
         const { url: urlV, filename } = await upV.json()
@@ -173,8 +183,7 @@ function AbaFigurinhas() {
         const fdA = new FormData(); fdA.append('file', fileAmarelo!); fdA.append('folder', 'AMARELO'); fdA.append('filename', filename)
         const upA = await fetch('/api/admin/upload', { method: 'POST', body: fdA })
         if (!upA.ok) {
-          const e = await upA.json().catch(() => ({}))
-          setErrForm(`Falha no upload AMARELO (${upA.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setErrForm(`Falha no upload AMARELO — ${await uploadErroMsg(upA)}`)
           setUploading(false); return
         }
       } else {
@@ -182,8 +191,7 @@ function AbaFigurinhas() {
         const fd = new FormData(); fd.append('file', file!); fd.append('folder', folder)
         const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
         if (!up.ok) {
-          const e = await up.json().catch(() => ({}))
-          setErrForm(`Falha no upload (${up.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setErrForm(`Falha no upload — ${await uploadErroMsg(up)}`)
           setUploading(false); return
         }
         imagemUrl = (await up.json()).url
