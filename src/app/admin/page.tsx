@@ -22,10 +22,9 @@ const CLASSIFICACOES = [
 ]
 
 const TIPOS: Record<string, { label: string; desc: string }> = {
-  FUNCIONARIO:  { label: 'Funcionário',  desc: 'Carta padrão de departamento' },
-  GESTOR:       { label: 'Gestor',       desc: 'Carta de gestor do setor (1 por seção)' },
-  ESPECIAL:     { label: 'Especial',     desc: 'Aparece aleatoriamente nos pacotes (~10%)' },
-  PREMIO:       { label: 'Prêmio',       desc: 'Distribuída manualmente pelo marketing' },
+  FUNCIONARIO:    { label: 'Funcionário',  desc: 'Carta padrão de departamento' },
+  GESTOR:         { label: 'Gestor',       desc: 'Carta de gestor do setor (1 por seção)' },
+  ESPECIAL:       { label: 'Especial',     desc: 'Aparece aleatoriamente nos pacotes (~10%)' },
   'PREMIO PRATA': { label: 'Prêmio Prata', desc: 'Carta exclusiva do pacote Prata (5 normais + 1 prata)' },
   'PREMIO OURO':  { label: 'Prêmio Ouro',  desc: 'Carta exclusiva do pacote Ouro (5 normais + 1 prata + 1 ouro)' },
 }
@@ -72,7 +71,7 @@ function AbaFigurinhas() {
     if (val === 'ESPECIAIS')     setEditTipo('ESPECIAL')
     else if (val === 'PREMIO PRATA') setEditTipo('PREMIO PRATA')
     else if (val === 'PREMIO OURO')  setEditTipo('PREMIO OURO')
-    else if (['ESPECIAL', 'PREMIO', 'PREMIO PRATA', 'PREMIO OURO'].includes(editTipo)) setEditTipo('FUNCIONARIO')
+    else if (['ESPECIAL', 'PREMIO PRATA', 'PREMIO OURO'].includes(editTipo)) setEditTipo('FUNCIONARIO')
   }
 
   async function salvarEdicao() {
@@ -116,7 +115,7 @@ function AbaFigurinhas() {
     if (val === 'ESPECIAIS')     setTipo('ESPECIAL')
     else if (val === 'PREMIO PRATA') setTipo('PREMIO PRATA')
     else if (val === 'PREMIO OURO')  setTipo('PREMIO OURO')
-    else if (['ESPECIAL', 'PREMIO', 'PREMIO PRATA', 'PREMIO OURO'].includes(tipo)) setTipo('FUNCIONARIO')
+    else if (['ESPECIAL', 'PREMIO PRATA', 'PREMIO OURO'].includes(tipo)) setTipo('FUNCIONARIO')
   }
 
   async function handleCadastrar() {
@@ -206,7 +205,7 @@ function AbaFigurinhas() {
                 style={sel}
               >
                 {CLASSIFICACOES.map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c} style={opt}>{c}</option>
                 ))}
               </select>
             </div>
@@ -220,7 +219,7 @@ function AbaFigurinhas() {
                 style={sel}
               >
                 {Object.entries(TIPOS).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label} — {v.desc}</option>
+                  <option key={k} value={k} style={opt}>{v.label} — {v.desc}</option>
                 ))}
               </select>
             </div>
@@ -415,7 +414,7 @@ function AbaFigurinhas() {
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>Classificação / Departamento</label>
               <select value={editClassif} onChange={e => handleEditClassifChange(e.target.value)} style={sel}>
-                {CLASSIFICACOES.map(c => <option key={c} value={c}>{c}</option>)}
+                {CLASSIFICACOES.map(c => <option key={c} value={c} style={opt}>{c}</option>)}
               </select>
             </div>
 
@@ -428,7 +427,7 @@ function AbaFigurinhas() {
                 style={sel}
               >
                 {Object.entries(TIPOS).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label} — {v.desc}</option>
+                  <option key={k} value={k} style={opt}>{v.label} — {v.desc}</option>
                 ))}
               </select>
             </div>
@@ -762,10 +761,11 @@ const lbl: React.CSSProperties = {
 const sel: React.CSSProperties = {
   width: '100%', height: 42, borderRadius: 8,
   border: '1px solid rgba(255,255,255,0.1)',
-  background: 'rgba(255,255,255,0.05)',
+  background: '#1a2030',
   color: '#fff', fontSize: 12, padding: '0 12px',
   outline: 'none', cursor: 'pointer',
 }
+const opt: React.CSSProperties = { background: '#1a2030', color: '#fff' }
 
 // ── Aba: Andamento ────────────────────────────────────────────────
 type ParticipanteAndamento = {
