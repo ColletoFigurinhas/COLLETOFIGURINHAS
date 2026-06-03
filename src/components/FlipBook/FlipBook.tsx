@@ -147,31 +147,16 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
   figs: Slot[]; top: number; color: string; maxSlots?: number
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
-  const padSide  = 13
-  const gap      = 3
-  const colW     = (PAGE_W - padSide * 2 - gap * (COLS - 1)) / COLS
-  const rowH     = Math.round(colW * FIG_H / FIG_W)
-  const gridRef  = useRef<HTMLDivElement>(null)
-
-  // Para o mousedown dentro do grid quando sobre uma figurinha antes
-  // que o evento chegue ao bookRef (onde o page-flip está ouvindo).
-  // Isso impede que o page-flip inicie a animação de dobra de página.
-  useEffect(() => {
-    const el = gridRef.current
-    if (!el) return
-    const handler = (e: MouseEvent) => {
-      if ((e.target as HTMLElement)?.closest('[data-figurinha]'))
-        e.stopPropagation()
-    }
-    el.addEventListener('mousedown', handler, false)
-    return () => el.removeEventListener('mousedown', handler, false)
-  }, [])
+  const padSide = 13
+  const gap     = 3
+  const colW    = (PAGE_W - padSide * 2 - gap * (COLS - 1)) / COLS
+  const rowH    = Math.round(colW * FIG_H / FIG_W)
 
   const slots: Slot[] = [...figs]
   while (slots.length < maxSlots) slots.push({ id: -(slots.length + 1), imagemUrl: null })
 
   return (
-    <div ref={gridRef} style={{
+    <div style={{
       position: 'absolute',
       top, left: padSide, right: padSide,
       display: 'grid',
@@ -677,14 +662,16 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
           usePortrait: portrait,
           drawShadow: true, flippingTime: portrait ? 700 : 900,
           maxShadowOpacity: 0.85,
-          // No mobile desabilitamos o drag interno — swipe é feito por nós
-          useMouseEvents: !portrait,
-          swipeDistance: portrait ? 999999 : 30,
-          clickEventForward: true,
+          // Desabilitamos os eventos nativos do page-flip em todos os modos.
+          // Toda interação (click para virar, swipe no mobile) é gerenciada
+          // pelos nossos handlers React (onClick / onTouchEnd). Isso evita
+          // que o page-flip intercepte clicks nas figurinhas ou inicie
+          // animações de dobra que bloqueiam a interação com o conteúdo.
+          useMouseEvents: false,
+          swipeDistance: 999999,
+          clickEventForward: false,
           mobileScrollSupport: false, startZIndex: 1,
-          // Em portrait o boundsRect.left é negativo, fazendo flipPrev({x:10}) cair
-          // no centro do livro e falhar na verificação de corner — desativamos no mobile.
-          autoSize: false, disableFlipByClick: !portrait,
+          autoSize: false, disableFlipByClick: true,
         })
 
         pf.loadFromHTML(bookRef.current!.querySelectorAll('[data-pb-page]'))
@@ -976,10 +963,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
             onClick={e => {
               if (isPortrait) return  // mobile usa swipe/botões
               const pf = flipRef.current
-              if (!pf) return
-              // Aceita 'read', 'fold_corner' e 'user_fold' — 'flip' (animando) é o único bloqueio
-              if (bookState.current === 'flipping') return
-              // Ignora se o target é uma figurinha (o interceptor nativo já tratou)
+              if (!pf || bookState.current !== 'read') return
               if ((e.target as HTMLElement)?.closest?.('[data-figurinha]')) return
               const dx = Math.abs(e.clientX - mouseDownPos.current.x)
               const dy = Math.abs(e.clientY - mouseDownPos.current.y)
@@ -993,7 +977,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
             <div ref={bookRef} style={{ width: isPortrait ? PAGE_W : PAGE_W * 2, height: PAGE_H }}>
               {pages.map((content, i) => (
                 <div key={i} data-pb-page=""
-                  data-density="soft"
+                  data-density={i === 0 || i === total - 1 ? 'hard' : 'soft'}
                   style={{ width: PAGE_W, height: PAGE_H }}>
                   <div className="page-inner">{content}</div>
                 </div>
