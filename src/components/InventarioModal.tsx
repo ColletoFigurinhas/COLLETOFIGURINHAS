@@ -5,6 +5,7 @@ import FigurinhaPreview from '@/components/FigurinhaPreview'
 
 type Figurinha = { id: number; classificacao: string; imagemUrl: string | null; quantidade: number }
 type Secao     = { classificacao: string; figurinhas: Figurinha[] }
+type Premio    = { id: number; classificacao: string; imagemUrl: string | null; quantidade: number; entregue: boolean }
 
 const SECTION_COLOR: Record<string, string> = {
   'COMERCIAL':                '#1e3a5f',
@@ -273,9 +274,10 @@ function FigurinhaCard({ fig, onTrocar }: { fig: Figurinha; onTrocar: (fig: Figu
 
 // ── Modal principal ───────────────────────────────────────────────
 export default function InventarioModal({ onClose }: { onClose: () => void }) {
-  const [secoes,    setSecoes]    = useState<Secao[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [figTroca,  setFigTroca]  = useState<Figurinha | null>(null)
+  const [secoes,     setSecoes]     = useState<Secao[]>([])
+  const [premios,    setPremios]    = useState<Premio[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [figTroca,   setFigTroca]   = useState<Figurinha | null>(null)
   const [figPreview, setFigPreview] = useState<Figurinha | null>(null)
 
   const carregar = () => {
@@ -283,13 +285,17 @@ export default function InventarioModal({ onClose }: { onClose: () => void }) {
     fetch('/api/inventario')
       .then(r => r.json())
       .then(data => {
-        if (!Array.isArray(data)) { setLoading(false); return }
-        // Mostra todas que o usuário tem (quantidade >= 1)
-        const filtrado = data.map((s: Secao) => ({
+        // Suporta novo formato { secoes, premios } e legado array
+        const rawSecoes: Secao[]  = Array.isArray(data) ? data : (data?.secoes ?? [])
+        const rawPremios: Premio[] = Array.isArray(data) ? [] : (data?.premios ?? [])
+
+        const filtrado = rawSecoes.map((s: Secao) => ({
           ...s,
           figurinhas: s.figurinhas.filter(f => f.quantidade >= 1),
         })).filter((s: Secao) => s.figurinhas.length > 0)
+
         setSecoes(filtrado)
+        setPremios(rawPremios)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -378,40 +384,64 @@ export default function InventarioModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
           ) : (
-            secoes.map(sec => {
-              const color = SECTION_COLOR[sec.classificacao] ?? '#555'
+            <>
+              {secoes.map(sec => {
+                const color = SECTION_COLOR[sec.classificacao] ?? '#555'
+                return (
+                  <div key={sec.classificacao} style={{ marginBottom: 28 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 8, borderBottom: `2px solid ${color}` }}>
+                      <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', color }}>{sec.classificacao}</span>
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>
+                        {sec.figurinhas.length} figurinha{sec.figurinhas.length !== 1 ? 's' : ''}
+                        {sec.figurinhas.filter(f => f.quantidade >= 2).length > 0 && (
+                          <span style={{ color: '#f5c800' }}>{' · '}{sec.figurinhas.filter(f => f.quantidade >= 2).length} repetida{sec.figurinhas.filter(f => f.quantidade >= 2).length !== 1 ? 's' : ''}</span>
+                        )}
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
+                      {sec.figurinhas.map(fig => <FigurinhaCard key={fig.id} fig={fig} onTrocar={setFigPreview} />)}
+                    </div>
+                  </div>
+                )
+              })}
 
-              return (
-                <div key={sec.classificacao} style={{ marginBottom: 28 }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    marginBottom: 12, paddingBottom: 8,
-                    borderBottom: `2px solid ${color}`,
-                  }}>
-                    <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', color }}>
-                      {sec.classificacao}
-                    </span>
+              {/* Seção Meus Prêmios — sempre por último */}
+              {premios.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #f59e0b' }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', color: '#f59e0b' }}>Meus Prêmios</span>
                     <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>
-                      {sec.figurinhas.length} figurinha{sec.figurinhas.length !== 1 ? 's' : ''}
-                      {sec.figurinhas.filter(f => f.quantidade >= 2).length > 0 && (
-                        <span style={{ color: '#f5c800' }}>
-                          {' · '}{sec.figurinhas.filter(f => f.quantidade >= 2).length} repetida{sec.figurinhas.filter(f => f.quantidade >= 2).length !== 1 ? 's' : ''}
-                        </span>
-                      )}
+                      {premios.filter(p => p.entregue).length}/{premios.length} entregues
                     </span>
                   </div>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-                    gap: 8,
-                  }}>
-                    {sec.figurinhas.map(fig => (
-                      <FigurinhaCard key={fig.id} fig={fig} onTrocar={setFigPreview} />
-                    ))}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
+                    {premios.map(p => {
+                      const isPrata = p.classificacao === 'PREMIO PRATA'
+                      const cor     = isPrata ? '#94a3b8' : '#f59e0b'
+                      const bgCor   = isPrata ? '#1e293b' : '#78350f'
+                      return (
+                        <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                          <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', border: `2px solid ${cor}`, boxShadow: `0 0 10px ${isPrata ? 'rgba(148,163,184,0.3)' : 'rgba(245,158,11,0.4)'}`, background: bgCor }}>
+                            {p.imagemUrl
+                              ? <img src={p.imagemUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>{isPrata ? '🥈' : '🥇'}</div>
+                            }
+                            {p.entregue ? (
+                              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(74,222,128,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: '#000', boxShadow: '0 0 12px rgba(74,222,128,0.6)' }}>✓</div>
+                              </div>
+                            ) : (
+                              <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(251,191,36,0.9)', borderRadius: 3, fontSize: 6, fontWeight: 900, color: '#000', padding: '2px 4px', letterSpacing: 0.5, textTransform: 'uppercase' }}>Pendente</div>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 8, fontWeight: 700, color: cor, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center' }}>{isPrata ? '🥈 Prata' : '🥇 Ouro'}</div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-              )
-            })
+              )}
+            </>
           )}
         </div>
       </div>
