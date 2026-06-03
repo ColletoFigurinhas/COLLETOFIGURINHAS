@@ -75,7 +75,7 @@ function AbaFigurinhas() {
     const text = await res.text().catch(() => '')
     try {
       const j = JSON.parse(text)
-      return `(${res.status}) ${j.detail ?? j.error ?? text || 'erro desconhecido'}`
+      return `(${res.status}) ${(j.detail ?? j.error ?? text) || 'erro desconhecido'}`
     } catch {
       return `(${res.status}) ${text.slice(0, 200) || 'erro desconhecido'}`
     }
