@@ -16,11 +16,11 @@ export type FigurinhaInventario = {
 }
 
 export type PremioInventario = {
-  id:            number
-  classificacao: string
-  imagemUrl:     string | null
-  quantidade:    number
-  entregue:      boolean
+  id:                 number
+  classificacao:      string
+  imagemUrl:          string | null
+  quantidade:         number
+  quantidadeEntregue: number
 }
 
 export default async function InventarioPage() {
@@ -34,12 +34,12 @@ export default async function InventarioPage() {
     }),
     db.albumItem.findMany({
       where:  { participanteId: userId },
-      select: { figurinhaId: true, quantidade: true, entregue: true },
+      select: { figurinhaId: true, quantidade: true, quantidadeEntregue: true },
     }),
   ])
 
-  const qtdMap      = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
-  const entregueMap = new Map(albumItens.map(a => [a.figurinhaId, a.entregue]))
+  const qtdMap         = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
+  const qtdEntregueMap = new Map(albumItens.map(a => [a.figurinhaId, a.quantidadeEntregue]))
 
   const figurinhasNormais = figurinhas.filter(f => !['PREMIO PRATA', 'PREMIO OURO'].includes(f.classificacao))
   const figurinhasPremiadas = figurinhas.filter(f => ['PREMIO PRATA', 'PREMIO OURO'].includes(f.classificacao))
@@ -57,8 +57,8 @@ export default async function InventarioPage() {
       id:            f.id,
       classificacao: f.classificacao,
       imagemUrl:     f.imagemUrl,
-      quantidade:    qtdMap.get(f.id) ?? 0,
-      entregue:      entregueMap.get(f.id) ?? false,
+      quantidade:         qtdMap.get(f.id) ?? 0,
+      quantidadeEntregue: qtdEntregueMap.get(f.id) ?? 0,
     }))
     .sort((a, b) => a.classificacao.localeCompare(b.classificacao))
 

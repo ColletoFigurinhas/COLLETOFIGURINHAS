@@ -13,17 +13,27 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const albumItemId = parseInt(id)
   if (isNaN(albumItemId)) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
 
-  const { entregue } = await request.json()
+  const { entregar } = await request.json() // true = marcar | false = desmarcar
 
-  const item = await db.albumItem.update({
+  const item = await db.albumItem.findUnique({
+    where: { id: albumItemId },
+    select: { quantidade: true, quantidadeEntregue: true },
+  })
+  if (!item) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
+
+  const novaQtd = entregar
+    ? Math.min(item.quantidade, item.quantidadeEntregue + 1)
+    : Math.max(0, item.quantidadeEntregue - 1)
+
+  const updated = await db.albumItem.update({
     where: { id: albumItemId },
     data: {
-      entregue,
-      entregueEm: entregue ? new Date() : null,
-      entregueBy: entregue ? (s.nome ?? 'admin') : null,
+      quantidadeEntregue: novaQtd,
+      entregueEm: entregar ? new Date() : (novaQtd === 0 ? null : undefined),
+      entregueBy: entregar ? (s.nome ?? 'admin') : (novaQtd === 0 ? null : undefined),
     },
-    select: { id: true, entregue: true, entregueEm: true, entregueBy: true },
+    select: { id: true, quantidadeEntregue: true, quantidade: true },
   })
 
-  return NextResponse.json(item)
+  return NextResponse.json(updated)
 }

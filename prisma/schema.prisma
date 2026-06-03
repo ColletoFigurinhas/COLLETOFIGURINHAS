@@ -105,9 +105,9 @@ model AlbumItem {
   figurinhaId    Int       @map("figurinha_id")
   quantidade     Int       @default(1)
   primeiraVezEm  DateTime  @default(now()) @map("primeira_vez_em")
-  entregue       Boolean   @default(false)
-  entregueEm     DateTime? @map("entregue_em")
-  entregueBy     String?   @map("entregue_by")
+  quantidadeEntregue Int       @default(0)    @map("quantidade_entregue")
+  entregueEm         DateTime? @map("entregue_em")
+  entregueBy         String?   @map("entregue_by")
 
   participante Participante @relation(fields: [participanteId], references: [id])
   figurinha    Figurinha    @relation(fields: [figurinhaId],    references: [id])

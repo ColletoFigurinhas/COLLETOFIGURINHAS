@@ -5,7 +5,7 @@ import FigurinhaPreview from '@/components/FigurinhaPreview'
 
 type Figurinha = { id: number; classificacao: string; imagemUrl: string | null; quantidade: number }
 type Secao     = { classificacao: string; figurinhas: Figurinha[] }
-type Premio    = { id: number; classificacao: string; imagemUrl: string | null; quantidade: number; entregue: boolean }
+type Premio    = { id: number; classificacao: string; imagemUrl: string | null; quantidade: number; quantidadeEntregue: number }
 
 const SECTION_COLOR: Record<string, string> = {
   'COMERCIAL':                '#1e3a5f',
@@ -415,28 +415,31 @@ export default function InventarioModal({ onClose }: { onClose: () => void }) {
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
-                    {premios.map(p => {
+                    {premios.flatMap(p => {
                       const isPrata = p.classificacao === 'PREMIO PRATA'
                       const cor     = isPrata ? '#94a3b8' : '#f59e0b'
                       const bgCor   = isPrata ? '#1e293b' : '#78350f'
-                      return (
-                        <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                          <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', border: `2px solid ${cor}`, boxShadow: `0 0 10px ${isPrata ? 'rgba(148,163,184,0.3)' : 'rgba(245,158,11,0.4)'}`, background: bgCor }}>
-                            {p.imagemUrl
-                              ? <img src={p.imagemUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>{isPrata ? '🥈' : '🥇'}</div>
-                            }
-                            {p.entregue ? (
-                              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(74,222,128,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: '#000', boxShadow: '0 0 12px rgba(74,222,128,0.6)' }}>✓</div>
-                              </div>
-                            ) : (
-                              <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(251,191,36,0.9)', borderRadius: 3, fontSize: 6, fontWeight: 900, color: '#000', padding: '2px 4px', letterSpacing: 0.5, textTransform: 'uppercase' }}>Pendente</div>
-                            )}
+                      return Array.from({ length: p.quantidade }, (_, i) => {
+                        const entregue = i < p.quantidadeEntregue
+                        return (
+                          <div key={`${p.id}-${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', border: `2px solid ${cor}`, boxShadow: `0 0 10px ${isPrata ? 'rgba(148,163,184,0.3)' : 'rgba(245,158,11,0.4)'}`, background: bgCor }}>
+                              {p.imagemUrl
+                                ? <img src={p.imagemUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>{isPrata ? '🥈' : '🥇'}</div>
+                              }
+                              {entregue ? (
+                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(74,222,128,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: '#000', boxShadow: '0 0 12px rgba(74,222,128,0.6)' }}>✓</div>
+                                </div>
+                              ) : (
+                                <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(251,191,36,0.9)', borderRadius: 3, fontSize: 6, fontWeight: 900, color: '#000', padding: '2px 4px', letterSpacing: 0.5, textTransform: 'uppercase' }}>Pendente</div>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 8, fontWeight: 700, color: cor, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center' }}>{isPrata ? '🥈 Prata' : '🥇 Ouro'}</div>
                           </div>
-                          <div style={{ fontSize: 8, fontWeight: 700, color: cor, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center' }}>{isPrata ? '🥈 Prata' : '🥇 Ouro'}</div>
-                        </div>
-                      )
+                        )
+                      })
                     })}
                   </div>
                 </div>

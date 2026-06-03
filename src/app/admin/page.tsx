@@ -976,13 +976,13 @@ function AbaAndamento() {
 
 // ── Aba: Prêmios ──────────────────────────────────────────────────
 type PremioItem = {
-  id:          number
-  quantidade:  number
-  entregue:    boolean
-  entregueEm:  string | null
-  entregueBy:  string | null
-  participante:{ id: number; nome: string; matricula: string }
-  figurinha:   { id: number; classificacao: string; tipo: string; imagemUrl: string | null }
+  albumItemId:  number
+  unidade:      number
+  entregue:     boolean
+  entregueEm:   string | null
+  entregueBy:   string | null
+  participante: { id: number; nome: string; matricula: string }
+  figurinha:    { id: number; classificacao: string; tipo: string; imagemUrl: string | null }
 }
 
 function AbaPremios() {
@@ -990,7 +990,7 @@ function AbaPremios() {
   const [loading,  setLoading]  = useState(true)
   const [query,    setQuery]    = useState('')
   const [filtro,   setFiltro]   = useState<'todos' | 'pendente' | 'entregue'>('todos')
-  const [marcando, setMarcando] = useState<number | null>(null)
+  const [marcando, setMarcando] = useState<string | null>(null)
 
   async function carregar(q = query) {
     setLoading(true)
@@ -1012,11 +1012,12 @@ function AbaPremios() {
   }, [query]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function marcarEntregue(item: PremioItem) {
-    setMarcando(item.id)
-    await fetch(`/api/admin/premios/${item.id}`, {
+    const key = `${item.albumItemId}-${item.unidade}`
+    setMarcando(key as any)
+    await fetch(`/api/admin/premios/${item.albumItemId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entregue: !item.entregue }),
+      body: JSON.stringify({ entregar: !item.entregue }),
     })
     await carregar()
     setMarcando(null)
@@ -1068,7 +1069,7 @@ function AbaPremios() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {lista.map(item => (
-            <div key={item.id} style={{
+            <div key={`${item.albumItemId}-${item.unidade}`} style={{
               display: 'flex', alignItems: 'center', gap: 12,
               background: item.entregue ? 'rgba(74,222,128,0.04)' : 'rgba(255,255,255,0.03)',
               border: `1px solid ${item.entregue ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.07)'}`,
@@ -1098,8 +1099,7 @@ function AbaPremios() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.participante.nome}</div>
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginTop: 2 }}>
-                  #{item.participante.matricula} · {item.figurinha.classificacao}
-                  {item.quantidade > 1 && ` · ×${item.quantidade}`}
+                  #{item.participante.matricula} · {item.figurinha.classificacao} · unidade {item.unidade}
                 </div>
                 {item.entregue && item.entregueBy && (
                   <div style={{ fontSize: 9, color: '#4ade80', marginTop: 3 }}>
@@ -1110,7 +1110,7 @@ function AbaPremios() {
 
               {/* Botão */}
               <button
-                disabled={marcando === item.id}
+                disabled={marcando === `${item.albumItemId}-${item.unidade}`}
                 onClick={() => marcarEntregue(item)}
                 style={{
                   padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
@@ -1120,7 +1120,7 @@ function AbaPremios() {
                   transition: 'all 0.15s',
                 }}
               >
-                {marcando === item.id ? '…' : item.entregue ? '✓ Entregue' : 'Marcar entregue'}
+                {marcando === `${item.albumItemId}-${item.unidade}` ? '…' : item.entregue ? '✓ Entregue' : 'Marcar entregue'}
               </button>
             </div>
           ))}

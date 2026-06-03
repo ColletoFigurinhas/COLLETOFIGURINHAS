@@ -31,12 +31,12 @@ export async function GET() {
       }),
       db.albumItem.findMany({
         where:  { participanteId: userId },
-        select: { figurinhaId: true, quantidade: true, entregue: true },
+        select: { figurinhaId: true, quantidade: true, quantidadeEntregue: true },
       }),
     ])
 
-    const qtdMap      = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
-    const entregueMap = new Map(albumItens.map(a => [a.figurinhaId, a.entregue]))
+    const qtdMap            = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
+    const qtdEntregueMap    = new Map(albumItens.map(a => [a.figurinhaId, a.quantidadeEntregue]))
 
     const figurinhasNormais   = figurinhas.filter(f => !PREMIOS_CLASSIF.includes(f.classificacao))
     const figurinhasPremiadas = figurinhas.filter(f =>  PREMIOS_CLASSIF.includes(f.classificacao))
@@ -58,8 +58,8 @@ export async function GET() {
         id:            f.id,
         classificacao: f.classificacao,
         imagemUrl:     f.imagemUrl,
-        quantidade:    qtdMap.get(f.id) ?? 0,
-        entregue:      entregueMap.get(f.id) ?? false,
+        quantidade:         qtdMap.get(f.id) ?? 0,
+        quantidadeEntregue: qtdEntregueMap.get(f.id) ?? 0,
       }))
       .sort((a, b) => a.classificacao.localeCompare(b.classificacao))
 
