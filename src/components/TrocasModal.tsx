@@ -42,14 +42,15 @@ function StatusBadge({ status }: { status: Troca['status'] }) {
 
 // ── Mini card ─────────────────────────────────────────────────────
 function MiniCard({ fig, selecionado, onClick }: {
-  fig: { id: number; imagemUrl: string | null }
+  fig: { id: number; imagemUrl: string | null; quantidade?: number }
   selecionado?: boolean
   onClick?: () => void
 }) {
+  const repetida = (fig.quantidade ?? 0) >= 2
   return (
     <div onClick={onClick} style={{
       width: 52, height: 70, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
-      border: selecionado ? '2px solid #f0c040' : '1.5px solid rgba(255,255,255,0.12)',
+      border: selecionado ? '2px solid #f0c040' : repetida ? '1.5px solid rgba(240,192,64,0.5)' : '1.5px solid rgba(255,255,255,0.12)',
       boxShadow: selecionado ? '0 0 10px rgba(240,192,64,0.4)' : 'none',
       background: 'rgba(255,255,255,0.06)',
       cursor: onClick ? 'pointer' : 'default',
@@ -60,6 +61,16 @@ function MiniCard({ fig, selecionado, onClick }: {
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'rgba(255,255,255,0.3)' }}>#{fig.id}</div>
       }
       {selecionado && <div style={{ position: 'absolute', inset: 0, background: 'rgba(240,192,64,0.15)' }} />}
+      {repetida && (
+        <div style={{
+          position: 'absolute', top: 2, right: 2,
+          background: '#f0c040', color: '#000',
+          fontSize: 7, fontWeight: 900, borderRadius: 4,
+          padding: '1px 3px', lineHeight: 1.2,
+        }}>
+          ×{fig.quantidade}
+        </div>
+      )}
     </div>
   )
 }
