@@ -76,9 +76,9 @@ function TrocaRecebidaPendente({ troca, onAtualizar }: { troca: Troca; onAtualiz
     if (!expandido) return
     fetch('/api/inventario')
       .then(r => r.json())
-      .then((secoes: any[]) => {
-        if (!Array.isArray(secoes)) return
-        setMinhasFigs(secoes.flatMap(s => s.figurinhas).filter((f: any) => f.quantidade >= 1))
+      .then((data: any) => {
+        const secoes = Array.isArray(data) ? data : (data?.secoes ?? [])
+        setMinhasFigs(secoes.flatMap((s: any) => s.figurinhas).filter((f: any) => f.quantidade >= 1))
       })
   }, [expandido])
 
