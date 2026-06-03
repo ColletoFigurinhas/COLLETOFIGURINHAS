@@ -2,5 +2,5 @@
 # Edite este arquivo, faça git push → git pull no servidor aplica automaticamente.
 # Formato: minuto hora dia mês dia-semana usuário comando
 
-# Distribuição diária de pacotes — 18:00 BRT (21:00 UTC), seg–sex
-0 21 * * 1-5 root /var/www/album-figurinhas/scripts/distribuir.sh
+# Distribuição diária de pacotes — 12:00 BRT (15:00 UTC), seg–sex
+0 15 * * 1-5 root /var/www/album-figurinhas/scripts/distribuir.sh

@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client'
 
-/** Horário da distribuição diária em UTC (18:00 BRT = 21:00 UTC) */
-export const CRON_HOUR_UTC = 21
+/** Horário da distribuição diária em UTC (12:00 BRT = 15:00 UTC) */
+export const CRON_HOUR_UTC = 15
 
 /** Retorna true se a data for segunda a sexta */
 export function isDiaUtil(date: Date): boolean {
