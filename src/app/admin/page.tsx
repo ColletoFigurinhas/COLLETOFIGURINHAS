@@ -105,7 +105,8 @@ function AbaFigurinhas() {
     try {
       let imagemUrl = editando.imagemUrl
       if (editFile) {
-        const fd = new FormData(); fd.append('file', editFile)
+        const folder = editTipo.startsWith('PREMIO') ? 'Premio' : 'Especiais'
+        const fd = new FormData(); fd.append('file', editFile); fd.append('folder', folder)
         const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
         if (!up.ok) { setEditErr('Falha no upload.'); setEditUploading(false); return }
         imagemUrl = (await up.json()).url
@@ -165,7 +166,8 @@ function AbaFigurinhas() {
         const upA = await fetch('/api/admin/upload', { method: 'POST', body: fdA })
         if (!upA.ok) { setErrForm('Falha no upload AMARELO.'); setUploading(false); return }
       } else {
-        const fd = new FormData(); fd.append('file', file!)
+        const folder = tipo.startsWith('PREMIO') ? 'Premio' : 'Especiais'
+        const fd = new FormData(); fd.append('file', file!); fd.append('folder', folder)
         const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
         if (!up.ok) { setErrForm('Falha no upload.'); setUploading(false); return }
         imagemUrl = (await up.json()).url
