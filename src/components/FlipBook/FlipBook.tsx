@@ -143,8 +143,8 @@ function isPageVisible(cur: number, target: number, portrait: boolean, total: nu
 // ── Grid de figurinhas ────────────────────────────────────────────
 type Slot = { id: number; imagemUrl: string | null; tipo?: string }
 
-function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, indexOffset = 0, onPreview }: {
-  figs: Slot[]; top: number; color: string; maxSlots?: number; indexOffset?: number
+function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
+  figs: Slot[]; top: number; color: string; maxSlots?: number
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
   const padSide = 13
@@ -165,7 +165,7 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, indexOffset = 0, o
       gap,
     }}>
       {slots.map((f, i) => {
-        const cor        = f.tipo === 'FUNCIONARIO' ? corXadrez(indexOffset + i) : null
+        const cor        = f.tipo === 'FUNCIONARIO' ? corXadrez(i) : null
         const displayUrl = f.imagemUrl && cor ? urlComCor(f.imagemUrl, cor) : f.imagemUrl
         return (
           <div key={f.id}
@@ -202,11 +202,10 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, indexOffset = 0, o
 // ── Página de seção ───────────────────────────────────────────────
 // isGestorPage = true → usa fundo de gestor (aparece só 1x por seção)
 // isGestorPage = false → usa fundo normal (pode repetir)
-function SectionPage({ section, figs, isGestorPage, indexOffset = 0, onPreview }: {
+function SectionPage({ section, figs, isGestorPage, onPreview }: {
   section: string
   figs: Slot[]
   isGestorPage: boolean
-  indexOffset?: number
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
   const pages   = SECTION_PAGES[section]
@@ -246,7 +245,6 @@ function SectionPage({ section, figs, isGestorPage, indexOffset = 0, onPreview }
         top={GRID_TOP}
         color={color}
         maxSlots={12}
-        indexOffset={indexOffset}
         onPreview={onPreview}
       />
     </div>
@@ -382,7 +380,6 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
         section={sec.classificacao}
         figs={gestor ? [gestor, ...gestorPageFigs] : gestorPageFigs}
         isGestorPage={true}
-        indexOffset={0}
         onPreview={onPreview}
       />
     )
@@ -395,7 +392,6 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
           section={sec.classificacao}
           figs={group}
           isGestorPage={false}
-          indexOffset={(idx + 1) * SLOTS}
           onPreview={onPreview}
         />
       )

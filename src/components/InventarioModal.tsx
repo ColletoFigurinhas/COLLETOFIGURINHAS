@@ -225,8 +225,8 @@ function ModalTroca({ fig, onClose, onSucesso }: {
 }
 
 // ── Cores alternadas (xadrez 4 colunas) ──────────────────────────
-function corXadrez(i: number): 'VERDE' | 'AMARELO' {
-  return (Math.floor(i / 4) + i % 4) % 2 === 0 ? 'VERDE' : 'AMARELO'
+function corAlternada(i: number): 'VERDE' | 'AMARELO' {
+  return i % 2 === 0 ? 'VERDE' : 'AMARELO'
 }
 function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
   const base = (url.split('/').pop() ?? '').replace(/\.[^.]+$/, '')
@@ -237,7 +237,7 @@ function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
 function FigurinhaCard({ fig, index, onTrocar }: { fig: Figurinha; index: number; onTrocar: (fig: Figurinha) => void }) {
   const repetida = fig.quantidade >= 2
   const color = SECTION_COLOR[fig.classificacao] ?? '#333'
-  const cor   = corXadrez(index)
+  const cor   = corAlternada(index)
   const src   = fig.imagemUrl ? urlComCor(fig.imagemUrl, cor) : null
 
   return (
