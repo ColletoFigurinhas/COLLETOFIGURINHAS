@@ -108,7 +108,11 @@ function AbaFigurinhas() {
         const folder = editTipo.startsWith('PREMIO') ? 'Premio' : 'Especiais'
         const fd = new FormData(); fd.append('file', editFile); fd.append('folder', folder)
         const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-        if (!up.ok) { setEditErr('Falha no upload.'); setEditUploading(false); return }
+        if (!up.ok) {
+          const e = await up.json().catch(() => ({}))
+          setEditErr(`Falha no upload (${up.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setEditUploading(false); return
+        }
         imagemUrl = (await up.json()).url
       }
       const r = await fetch(`/api/admin/figurinhas/${editando.id}`, {
@@ -157,19 +161,31 @@ function AbaFigurinhas() {
         // 1. Upload VERDE — gera o filename
         const fdV = new FormData(); fdV.append('file', fileVerde!); fdV.append('folder', 'VERDE')
         const upV = await fetch('/api/admin/upload', { method: 'POST', body: fdV })
-        if (!upV.ok) { setErrForm('Falha no upload VERDE.'); setUploading(false); return }
+        if (!upV.ok) {
+          const e = await upV.json().catch(() => ({}))
+          setErrForm(`Falha no upload VERDE (${upV.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setUploading(false); return
+        }
         const { url: urlV, filename } = await upV.json()
         imagemUrl = urlV
 
         // 2. Upload AMARELO — reutiliza o mesmo filename
         const fdA = new FormData(); fdA.append('file', fileAmarelo!); fdA.append('folder', 'AMARELO'); fdA.append('filename', filename)
         const upA = await fetch('/api/admin/upload', { method: 'POST', body: fdA })
-        if (!upA.ok) { setErrForm('Falha no upload AMARELO.'); setUploading(false); return }
+        if (!upA.ok) {
+          const e = await upA.json().catch(() => ({}))
+          setErrForm(`Falha no upload AMARELO (${upA.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setUploading(false); return
+        }
       } else {
         const folder = tipo.startsWith('PREMIO') ? 'Premio' : 'Especiais'
         const fd = new FormData(); fd.append('file', file!); fd.append('folder', folder)
         const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-        if (!up.ok) { setErrForm('Falha no upload.'); setUploading(false); return }
+        if (!up.ok) {
+          const e = await up.json().catch(() => ({}))
+          setErrForm(`Falha no upload (${up.status}): ${e.detail ?? e.error ?? 'erro desconhecido'}`)
+          setUploading(false); return
+        }
         imagemUrl = (await up.json()).url
       }
 
