@@ -45,5 +45,7 @@ next-env.d.ts
 *.zip
 *.mp4
 public/figuras/**/*.png
+!public/figuras/VERDE/*.png
+!public/figuras/AMARELO/*.png
 tmp/campanha_pages/
 tmp/*-prod.mjs
