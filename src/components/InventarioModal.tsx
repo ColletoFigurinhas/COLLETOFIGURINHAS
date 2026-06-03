@@ -18,15 +18,20 @@ const SECTION_COLOR: Record<string, string> = {
 }
 
 // ── Modal de troca ────────────────────────────────────────────────
+type BuscaResult = { id: number; nome: string; matricula: string }
+
 function ModalTroca({ fig, onClose, onSucesso }: {
   fig: Figurinha
   onClose: () => void
   onSucesso: () => void
 }) {
-  const [matricula, setMatricula] = useState('')
-  const [enviando, setEnviando]   = useState(false)
-  const [erro, setErro]           = useState('')
-  const [ok, setOk]               = useState('')
+  const [query,       setQuery]       = useState('')
+  const [resultados,  setResultados]  = useState<BuscaResult[]>([])
+  const [buscando,    setBuscando]    = useState(false)
+  const [selecionado, setSelecionado] = useState<BuscaResult | null>(null)
+  const [enviando,    setEnviando]    = useState(false)
+  const [erro,        setErro]        = useState('')
+  const [ok,          setOk]          = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -36,21 +41,44 @@ function ModalTroca({ fig, onClose, onSucesso }: {
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
+  // Busca com debounce
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2) { setResultados([]); return }
+    setBuscando(true)
+    const t = setTimeout(async () => {
+      const r = await fetch(`/api/participantes/buscar?q=${encodeURIComponent(q)}`)
+      setResultados(await r.json())
+      setBuscando(false)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [query])
+
+  function selecionar(p: BuscaResult) {
+    setSelecionado(p)
+    setQuery(p.nome)
+    setResultados([])
+    setErro('')
+  }
+
+  function limparSelecao() {
+    setSelecionado(null)
+    setQuery('')
+    setResultados([])
+    setErro('')
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault()
-    if (!matricula.trim()) return
+    if (!selecionado) return
     setEnviando(true); setErro('')
-
-    // Normaliza: remove não-dígitos e preenche com zeros à esquerda (931 → 00931)
-    const matriculaNorm = matricula.replace(/\D/g, '').padStart(5, '0')
-
     const r = await fetch('/api/trocas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ figurinhaOfertadaId: fig.id, matriculaDestinatario: matriculaNorm }),
+      body: JSON.stringify({ figurinhaOfertadaId: fig.id, matriculaDestinatario: selecionado.matricula }),
     })
     const data = await r.json()
-
     if (data.ok) {
       setOk(`Proposta enviada para ${data.destinatarioNome}!`)
       setTimeout(onSucesso, 1500)
@@ -58,6 +86,13 @@ function ModalTroca({ fig, onClose, onSucesso }: {
       setErro(data.error ?? 'Erro ao enviar')
       setEnviando(false)
     }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', height: 40, borderRadius: 8, boxSizing: 'border-box',
+    border: erro ? '1px solid rgba(248,113,113,0.5)' : '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.06)',
+    color: '#fff', fontSize: 13, padding: '0 12px', outline: 'none',
   }
 
   return (
@@ -72,7 +107,7 @@ function ModalTroca({ fig, onClose, onSucesso }: {
         borderRadius: 14, overflow: 'hidden',
         boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
       }}>
-        {/* Header com a figurinha */}
+        {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)',
@@ -83,79 +118,99 @@ function ModalTroca({ fig, onClose, onSucesso }: {
             border: '1.5px solid rgba(245,200,0,0.3)', flexShrink: 0,
             background: SECTION_COLOR[fig.classificacao] ?? '#333',
           }}>
-            {fig.imagemUrl && (
-              <img src={fig.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
+            {fig.imagemUrl && <img src={fig.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase' }}>
-              Propor troca
-            </div>
-            <div style={{ fontSize: 11, color: '#f5c800', fontWeight: 700, marginTop: 3 }}>
-              Figurinha #{fig.id}
-            </div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
-              {fig.classificacao}
-            </div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase' }}>Propor troca</div>
+            <div style={{ fontSize: 11, color: '#f5c800', fontWeight: 700, marginTop: 3 }}>Figurinha #{fig.id}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{fig.classificacao}</div>
           </div>
-          <button onClick={onClose} style={{
-            width: 28, height: 28, borderRadius: 7, border: 'none',
-            background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)',
-            fontSize: 14, cursor: 'pointer', flexShrink: 0,
-          }}>×</button>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>×</button>
         </div>
 
         {/* Corpo */}
         <div style={{ padding: 16 }}>
           {ok ? (
-            <div style={{
-              textAlign: 'center', padding: '20px 0',
-              fontSize: 13, color: '#4ade80', fontWeight: 600,
-            }}>
-              {ok}
-            </div>
+            <div style={{ textAlign: 'center', padding: '20px 0', fontSize: 13, color: '#4ade80', fontWeight: 600 }}>{ok}</div>
           ) : (
             <form onSubmit={enviar}>
-              <label style={{
-                display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.4)',
-                letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8,
-              }}>
-                Matrícula do colega
+              <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
+                Buscar colega (nome ou matrícula)
               </label>
-              <input
-                ref={inputRef}
-                value={matricula}
-                onChange={e => setMatricula(e.target.value)}
-                placeholder="Sua matrícula"
-                maxLength={10}
-                style={{
-                  width: '100%', height: 40, borderRadius: 8, boxSizing: 'border-box',
-                  border: erro ? '1px solid rgba(248,113,113,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff', fontSize: 15, padding: '0 12px', outline: 'none',
-                  marginBottom: erro ? 6 : 14,
-                }}
-              />
-              {erro && (
-                <div style={{ fontSize: 10, color: '#f87171', marginBottom: 12 }}>{erro}</div>
+
+              {/* Campo de busca ou confirmação do selecionado */}
+              {selecionado ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14,
+                  padding: '8px 12px', borderRadius: 8, background: 'rgba(74,222,128,0.08)',
+                  border: '1px solid rgba(74,222,128,0.3)' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4ade80' }}>{selecionado.nome}</div>
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>#{selecionado.matricula}</div>
+                  </div>
+                  <button type="button" onClick={limparSelecao} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 14, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}>×</button>
+                </div>
+              ) : (
+                <div style={{ position: 'relative', marginBottom: 6 }}>
+                  <input
+                    ref={inputRef}
+                    value={query}
+                    onChange={e => { setQuery(e.target.value); setSelecionado(null) }}
+                    placeholder="Nome ou número da matrícula…"
+                    style={inputStyle}
+                  />
+                  {/* Dropdown de resultados */}
+                  {(resultados.length > 0 || buscando) && (
+                    <div style={{
+                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                      background: '#1a2035', border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 8, marginTop: 4, overflow: 'hidden',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    }}>
+                      {buscando ? (
+                        <div style={{ padding: '10px 14px', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Buscando…</div>
+                      ) : resultados.length === 0 ? (
+                        <div style={{ padding: '10px 14px', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Nenhum colega encontrado.</div>
+                      ) : resultados.map(p => (
+                        <button key={p.id} type="button" onClick={() => selecionar(p)} style={{
+                          display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                          padding: '10px 14px', background: 'none', border: 'none',
+                          borderBottom: '1px solid rgba(255,255,255,0.05)',
+                          cursor: 'pointer', textAlign: 'left',
+                        }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nome}</div>
+                            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>#{p.matricula}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
-              <div style={{ display: 'flex', gap: 8 }}>
+
+              {!selecionado && query.trim().length < 2 && (
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginBottom: 14 }}>Digite ao menos 2 caracteres para buscar.</div>
+              )}
+
+              {erro && <div style={{ fontSize: 10, color: '#f87171', marginBottom: 12 }}>{erro}</div>}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: selecionado ? 0 : 8 }}>
                 <button type="button" onClick={onClose} style={{
                   flex: 1, height: 38, borderRadius: 8, cursor: 'pointer',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'transparent', color: 'rgba(255,255,255,0.4)',
-                  fontSize: 11, fontWeight: 700, letterSpacing: 1,
+                  border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                  color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, letterSpacing: 1,
                 }}>
                   Cancelar
                 </button>
-                <button type="submit" disabled={enviando || !matricula.trim()} style={{
+                <button type="submit" disabled={!selecionado || enviando} style={{
                   flex: 2, height: 38, borderRadius: 8, border: 'none',
-                  background: matricula.trim() && !enviando
-                    ? 'linear-gradient(135deg,#f5c800,#c49200)'
-                    : 'rgba(255,255,255,0.07)',
-                  color: matricula.trim() && !enviando ? '#000' : 'rgba(255,255,255,0.2)',
+                  background: selecionado && !enviando ? 'linear-gradient(135deg,#f5c800,#c49200)' : 'rgba(255,255,255,0.07)',
+                  color: selecionado && !enviando ? '#000' : 'rgba(255,255,255,0.2)',
                   fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase',
-                  cursor: matricula.trim() && !enviando ? 'pointer' : 'not-allowed',
+                  cursor: selecionado && !enviando ? 'pointer' : 'not-allowed',
                 }}>
                   {enviando ? 'Enviando…' : 'Enviar proposta'}
                 </button>

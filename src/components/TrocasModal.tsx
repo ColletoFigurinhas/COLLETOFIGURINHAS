@@ -164,8 +164,11 @@ function TrocaRecebidaPendente({ troca, onAtualizar }: { troca: Troca; onAtualiz
 
 // ── Item de troca enviada pendente ────────────────────────────────
 function TrocaEnviadaPendente({ troca, onAtualizar }: { troca: Troca; onAtualizar: () => void }) {
+  const [confirmando, setConfirmando] = useState(false)
+
   async function cancelar() {
     await fetch(`/api/trocas/${troca.id}/cancelar`, { method: 'POST' })
+    setConfirmando(false)
     onAtualizar()
   }
 
@@ -188,13 +191,27 @@ function TrocaEnviadaPendente({ troca, onAtualizar }: { troca: Troca; onAtualiza
           Figurinha #{troca.figurinhaOfertada.id} · {troca.figurinhaOfertada.classificacao}
         </div>
       </div>
-      <button onClick={cancelar} style={{
-        fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 10px',
-        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-        color: 'rgba(255,255,255,0.4)', borderRadius: 6, cursor: 'pointer',
-      }}>
-        Cancelar
-      </button>
+      {confirmando ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 }}>Cancelar troca?</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={() => setConfirmando(false)} style={{ fontSize: 9, fontWeight: 700, padding: '4px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>
+              Não
+            </button>
+            <button onClick={cancelar} style={{ fontSize: 9, fontWeight: 700, padding: '4px 8px', borderRadius: 5, border: 'none', background: 'rgba(248,113,113,0.2)', color: '#f87171', cursor: 'pointer' }}>
+              Sim, cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setConfirmando(true)} style={{
+          fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 10px',
+          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+          color: 'rgba(255,255,255,0.4)', borderRadius: 6, cursor: 'pointer',
+        }}>
+          Cancelar
+        </button>
+      )}
     </div>
   )
 }
