@@ -65,6 +65,23 @@ function AbaFigurinhas() {
   const [editErr,       setEditErr]       = useState('')
   const editFileRef = useRef<HTMLInputElement>(null)
 
+  // Deleção com confirmação inline
+  const [deletandoId, setDeletandoId] = useState<number | null>(null)
+  const [deleteErr,   setDeleteErr]   = useState<string>('')
+
+  async function handleDeletar(id: number) {
+    setDeleteErr('')
+    const r = await fetch(`/api/admin/figurinhas/${id}`, { method: 'DELETE' })
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}))
+      setDeleteErr(body.error ?? 'Erro ao deletar.')
+      setDeletandoId(null)
+      return
+    }
+    setFigurinhas(prev => prev.filter(f => f.id !== id))
+    setDeletandoId(null)
+  }
+
   function abrirEdicao(f: Figurinha) {
     setEditando({ id: f.id, classificacao: f.classificacao, tipo: f.tipo, imagemUrl: f.imagemUrl })
     setEditClassif(f.classificacao)
@@ -352,6 +369,12 @@ function AbaFigurinhas() {
         })}
       </div>
 
+      {deleteErr && (
+        <div style={{ fontSize: 11, color: '#f87171', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 12 }}>
+          {deleteErr}
+        </div>
+      )}
+
       {/* Grid */}
       {loading ? (
         <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
@@ -380,46 +403,83 @@ function AbaFigurinhas() {
                 </div>
               )}
 
-              {/* Toggle + Editar */}
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginTop: 6 }}>
-                {/* Toggle ativo/inativo */}
-                <button
-                  onClick={() => toggleAtivo(f.id, f.ativo)}
-                  title={f.ativo ? 'Ativa — clique para desativar' : 'Inativa — clique para ativar'}
-                  style={{
-                    width: 42, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
-                    background: f.ativo
-                      ? 'linear-gradient(135deg,#16a34a,#15803d)'
-                      : 'linear-gradient(135deg,#dc2626,#b91c1c)',
-                    position: 'relative', transition: 'background 0.25s', flexShrink: 0,
-                    boxShadow: f.ativo
-                      ? '0 0 10px rgba(22,163,74,0.55)'
-                      : '0 0 10px rgba(220,38,38,0.45)',
-                  }}
-                >
-                  <div style={{
-                    position: 'absolute', top: 3,
-                    left: f.ativo ? 22 : 3,
-                    width: 16, height: 16, borderRadius: '50%',
-                    background: '#fff', transition: 'left 0.25s',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
-                  }} />
-                </button>
+              {/* Toggle + Editar + Deletar */}
+              {deletandoId === f.id ? (
+                /* Confirmação de deleção */
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                  <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 }}>Deletar?</span>
+                  <button
+                    onClick={() => handleDeletar(f.id)}
+                    title="Confirmar deleção"
+                    style={{
+                      width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(220,38,38,0.5)',
+                      background: 'rgba(220,38,38,0.15)', color: '#f87171',
+                      fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, lineHeight: 1,
+                    }}
+                  >✓</button>
+                  <button
+                    onClick={() => setDeletandoId(null)}
+                    title="Cancelar"
+                    style={{
+                      width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)',
+                      fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, lineHeight: 1,
+                    }}
+                  >✕</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginTop: 6 }}>
+                  {/* Toggle ativo/inativo */}
+                  <button
+                    onClick={() => toggleAtivo(f.id, f.ativo)}
+                    title={f.ativo ? 'Ativa — clique para desativar' : 'Inativa — clique para ativar'}
+                    style={{
+                      width: 42, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
+                      background: f.ativo
+                        ? 'linear-gradient(135deg,#16a34a,#15803d)'
+                        : 'linear-gradient(135deg,#dc2626,#b91c1c)',
+                      position: 'relative', transition: 'background 0.25s', flexShrink: 0,
+                      boxShadow: f.ativo
+                        ? '0 0 10px rgba(22,163,74,0.55)'
+                        : '0 0 10px rgba(220,38,38,0.45)',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 3,
+                      left: f.ativo ? 22 : 3,
+                      width: 16, height: 16, borderRadius: '50%',
+                      background: '#fff', transition: 'left 0.25s',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+                    }} />
+                  </button>
 
-                {/* Botão editar */}
-                <button
-                  onClick={() => abrirEdicao(f)}
-                  title="Editar carta"
-                  style={{
-                    width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)',
-                    fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, lineHeight: 1,
-                  }}
-                >
-                  ✎
-                </button>
-              </div>
+                  {/* Botão editar */}
+                  <button
+                    onClick={() => abrirEdicao(f)}
+                    title="Editar carta"
+                    style={{
+                      width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)',
+                      fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, lineHeight: 1,
+                    }}
+                  >✎</button>
+
+                  {/* Botão deletar */}
+                  <button
+                    onClick={() => { setDeletandoId(f.id); setDeleteErr('') }}
+                    title="Deletar carta"
+                    style={{
+                      width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(220,38,38,0.2)',
+                      background: 'rgba(220,38,38,0.06)', color: 'rgba(248,113,113,0.6)',
+                      fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, lineHeight: 1,
+                    }}
+                  >🗑</button>
+                </div>
+              )}
             </div>
           ))}
         </div>

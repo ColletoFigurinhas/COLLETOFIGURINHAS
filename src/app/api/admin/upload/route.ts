@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
+import { writeFile, mkdir, chmod } from 'fs/promises'
 import path from 'path'
 import { getSession } from '@/lib/session'
 
@@ -20,10 +20,21 @@ export async function POST(request: Request) {
   const existing = formData.get('filename') as string | null
   const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = existing ?? `${Date.now()}.${ext}`
+  const filePath = path.join(process.cwd(), 'public', 'figuras', folder, filename)
   const dir      = path.join(process.cwd(), 'public', 'figuras', folder)
 
-  await mkdir(dir, { recursive: true })
-  await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()))
+  try {
+    await mkdir(dir, { recursive: true })
+    await chmod(dir, 0o755)
+    await writeFile(filePath, Buffer.from(await file.arrayBuffer()))
+    await chmod(filePath, 0o644)
+  } catch (err: any) {
+    console.error('[upload] erro ao salvar arquivo:', err)
+    return NextResponse.json(
+      { error: 'Falha ao salvar arquivo', detail: err?.message, dir },
+      { status: 500 }
+    )
+  }
 
   return NextResponse.json({ url: `/figuras/${folder}/${filename}`, filename })
 }
