@@ -76,7 +76,7 @@ function MiniCard({ fig, selecionado, onClick }: {
 }
 
 // ── Item de troca recebida pendente ───────────────────────────────
-function TrocaRecebidaPendente({ troca, onAtualizar }: { troca: Troca; onAtualizar: () => void }) {
+function TrocaRecebidaPendente({ troca, onAtualizar, onTrocaConcluida }: { troca: Troca; onAtualizar: () => void; onTrocaConcluida?: () => void }) {
   const [minhasFigs,   setMinhasFigs]   = useState<MinhaFigurinha[]>([])
   const [selecionada,  setSelecionada]  = useState<number | null>(null)
   const [expandido,    setExpandido]    = useState(false)
@@ -102,7 +102,7 @@ function TrocaRecebidaPendente({ troca, onAtualizar }: { troca: Troca; onAtualiz
       body: JSON.stringify({ figurinhaRecebidaId: selecionada }),
     })
     const data = await r.json()
-    if (data.ok) onAtualizar()
+    if (data.ok) { onAtualizar(); onTrocaConcluida?.() }
     else { setErro(data.error ?? 'Erro'); setEnviando(false) }
   }
 
@@ -281,7 +281,7 @@ function TrocaHistoricoItem({ troca, userId }: { troca: Troca; userId?: number }
 }
 
 // ── Modal principal ───────────────────────────────────────────────
-export default function TrocasModal({ onClose }: { onClose: () => void }) {
+export default function TrocasModal({ onClose, onTrocaConcluida }: { onClose: () => void; onTrocaConcluida?: () => void }) {
   const [aba, setAba]               = useState<'pendentes' | 'historico'>('pendentes')
   const [recebidas, setRecebidas]   = useState<Troca[]>([])
   const [enviadas,  setEnviadas]    = useState<Troca[]>([])
@@ -392,7 +392,7 @@ export default function TrocasModal({ onClose }: { onClose: () => void }) {
                   <>
                     <SectionLabel texto={`Recebidas (${recebidasPendentes.length})`} />
                     {recebidasPendentes.map(t => (
-                      <TrocaRecebidaPendente key={t.id} troca={t} onAtualizar={carregar} />
+                      <TrocaRecebidaPendente key={t.id} troca={t} onAtualizar={carregar} onTrocaConcluida={onTrocaConcluida} />
                     ))}
                   </>
                 )}

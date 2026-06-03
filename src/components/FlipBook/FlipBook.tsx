@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo, useCallback, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Role } from '@prisma/client'
 import type { SectionData } from '@/app/album/page'
 import InventarioModal from '@/components/InventarioModal'
@@ -493,7 +494,15 @@ function MobileFilmstrip({ pages, current, onGo, onClose }: {
 // ── Componente principal ──────────────────────────────────────────
 export default function FlipBook({ sections, nomeUsuario, matricula, role }: { sections: SectionData[]; nomeUsuario?: string; matricula?: string; role?: Role }) {
   const isAdmin = role === 'MARKETING' || role === 'TI' || role === 'ADMIN'
+  const router  = useRouter()
   const [logoutPending, startLogout] = useTransition()
+  const [, startRefresh] = useTransition()
+  const [inventarioKey, setInventarioKey] = useState(0)
+
+  function handleTrocaConcluida() {
+    startRefresh(() => router.refresh())      // recarrega dados do server component (album)
+    setInventarioKey(k => k + 1)             // força remount do InventarioModal
+  }
   const bookRef      = useRef<HTMLDivElement>(null)
   const flipRef      = useRef<any>(null)
   const curRef       = useRef(0)
@@ -734,8 +743,8 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
 
   return (
     <>
-      {inventarioOpen && <InventarioModal onClose={() => setInventarioOpen(false)} />}
-      {trocasOpen     && <TrocasModal onClose={() => { setTrocasOpen(false); setTrocasBadge(0) }} />}
+      {inventarioOpen && <InventarioModal key={inventarioKey} onClose={() => setInventarioOpen(false)} />}
+      {trocasOpen     && <TrocasModal onClose={() => { setTrocasOpen(false); setTrocasBadge(0) }} onTrocaConcluida={handleTrocaConcluida} />}
       {pacotesOpen    && <PacoteAbertura onClose={() => { setPacotesOpen(false); setPacotesBadge(0) }} />}
       <ToastList toasts={toasts} onRemove={removeToast} onNavigate={type => {
         if (type === 'pacote') { setPacotesOpen(true) }
