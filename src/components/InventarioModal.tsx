@@ -411,7 +411,7 @@ export default function InventarioModal({ onClose }: { onClose: () => void }) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #f59e0b' }}>
                     <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', color: '#f59e0b' }}>Meus Prêmios</span>
                     <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>
-                      {premios.filter(p => p.entregue).length}/{premios.length} entregues
+                      {premios.filter(p => p.quantidadeEntregue >= p.quantidade).length}/{premios.length} entregues
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
