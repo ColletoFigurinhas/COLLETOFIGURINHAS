@@ -334,8 +334,9 @@ export default function TrocasModal({ onClose }: { onClose: () => void }) {
             <button key={tab.key} onClick={() => setAba(tab.key)} style={{
               flex: 1, padding: '12px 16px', cursor: 'pointer',
               background: aba === tab.key ? 'rgba(240,192,64,0.08)' : 'transparent',
+              borderTop: 'none', borderLeft: 'none', borderRight: 'none',
               borderBottom: aba === tab.key ? '2px solid #f0c040' : '2px solid transparent',
-              border: 'none', color: aba === tab.key ? '#f0c040' : 'rgba(255,255,255,0.35)',
+              color: aba === tab.key ? '#f0c040' : 'rgba(255,255,255,0.35)',
               fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}>

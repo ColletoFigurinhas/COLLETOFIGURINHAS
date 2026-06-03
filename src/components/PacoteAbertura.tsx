@@ -406,7 +406,6 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
         background: 'rgba(0,0,0,0.94)', backdropFilter: 'blur(14px)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
-        animation: showShake ? 'shake 0.55s ease-out' : 'none',
       }}>
 
         {/* Flash */}
@@ -485,7 +484,9 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
                 cursor: 'pointer',
                 animation: leaving
                   ? 'card-exit 0.19s ease-in forwards'
-                  : `${tcfg.entrance} 0.6s cubic-bezier(0.2,0.8,0.2,1)`,
+                  : showShake
+                    ? `${tcfg.entrance} 0.6s cubic-bezier(0.2,0.8,0.2,1), shake 0.55s ease-out`
+                    : `${tcfg.entrance} 0.6s cubic-bezier(0.2,0.8,0.2,1)`,
                 ...(tier === 'especial' ? {
                   backgroundImage: 'linear-gradient(#0a0a0a,#0a0a0a), linear-gradient(90deg,#c084fc,#f472b6,#fbbf24,#34d399,#60a5fa,#c084fc)',
                   backgroundOrigin: 'border-box', backgroundClip: 'padding-box,border-box',
