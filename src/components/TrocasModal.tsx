@@ -66,11 +66,12 @@ function MiniCard({ fig, selecionado, onClick }: {
 
 // ── Item de troca recebida pendente ───────────────────────────────
 function TrocaRecebidaPendente({ troca, onAtualizar }: { troca: Troca; onAtualizar: () => void }) {
-  const [minhasFigs,  setMinhasFigs]  = useState<MinhaFigurinha[]>([])
-  const [selecionada, setSelecionada] = useState<number | null>(null)
-  const [expandido,   setExpandido]   = useState(false)
-  const [enviando,    setEnviando]    = useState(false)
-  const [erro,        setErro]        = useState('')
+  const [minhasFigs,   setMinhasFigs]   = useState<MinhaFigurinha[]>([])
+  const [selecionada,  setSelecionada]  = useState<number | null>(null)
+  const [expandido,    setExpandido]    = useState(false)
+  const [enviando,     setEnviando]     = useState(false)
+  const [erro,         setErro]         = useState('')
+  const [soRepetidas,  setSoRepetidas]  = useState(false)
 
   useEffect(() => {
     if (!expandido) return
@@ -138,11 +139,22 @@ function TrocaRecebidaPendente({ troca, onAtualizar }: { troca: Troca; onAtualiz
 
       {expandido && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
-            Escolha qual figurinha oferecer em troca:
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase' }}>
+              Escolha qual figurinha oferecer em troca:
+            </div>
+            <button onClick={() => setSoRepetidas(v => !v)} style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+              padding: '3px 8px', borderRadius: 5, cursor: 'pointer', border: 'none',
+              background: soRepetidas ? '#f0c040' : 'rgba(240,192,64,0.12)',
+              color: soRepetidas ? '#000' : '#f0c040',
+              transition: 'all 0.15s',
+            }}>
+              {soRepetidas ? '★ Repetidas' : '☆ Repetidas'}
+            </button>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
-            {minhasFigs.map(f => (
+            {(soRepetidas ? minhasFigs.filter(f => f.quantidade >= 2) : minhasFigs).map(f => (
               <MiniCard key={f.id} fig={f} selecionado={selecionada === f.id} onClick={() => setSelecionada(f.id)} />
             ))}
           </div>
