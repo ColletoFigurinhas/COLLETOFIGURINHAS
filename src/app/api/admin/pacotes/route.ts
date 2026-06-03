@@ -11,33 +11,39 @@ export async function POST(request: Request) {
     if (!s?.userId || !ROLES_PERMITIDOS.includes(s.role as any))
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-    const { participanteId, tipo, figurinhaPremioId } = await request.json()
+    const { participanteId, tipo, premioPrataId, premioOuroId } = await request.json()
 
     if (!participanteId || !['PADRAO', 'PLUS', 'PREMIUM'].includes(tipo))
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
 
-    if (tipo === 'PREMIUM' && !figurinhaPremioId)
-      return NextResponse.json({ error: 'Selecione a carta prêmio.' }, { status: 400 })
+    if (tipo === 'PLUS' && !premioPrataId)
+      return NextResponse.json({ error: 'Selecione a carta Prêmio Prata.' }, { status: 400 })
+
+    if (tipo === 'PREMIUM' && (!premioPrataId || !premioOuroId))
+      return NextResponse.json({ error: 'Selecione a carta Prêmio Prata e a carta Prêmio Ouro.' }, { status: 400 })
 
     const participante = await db.participante.findFirst({
-      where: { id: participanteId },
+      where:  { id: participanteId },
       select: { nome: true, matricula: true },
     })
     if (!participante) return NextResponse.json({ error: 'Participante não encontrado.' }, { status: 404 })
 
     const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
 
-    const qtd = tipo === 'PADRAO'
-      ? campanha.stickersPorDiaPadrao
-      : tipo === 'PLUS'
-        ? campanha.stickersPorDiaPlus
-        : campanha.stickersPorDiaPremium
+    // 5 figurinhas normais para PLUS e PREMIUM
+    const qtdNormais = tipo === 'PADRAO' ? campanha.stickersPorDiaPadrao : 5
+    const normais = await sortearFigurinhas(db, campanha.id, qtdNormais, campanha.chanceEspecial)
 
-    const picks = await sortearFigurinhas(db, campanha.id, qtd, campanha.chanceEspecial)
-
-    const cartasPacote = tipo === 'PREMIUM'
-      ? [...picks.slice(0, picks.length - 1), { id: figurinhaPremioId }]
-      : picks
+    let cartas: { id: number }[]
+    if (tipo === 'PADRAO') {
+      cartas = normais
+    } else if (tipo === 'PLUS') {
+      // 5 normais + 1 prêmio prata
+      cartas = [...normais, { id: premioPrataId }]
+    } else {
+      // 5 normais + 1 prêmio prata + 1 prêmio ouro
+      cartas = [...normais, { id: premioPrataId }, { id: premioOuroId }]
+    }
 
     const pacote = await db.pacote.create({
       data: {
@@ -47,12 +53,12 @@ export async function POST(request: Request) {
         dataReferencia: new Date(),
         status:         'DISPONIVEL',
         figurinhas: {
-          create: cartasPacote.map(f => ({ figurinhaId: f.id, revelada: false })),
+          create: cartas.map(f => ({ figurinhaId: f.id, revelada: false })),
         },
         ...(tipo === 'PREMIUM' ? {
           premio: {
             create: {
-              descricao:    `Carta prêmio #${figurinhaPremioId}`,
+              descricao:    `Carta prêmio ouro #${premioOuroId}`,
               registradoPor: s.nome ?? 'admin',
             },
           },

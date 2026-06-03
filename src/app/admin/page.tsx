@@ -17,13 +17,17 @@ const CLASSIFICACOES = [
   'COMPRAS',
   'RH / SERVIÇOS GERAIS',
   'ESPECIAIS',
+  'PREMIO PRATA',
+  'PREMIO OURO',
 ]
 
 const TIPOS: Record<string, { label: string; desc: string }> = {
-  FUNCIONARIO: { label: 'Funcionário', desc: 'Carta padrão de departamento' },
-  GESTOR:      { label: 'Gestor',      desc: 'Carta de gestor do setor (1 por seção)' },
-  ESPECIAL:    { label: 'Especial',    desc: 'Aparece aleatoriamente nos pacotes (~10%)' },
-  PREMIO:      { label: 'Prêmio',      desc: 'Distribuída manualmente pelo marketing' },
+  FUNCIONARIO:  { label: 'Funcionário',  desc: 'Carta padrão de departamento' },
+  GESTOR:       { label: 'Gestor',       desc: 'Carta de gestor do setor (1 por seção)' },
+  ESPECIAL:     { label: 'Especial',     desc: 'Aparece aleatoriamente nos pacotes (~10%)' },
+  PREMIO:       { label: 'Prêmio',       desc: 'Distribuída manualmente pelo marketing' },
+  'PREMIO PRATA': { label: 'Prêmio Prata', desc: 'Carta exclusiva do pacote Prata (5 normais + 1 prata)' },
+  'PREMIO OURO':  { label: 'Prêmio Ouro',  desc: 'Carta exclusiva do pacote Ouro (5 normais + 1 prata + 1 ouro)' },
 }
 
 // ── Aba: Figurinhas ───────────────────────────────────────────────
@@ -65,8 +69,10 @@ function AbaFigurinhas() {
 
   function handleEditClassifChange(val: string) {
     setEditClassif(val)
-    if (val === 'ESPECIAIS') setEditTipo('ESPECIAL')
-    else if (editTipo === 'ESPECIAL' || editTipo === 'PREMIO') setEditTipo('FUNCIONARIO')
+    if (val === 'ESPECIAIS')     setEditTipo('ESPECIAL')
+    else if (val === 'PREMIO PRATA') setEditTipo('PREMIO PRATA')
+    else if (val === 'PREMIO OURO')  setEditTipo('PREMIO OURO')
+    else if (['ESPECIAL', 'PREMIO', 'PREMIO PRATA', 'PREMIO OURO'].includes(editTipo)) setEditTipo('FUNCIONARIO')
   }
 
   async function salvarEdicao() {
@@ -107,8 +113,10 @@ function AbaFigurinhas() {
   // Quando classificação muda para ESPECIAIS, sugere ESPECIAL como padrão
   function handleClassifChange(val: string) {
     setClassif(val)
-    if (val === 'ESPECIAIS') setTipo('ESPECIAL')
-    else if (tipo === 'ESPECIAL' || tipo === 'PREMIO') setTipo('FUNCIONARIO')
+    if (val === 'ESPECIAIS')     setTipo('ESPECIAL')
+    else if (val === 'PREMIO PRATA') setTipo('PREMIO PRATA')
+    else if (val === 'PREMIO OURO')  setTipo('PREMIO OURO')
+    else if (['ESPECIAL', 'PREMIO', 'PREMIO PRATA', 'PREMIO OURO'].includes(tipo)) setTipo('FUNCIONARIO')
   }
 
   async function handleCadastrar() {
@@ -448,6 +456,7 @@ function AbaFigurinhas() {
 
 // ── Aba: Pacotes ──────────────────────────────────────────────────
 type CartaPremio = { id: number; imagemUrl: string | null; ativo: boolean }
+type TipoModal   = 'PLUS' | 'PREMIUM'
 
 function AbaPacotes() {
   const [query,            setQuery]            = useState('')
@@ -455,12 +464,13 @@ function AbaPacotes() {
   const [searching,        setSearching]        = useState(false)
   const [sending,          setSending]          = useState<number | null>(null)
   const [feedback,         setFeedback]         = useState<Feedback | null>(null)
-  const [modal,            setModal]            = useState<{ id: number; nome: string } | null>(null)
-  const [cartasPremio,     setCartasPremio]     = useState<CartaPremio[]>([])
-  const [cartaSelecionada, setCartaSelecionada] = useState<number | null>(null)
+  const [modal,            setModal]            = useState<{ id: number; nome: string; tipo: TipoModal } | null>(null)
+  const [cartasPrata,      setCartasPrata]      = useState<CartaPremio[]>([])
+  const [cartasOuro,       setCartasOuro]       = useState<CartaPremio[]>([])
+  const [prataSel,         setPrataSel]         = useState<number | null>(null)
+  const [ouroSel,          setOuroSel]          = useState<number | null>(null)
   const [loadingCartas,    setLoadingCartas]    = useState(false)
 
-  // Busca live com debounce de 300ms
   useEffect(() => {
     const q = query.trim()
     if (!q) { setResultados([]); return }
@@ -473,22 +483,25 @@ function AbaPacotes() {
     return () => clearTimeout(t)
   }, [query])
 
-  async function abrirModalOuro(p: Participante) {
-    setModal({ id: p.id, nome: p.nome })
-    setCartaSelecionada(null)
+  async function abrirModal(p: Participante, tipo: TipoModal) {
+    setModal({ id: p.id, nome: p.nome, tipo })
+    setPrataSel(null); setOuroSel(null)
     setLoadingCartas(true)
-    const r = await fetch('/api/admin/figurinhas?tipo=PREMIO')
-    const data = await r.json()
-    setCartasPremio(Array.isArray(data) ? data.filter((f: CartaPremio) => f.ativo) : [])
+    const [prataDados, ouroDados] = await Promise.all([
+      fetch('/api/admin/figurinhas?tipo=PREMIO%20PRATA').then(r => r.json()),
+      tipo === 'PREMIUM' ? fetch('/api/admin/figurinhas?tipo=PREMIO%20OURO').then(r => r.json()) : Promise.resolve([]),
+    ])
+    setCartasPrata(Array.isArray(prataDados) ? prataDados.filter((f: CartaPremio) => f.ativo) : [])
+    setCartasOuro(Array.isArray(ouroDados)  ? ouroDados.filter((f: CartaPremio) => f.ativo)  : [])
     setLoadingCartas(false)
   }
 
-  async function darPacote(participanteId: number, tipo: 'PADRAO' | 'PLUS' | 'PREMIUM', figurinhaPremioId?: number) {
+  async function darPacote(participanteId: number, tipo: 'PADRAO' | 'PLUS' | 'PREMIUM', premioPrataId?: number, premioOuroId?: number) {
     setSending(participanteId)
     const r = await fetch('/api/admin/pacotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ participanteId, tipo, figurinhaPremioId }),
+      body: JSON.stringify({ participanteId, tipo, premioPrataId, premioOuroId }),
     })
     const data = await r.json()
     setSending(null)
@@ -501,7 +514,7 @@ function AbaPacotes() {
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>Distribuir Pacotes</h2>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: 1 }}>
-          Padrão = 14 figurinhas · Prata = Plus (15) · Ouro = Premium (15 + prêmio físico)
+          Padrão = 14 normais · Prata = 5 normais + 1 prêmio prata · Ouro = 5 normais + 1 prata + 1 ouro
         </div>
       </div>
 
@@ -548,14 +561,14 @@ function AbaPacotes() {
                     📦 Padrão
                   </button>
                   <button
-                    onClick={() => darPacote(p.id, 'PLUS')}
+                    onClick={() => abrirModal(p, 'PLUS')}
                     disabled={isSending}
                     style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(192,192,255,0.3)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
                   >
                     🥈 Prata
                   </button>
                   <button
-                    onClick={() => abrirModalOuro(p)}
+                    onClick={() => abrirModal(p, 'PREMIUM')}
                     disabled={isSending}
                     style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(245,200,0,0.35)', background: 'rgba(245,200,0,0.07)', color: '#f5c800', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: isSending ? 'not-allowed' : 'pointer' }}
                   >
@@ -571,52 +584,93 @@ function AbaPacotes() {
       {modal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setModal(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#0f1623', border: '1px solid rgba(245,200,0,0.25)', borderRadius: 16, padding: 28, width: 500, maxWidth: '95vw', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,200,0,0.55)', marginBottom: 6 }}>Pacote Ouro — Premium</div>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{modal.nome}</div>
-            <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
-              Selecione a carta prêmio
-            </label>
-            <div style={{ flex: 1, overflowY: 'auto', marginBottom: 20 }}>
-              {loadingCartas ? (
-                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 32 }}>Carregando…</div>
-              ) : cartasPremio.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 32 }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Nenhuma carta prêmio cadastrada ainda.</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 6 }}>Vá em Figurinhas → Nova Carta → Tipo: Prêmio</div>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 10 }}>
-                  {cartasPremio.map(c => (
-                    <button key={c.id} onClick={() => setCartaSelecionada(c.id === cartaSelecionada ? null : c.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, outline: 'none' }}>
-                      <div style={{
-                        aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', position: 'relative',
-                        border: cartaSelecionada === c.id ? '2.5px solid #f5c800' : '2px solid rgba(255,255,255,0.08)',
-                        boxShadow: cartaSelecionada === c.id ? '0 0 16px rgba(245,200,0,0.6)' : 'none',
-                        transition: 'all 0.15s',
-                      }}>
-                        {c.imagemUrl
-                          ? <img src={c.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                          : <div style={{ width: '100%', height: '100%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🏆</div>
-                        }
-                        {cartaSelecionada === c.id && (
-                          <div style={{ position: 'absolute', top: 4, right: 4, background: '#f5c800', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>✓</div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+          <div onClick={e => e.stopPropagation()} style={{ background: '#0f1623', border: `1px solid ${modal.tipo === 'PREMIUM' ? 'rgba(245,200,0,0.25)' : 'rgba(165,180,252,0.25)'}`, borderRadius: 16, padding: 28, width: 540, maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: modal.tipo === 'PREMIUM' ? 'rgba(245,200,0,0.55)' : 'rgba(165,180,252,0.55)', marginBottom: 4 }}>
+                {modal.tipo === 'PREMIUM' ? '🥇 Pacote Ouro' : '🥈 Pacote Prata'}
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{modal.nome}</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+                {modal.tipo === 'PREMIUM' ? '5 normais + 1 prêmio prata + 1 prêmio ouro' : '5 normais + 1 prêmio prata'}
+              </div>
             </div>
+
+            {loadingCartas ? (
+              <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 32 }}>Carregando…</div>
+            ) : (
+              <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* Seletor Prêmio Prata */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#a5b4fc', marginBottom: 10 }}>
+                    🥈 Carta Prêmio Prata
+                  </label>
+                  {cartasPrata.length === 0 ? (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', padding: '12px 0' }}>
+                      Nenhuma carta Prêmio Prata cadastrada. Vá em Figurinhas → Nova Carta → Classificação: PREMIO PRATA.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
+                      {cartasPrata.map(c => (
+                        <button key={c.id} onClick={() => setPrataSel(c.id === prataSel ? null : c.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          <div style={{ aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', position: 'relative', border: prataSel === c.id ? '2.5px solid #a5b4fc' : '2px solid rgba(255,255,255,0.08)', boxShadow: prataSel === c.id ? '0 0 12px rgba(165,180,252,0.5)' : 'none', transition: 'all 0.15s' }}>
+                            {c.imagemUrl ? <img src={c.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '100%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🥈</div>}
+                            {prataSel === c.id && <div style={{ position: 'absolute', top: 3, right: 3, background: '#a5b4fc', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>✓</div>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Seletor Prêmio Ouro — apenas pacote PREMIUM */}
+                {modal.tipo === 'PREMIUM' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#f5c800', marginBottom: 10 }}>
+                      🥇 Carta Prêmio Ouro
+                    </label>
+                    {cartasOuro.length === 0 ? (
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', padding: '12px 0' }}>
+                        Nenhuma carta Prêmio Ouro cadastrada. Vá em Figurinhas → Nova Carta → Classificação: PREMIO OURO.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
+                        {cartasOuro.map(c => (
+                          <button key={c.id} onClick={() => setOuroSel(c.id === ouroSel ? null : c.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                            <div style={{ aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', position: 'relative', border: ouroSel === c.id ? '2.5px solid #f5c800' : '2px solid rgba(255,255,255,0.08)', boxShadow: ouroSel === c.id ? '0 0 12px rgba(245,200,0,0.5)' : 'none', transition: 'all 0.15s' }}>
+                              {c.imagemUrl ? <img src={c.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '100%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🥇</div>}
+                              {ouroSel === c.id && <div style={{ position: 'absolute', top: 3, right: 3, background: '#f5c800', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>✓</div>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}>
                 Cancelar
               </button>
-              <button disabled={!cartaSelecionada}
-                onClick={() => { darPacote(modal.id, 'PREMIUM', cartaSelecionada!); setModal(null) }}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: cartaSelecionada ? 'linear-gradient(135deg,#b45309,#92400e)' : 'rgba(180,83,9,0.2)', color: '#f5c800', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: cartaSelecionada ? 'pointer' : 'not-allowed' }}>
+              <button
+                disabled={!prataSel || (modal.tipo === 'PREMIUM' && !ouroSel)}
+                onClick={() => {
+                  darPacote(modal.id, modal.tipo === 'PREMIUM' ? 'PREMIUM' : 'PLUS', prataSel!, ouroSel ?? undefined)
+                  setModal(null)
+                }}
+                style={{
+                  padding: '10px 24px', borderRadius: 8, border: 'none',
+                  background: (prataSel && (modal.tipo === 'PLUS' || ouroSel))
+                    ? modal.tipo === 'PREMIUM' ? 'linear-gradient(135deg,#b45309,#92400e)' : 'linear-gradient(135deg,#4338ca,#3730a3)'
+                    : 'rgba(255,255,255,0.05)',
+                  color: modal.tipo === 'PREMIUM' ? '#f5c800' : '#a5b4fc',
+                  fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+                  cursor: (prataSel && (modal.tipo === 'PLUS' || ouroSel)) ? 'pointer' : 'not-allowed',
+                }}
+              >
                 Enviar pacote
               </button>
             </div>
@@ -649,6 +703,7 @@ function AbaLog() {
     PADRAO:  '📦 Padrão',
     PLUS:    '🥈 Prata',
     PREMIUM: '🥇 Ouro',
+    PADRAO_AUTO: '📦 Padrão (auto)',
   }
   const tipoCor: Record<string, string> = {
     PADRAO:  'rgba(255,255,255,0.55)',

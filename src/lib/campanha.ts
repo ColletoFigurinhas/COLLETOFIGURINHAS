@@ -28,7 +28,7 @@ export async function sortearFigurinhas(
   qtd: number,
   chanceEspecial: number
 ): Promise<{ id: number }[]> {
-  const normais   = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: { not: 'ESPECIAIS' } }, select: { id: true } })
+  const normais   = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: { notIn: ['ESPECIAIS', 'PREMIO PRATA', 'PREMIO OURO'] } }, select: { id: true } })
   const especiais = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: 'ESPECIAIS' },               select: { id: true } })
 
   const shuffled = [...normais].sort(() => Math.random() - 0.5)
