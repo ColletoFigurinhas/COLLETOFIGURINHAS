@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 
-// Calcula próxima distribuição: 18h horário de Brasília (UTC-3) = 21h UTC, seg-sex
+// Calcula próxima distribuição: 12h horário de Brasília (UTC-3) = 15h UTC, seg-sex
 // Pula o dia de início da campanha (coberto pelo nivelamento no login)
 function proximaDistribuicao(dataInicio: string | null): Date {
   const now  = new Date()
   const next = new Date(now)
-  next.setUTCHours(21, 0, 0, 0) // 18:00 BRT
+  next.setUTCHours(15, 0, 0, 0) // 12:00 BRT
 
   if (now >= next) next.setDate(next.getDate() + 1)
 
