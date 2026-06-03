@@ -169,7 +169,7 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
         const displayUrl = f.imagemUrl && cor ? urlComCor(f.imagemUrl, cor) : f.imagemUrl
         return (
           <div key={f.id}
-            onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
+            onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: displayUrl ?? f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
             style={{
               borderRadius: 10, overflow: 'hidden',
               background: f.imagemUrl ? '#fff' : 'rgba(0,0,0,0.06)',

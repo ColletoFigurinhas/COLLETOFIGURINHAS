@@ -242,7 +242,7 @@ function FigurinhaCard({ fig, index, onTrocar }: { fig: Figurinha; index: number
 
   return (
     <div
-      onClick={() => onTrocar(fig)}
+      onClick={() => onTrocar({ ...fig, imagemUrl: src ?? fig.imagemUrl })}
       style={{
         borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
         border: repetida ? '2px solid rgba(245,200,0,0.5)' : '1.5px solid rgba(255,255,255,0.12)',
