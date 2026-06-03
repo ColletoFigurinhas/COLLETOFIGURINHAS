@@ -169,6 +169,7 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
         const displayUrl = f.imagemUrl && cor ? urlComCor(f.imagemUrl, cor) : f.imagemUrl
         return (
           <div key={f.id}
+            data-figurinha={f.imagemUrl ? 'true' : undefined}
             onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: displayUrl ?? f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
             style={{
               borderRadius: 10, overflow: 'hidden',
@@ -654,6 +655,17 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
         const mod = await import('page-flip')
         const PF: any = (mod as any).PageFlip ?? (mod as any).default?.PageFlip ?? (mod as any).default
 
+        // Interceptor registrado ANTES do page-flip para que dispare primeiro.
+        // Quando o mousedown/click é sobre uma figurinha, para a propagação nativa
+        // impedindo que o page-flip inicie a animação de dobra da página.
+        const stopFlipOnFigurinha = (e: Event) => {
+          if ((e.target as HTMLElement)?.closest?.('[data-figurinha]')) {
+            e.stopImmediatePropagation()
+          }
+        }
+        bookRef.current!.addEventListener('mousedown', stopFlipOnFigurinha, false)
+        bookRef.current!.addEventListener('click',     stopFlipOnFigurinha, false)
+
         const portrait = window.innerWidth < 600
         pf = new PF(bookRef.current!, {
           width: PAGE_W, height: PAGE_H,
@@ -960,7 +972,11 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
             onClick={e => {
               if (isPortrait) return  // mobile usa swipe/botões
               const pf = flipRef.current
-              if (!pf || bookState.current !== 'read') return
+              if (!pf) return
+              // Aceita 'read', 'fold_corner' e 'user_fold' — 'flip' (animando) é o único bloqueio
+              if (bookState.current === 'flipping') return
+              // Ignora se o target é uma figurinha (o interceptor nativo já tratou)
+              if ((e.target as HTMLElement)?.closest?.('[data-figurinha]')) return
               const dx = Math.abs(e.clientX - mouseDownPos.current.x)
               const dy = Math.abs(e.clientY - mouseDownPos.current.y)
               if (dx > 8 || dy > 8) return
