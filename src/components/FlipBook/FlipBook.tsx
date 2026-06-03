@@ -147,16 +147,31 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
   figs: Slot[]; top: number; color: string; maxSlots?: number
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
-  const padSide = 13
-  const gap     = 3
-  const colW    = (PAGE_W - padSide * 2 - gap * (COLS - 1)) / COLS
-  const rowH    = Math.round(colW * FIG_H / FIG_W)
+  const padSide  = 13
+  const gap      = 3
+  const colW     = (PAGE_W - padSide * 2 - gap * (COLS - 1)) / COLS
+  const rowH     = Math.round(colW * FIG_H / FIG_W)
+  const gridRef  = useRef<HTMLDivElement>(null)
+
+  // Para o mousedown dentro do grid quando sobre uma figurinha antes
+  // que o evento chegue ao bookRef (onde o page-flip está ouvindo).
+  // Isso impede que o page-flip inicie a animação de dobra de página.
+  useEffect(() => {
+    const el = gridRef.current
+    if (!el) return
+    const handler = (e: MouseEvent) => {
+      if ((e.target as HTMLElement)?.closest('[data-figurinha]'))
+        e.stopPropagation()
+    }
+    el.addEventListener('mousedown', handler, false)
+    return () => el.removeEventListener('mousedown', handler, false)
+  }, [])
 
   const slots: Slot[] = [...figs]
   while (slots.length < maxSlots) slots.push({ id: -(slots.length + 1), imagemUrl: null })
 
   return (
-    <div style={{
+    <div ref={gridRef} style={{
       position: 'absolute',
       top, left: padSide, right: padSide,
       display: 'grid',
@@ -655,17 +670,6 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
         const mod = await import('page-flip')
         const PF: any = (mod as any).PageFlip ?? (mod as any).default?.PageFlip ?? (mod as any).default
 
-        // Interceptor registrado ANTES do page-flip para que dispare primeiro.
-        // Quando o mousedown/click é sobre uma figurinha, para a propagação nativa
-        // impedindo que o page-flip inicie a animação de dobra da página.
-        const stopFlipOnFigurinha = (e: Event) => {
-          if ((e.target as HTMLElement)?.closest?.('[data-figurinha]')) {
-            e.stopImmediatePropagation()
-          }
-        }
-        bookRef.current!.addEventListener('mousedown', stopFlipOnFigurinha, false)
-        bookRef.current!.addEventListener('click',     stopFlipOnFigurinha, false)
-
         const portrait = window.innerWidth < 600
         pf = new PF(bookRef.current!, {
           width: PAGE_W, height: PAGE_H,
@@ -989,7 +993,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
             <div ref={bookRef} style={{ width: isPortrait ? PAGE_W : PAGE_W * 2, height: PAGE_H }}>
               {pages.map((content, i) => (
                 <div key={i} data-pb-page=""
-                  data-density={i === 0 || i === total - 1 ? 'hard' : 'soft'}
+                  data-density="soft"
                   style={{ width: PAGE_W, height: PAGE_H }}>
                   <div className="page-inner">{content}</div>
                 </div>
