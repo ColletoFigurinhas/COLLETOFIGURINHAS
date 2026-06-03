@@ -994,8 +994,13 @@ function AbaPremios() {
 
   async function carregar(q = query) {
     setLoading(true)
-    const r = await fetch(`/api/admin/premios${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`)
-    setItens(await r.json())
+    try {
+      const r    = await fetch(`/api/admin/premios${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`)
+      const data = await r.json()
+      setItens(Array.isArray(data) ? data : [])
+    } catch {
+      setItens([])
+    }
     setLoading(false)
   }
 
