@@ -47,5 +47,6 @@ next-env.d.ts
 public/figuras/**/*.png
 !public/figuras/VERDE/*.png
 !public/figuras/AMARELO/*.png
+!public/figuras/**/Figura-*.png
 tmp/campanha_pages/
 tmp/*-prod.mjs
