@@ -15,6 +15,14 @@ export type FigurinhaInventario = {
   quantidade:    number   // 0 = não tem | 1 = tem | ≥2 = repetida
 }
 
+export type PremioInventario = {
+  id:            number
+  classificacao: string
+  imagemUrl:     string | null
+  quantidade:    number
+  entregue:      boolean
+}
+
 export default async function InventarioPage() {
   const { userId } = await verifySession()
 
@@ -26,24 +34,37 @@ export default async function InventarioPage() {
     }),
     db.albumItem.findMany({
       where:  { participanteId: userId },
-      select: { figurinhaId: true, quantidade: true },
+      select: { figurinhaId: true, quantidade: true, entregue: true },
     }),
   ])
 
-  // Mapa: figurinhaId → quantidade
-  const qtdMap = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
+  const qtdMap      = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
+  const entregueMap = new Map(albumItens.map(a => [a.figurinhaId, a.entregue]))
 
-  const colecao: FigurinhaInventario[] = figurinhas.map(f => ({
+  const figurinhasNormais = figurinhas.filter(f => !['PREMIO PRATA', 'PREMIO OURO'].includes(f.classificacao))
+  const figurinhasPremiadas = figurinhas.filter(f => ['PREMIO PRATA', 'PREMIO OURO'].includes(f.classificacao))
+
+  const colecao: FigurinhaInventario[] = figurinhasNormais.map(f => ({
     id:            f.id,
     classificacao: f.classificacao,
     imagemUrl:     f.imagemUrl,
     quantidade:    qtdMap.get(f.id) ?? 0,
   }))
 
-  // Agrupa por classificação na ordem do álbum
+  const premios: PremioInventario[] = figurinhasPremiadas
+    .filter(f => (qtdMap.get(f.id) ?? 0) > 0)
+    .map(f => ({
+      id:            f.id,
+      classificacao: f.classificacao,
+      imagemUrl:     f.imagemUrl,
+      quantidade:    qtdMap.get(f.id) ?? 0,
+      entregue:      entregueMap.get(f.id) ?? false,
+    }))
+    .sort((a, b) => a.classificacao.localeCompare(b.classificacao))
+
   const secoes = ORDEM_SECOES
     .map(c => ({ classificacao: c, figurinhas: colecao.filter(f => f.classificacao === c) }))
     .filter(s => s.figurinhas.length > 0)
 
-  return <InventarioClient secoes={secoes} />
+  return <InventarioClient secoes={secoes} premios={premios} />
 }

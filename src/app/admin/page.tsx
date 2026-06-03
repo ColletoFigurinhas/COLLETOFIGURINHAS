@@ -974,8 +974,159 @@ function AbaAndamento() {
   )
 }
 
+// ── Aba: Prêmios ──────────────────────────────────────────────────
+type PremioItem = {
+  id:          number
+  quantidade:  number
+  entregue:    boolean
+  entregueEm:  string | null
+  entregueBy:  string | null
+  participante:{ id: number; nome: string; matricula: string }
+  figurinha:   { id: number; classificacao: string; tipo: string; imagemUrl: string | null }
+}
+
+function AbaPremios() {
+  const [itens,    setItens]    = useState<PremioItem[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [query,    setQuery]    = useState('')
+  const [filtro,   setFiltro]   = useState<'todos' | 'pendente' | 'entregue'>('todos')
+  const [marcando, setMarcando] = useState<number | null>(null)
+
+  async function carregar(q = query) {
+    setLoading(true)
+    const r = await fetch(`/api/admin/premios${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`)
+    setItens(await r.json())
+    setLoading(false)
+  }
+
+  useEffect(() => { carregar() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const t = setTimeout(() => carregar(query), 300)
+    return () => clearTimeout(t)
+  }, [query]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function marcarEntregue(item: PremioItem) {
+    setMarcando(item.id)
+    await fetch(`/api/admin/premios/${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entregue: !item.entregue }),
+    })
+    await carregar()
+    setMarcando(null)
+  }
+
+  const lista = itens.filter(i =>
+    filtro === 'todos'    ? true :
+    filtro === 'pendente' ? !i.entregue :
+    i.entregue
+  )
+
+  const totalPendente = itens.filter(i => !i.entregue).length
+  const totalEntregue = itens.filter(i => i.entregue).length
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>Prêmios</h2>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: 1 }}>
+          <span style={{ color: '#fbbf24' }}>{totalPendente} pendentes</span>
+          {' · '}
+          <span style={{ color: '#4ade80' }}>{totalEntregue} entregues</span>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Filtrar por nome ou matrícula…"
+          style={{ flex: 1, minWidth: 180, height: 38, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: '#1a2030', color: '#fff', fontSize: 12, padding: '0 12px', outline: 'none' }}
+        />
+        {(['todos','pendente','entregue'] as const).map(f => (
+          <button key={f} onClick={() => setFiltro(f)} style={{
+            padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+            background: filtro === f ? (f === 'entregue' ? 'rgba(74,222,128,0.15)' : f === 'pendente' ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.1)') : 'rgba(255,255,255,0.04)',
+            color: filtro === f ? (f === 'entregue' ? '#4ade80' : f === 'pendente' ? '#fbbf24' : '#fff') : 'rgba(255,255,255,0.35)',
+          }}>
+            {f === 'todos' ? 'Todos' : f === 'pendente' ? 'Pendentes' : 'Entregues'}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 48 }}>Carregando…</div>
+      ) : lista.length === 0 ? (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 48, fontSize: 12 }}>Nenhum prêmio encontrado.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {lista.map(item => (
+            <div key={item.id} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: item.entregue ? 'rgba(74,222,128,0.04)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${item.entregue ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.07)'}`,
+              borderRadius: 12, padding: '12px 16px',
+            }}>
+              {/* Minicard */}
+              <div style={{
+                width: 40, height: 54, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
+                border: `1.5px solid ${item.figurinha.classificacao === 'PREMIO OURO' ? 'rgba(245,158,11,0.5)' : 'rgba(203,213,225,0.4)'}`,
+                background: item.figurinha.classificacao === 'PREMIO OURO' ? '#78350f' : '#1e293b',
+                position: 'relative',
+              }}>
+                {item.figurinha.imagemUrl
+                  ? <img src={item.figurinha.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                      {item.figurinha.classificacao === 'PREMIO OURO' ? '🥇' : '🥈'}
+                    </div>
+                }
+                {item.entregue && (
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>✓</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.participante.nome}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginTop: 2 }}>
+                  #{item.participante.matricula} · {item.figurinha.classificacao}
+                  {item.quantidade > 1 && ` · ×${item.quantidade}`}
+                </div>
+                {item.entregue && item.entregueBy && (
+                  <div style={{ fontSize: 9, color: '#4ade80', marginTop: 3 }}>
+                    Entregue por {item.entregueBy} · {new Date(item.entregueEm!).toLocaleDateString('pt-BR')}
+                  </div>
+                )}
+              </div>
+
+              {/* Botão */}
+              <button
+                disabled={marcando === item.id}
+                onClick={() => marcarEntregue(item)}
+                style={{
+                  padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0,
+                  background: item.entregue ? 'rgba(255,255,255,0.05)' : 'rgba(74,222,128,0.15)',
+                  color: item.entregue ? 'rgba(255,255,255,0.3)' : '#4ade80',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {marcando === item.id ? '…' : item.entregue ? '✓ Entregue' : 'Marcar entregue'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Página principal ──────────────────────────────────────────────
-type Tab = 'figurinhas' | 'pacotes' | 'log' | 'andamento'
+type Tab = 'figurinhas' | 'pacotes' | 'log' | 'andamento' | 'premios'
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('figurinhas')
@@ -983,6 +1134,7 @@ export default function AdminPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'figurinhas', label: 'Figurinhas' },
     { id: 'pacotes',    label: 'Pacotes' },
+    { id: 'premios',    label: 'Prêmios' },
     { id: 'log',        label: 'Log' },
     { id: 'andamento',  label: 'Andamento' },
   ]
@@ -1006,6 +1158,7 @@ export default function AdminPage() {
 
       {tab === 'figurinhas' && <AbaFigurinhas />}
       {tab === 'pacotes'    && <AbaPacotes />}
+      {tab === 'premios'    && <AbaPremios />}
       {tab === 'log'        && <AbaLog />}
       {tab === 'andamento'  && <AbaAndamento />}
     </div>

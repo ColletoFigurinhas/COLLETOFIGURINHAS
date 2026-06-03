@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { FigurinhaInventario } from './page'
+import type { FigurinhaInventario, PremioInventario } from './page'
 
 type Secao = { classificacao: string; figurinhas: FigurinhaInventario[] }
 type Filtro = 'todas' | 'tenho' | 'repetidas' | 'faltam'
@@ -100,7 +100,7 @@ function FigurinhaCard({ fig }: { fig: FigurinhaInventario }) {
 }
 
 // ── Componente principal ──────────────────────────────────────────
-export default function InventarioClient({ secoes }: { secoes: Secao[] }) {
+export default function InventarioClient({ secoes, premios = [] }: { secoes: Secao[]; premios?: PremioInventario[] }) {
   const [filtro, setFiltro] = useState<Filtro>('todas')
 
   const todasFigs    = secoes.flatMap(s => s.figurinhas)
@@ -191,6 +191,79 @@ export default function InventarioClient({ secoes }: { secoes: Secao[] }) {
             </button>
           ))}
         </div>
+
+        {/* Seção de Prêmios */}
+        {premios.length > 0 && (
+          <div style={{ marginBottom: 36 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 14, paddingBottom: 10,
+              borderBottom: '2px solid #f59e0b',
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', color: '#f59e0b' }}>
+                Meus Prêmios
+              </div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>
+                {premios.filter(p => p.entregue).length} / {premios.length} entregues
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 12 }}>
+              {premios.map(p => {
+                const isPrata = p.classificacao === 'PREMIO PRATA'
+                const cor     = isPrata ? '#94a3b8' : '#f59e0b'
+                const bgCor   = isPrata ? '#1e293b' : '#78350f'
+                return (
+                  <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                    <div style={{
+                      position: 'relative', width: '100%', aspectRatio: '3/4',
+                      borderRadius: 10, overflow: 'hidden',
+                      border: `2px solid ${cor}`,
+                      boxShadow: `0 0 14px ${isPrata ? 'rgba(148,163,184,0.35)' : 'rgba(245,158,11,0.45)'}`,
+                      background: bgCor,
+                    }}>
+                      {p.imagemUrl
+                        ? <img src={p.imagemUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+                            {isPrata ? '🥈' : '🥇'}
+                          </div>
+                      }
+                      {/* Visto de entregue */}
+                      {p.entregue && (
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          background: 'rgba(0,0,0,0.55)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: '50%',
+                            background: 'rgba(74,222,128,0.9)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 20, fontWeight: 900, color: '#000',
+                            boxShadow: '0 0 16px rgba(74,222,128,0.7)',
+                          }}>✓</div>
+                        </div>
+                      )}
+                      {/* Badge pendente */}
+                      {!p.entregue && (
+                        <div style={{
+                          position: 'absolute', top: 5, right: 5,
+                          background: 'rgba(251,191,36,0.9)', borderRadius: 4,
+                          fontSize: 7, fontWeight: 900, color: '#000',
+                          padding: '2px 5px', letterSpacing: 0.5, textTransform: 'uppercase',
+                        }}>
+                          Pendente
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: cor, letterSpacing: 1, textTransform: 'uppercase', textAlign: 'center' }}>
+                      {isPrata ? '🥈 Prata' : '🥇 Ouro'}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Seções */}
         {secoes.map(sec => {
