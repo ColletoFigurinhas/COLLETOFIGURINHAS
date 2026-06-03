@@ -39,13 +39,21 @@ function AbaFigurinhas() {
   const [showForm,   setShowForm]   = useState(false)
 
   // Form nova carta
-  const [classif,   setClassif]   = useState(CLASSIFICACOES[0])
-  const [tipo,      setTipo]      = useState('FUNCIONARIO')
-  const [file,      setFile]      = useState<File | null>(null)
-  const [preview,   setPreview]   = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [errForm,   setErrForm]   = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [classif,      setClassif]      = useState(CLASSIFICACOES[0])
+  const [tipo,         setTipo]         = useState('FUNCIONARIO')
+  const [fileVerde,    setFileVerde]    = useState<File | null>(null)
+  const [fileAmarelo,  setFileAmarelo]  = useState<File | null>(null)
+  const [prevVerde,    setPrevVerde]    = useState<string | null>(null)
+  const [prevAmarelo,  setPrevAmarelo]  = useState<string | null>(null)
+  const [file,         setFile]         = useState<File | null>(null)   // para não-FUNCIONARIO
+  const [preview,      setPreview]      = useState<string | null>(null)
+  const [uploading,    setUploading]    = useState(false)
+  const [errForm,      setErrForm]      = useState('')
+  const fileRef       = useRef<HTMLInputElement>(null)
+  const fileVerdeRef  = useRef<HTMLInputElement>(null)
+  const fileAmareloRef = useRef<HTMLInputElement>(null)
+
+  const isFuncionario = tipo === 'FUNCIONARIO'
 
   // Modal de edição
   const [editando,      setEditando]      = useState<EditState | null>(null)
@@ -119,25 +127,46 @@ function AbaFigurinhas() {
   }
 
   async function handleCadastrar() {
-    if (!file) { setErrForm('Selecione uma imagem.'); return }
+    if (isFuncionario && (!fileVerde || !fileAmarelo)) {
+      setErrForm('Selecione a imagem VERDE e a imagem AMARELO.'); return
+    }
+    if (!isFuncionario && !file) { setErrForm('Selecione uma imagem.'); return }
     setUploading(true); setErrForm('')
     try {
-      const fd = new FormData(); fd.append('file', file)
-      const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-      if (!up.ok) { setErrForm('Falha no upload.'); setUploading(false); return }
-      const { url } = await up.json()
+      let imagemUrl: string
+
+      if (isFuncionario) {
+        // 1. Upload VERDE — gera o filename
+        const fdV = new FormData(); fdV.append('file', fileVerde!); fdV.append('folder', 'VERDE')
+        const upV = await fetch('/api/admin/upload', { method: 'POST', body: fdV })
+        if (!upV.ok) { setErrForm('Falha no upload VERDE.'); setUploading(false); return }
+        const { url: urlV, filename } = await upV.json()
+        imagemUrl = urlV
+
+        // 2. Upload AMARELO — reutiliza o mesmo filename
+        const fdA = new FormData(); fdA.append('file', fileAmarelo!); fdA.append('folder', 'AMARELO'); fdA.append('filename', filename)
+        const upA = await fetch('/api/admin/upload', { method: 'POST', body: fdA })
+        if (!upA.ok) { setErrForm('Falha no upload AMARELO.'); setUploading(false); return }
+      } else {
+        const fd = new FormData(); fd.append('file', file!)
+        const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+        if (!up.ok) { setErrForm('Falha no upload.'); setUploading(false); return }
+        imagemUrl = (await up.json()).url
+      }
 
       const cr = await fetch('/api/admin/figurinhas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classificacao: classif, tipo, imagemUrl: url }),
+        body: JSON.stringify({ classificacao: classif, tipo, imagemUrl }),
       })
       if (!cr.ok) { setErrForm('Falha ao cadastrar.'); setUploading(false); return }
 
       // Reset form
-      setFile(null)
-      if (preview) URL.revokeObjectURL(preview)
-      setPreview(null)
+      setFile(null); setFileVerde(null); setFileAmarelo(null)
+      if (preview)     URL.revokeObjectURL(preview)
+      if (prevVerde)   URL.revokeObjectURL(prevVerde)
+      if (prevAmarelo) URL.revokeObjectURL(prevAmarelo)
+      setPreview(null); setPrevVerde(null); setPrevAmarelo(null)
       setShowForm(false)
       load()
     } catch { setErrForm('Erro inesperado.') }
@@ -225,41 +254,77 @@ function AbaFigurinhas() {
             </div>
           </div>
 
-          {/* Upload imagem */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-            {preview && (
-              <img src={preview} alt="" style={{ width: 64, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }} />
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => {
-                  const f = e.target.files?.[0]
-                  if (!f) return
-                  setFile(f); setErrForm('')
-                  if (preview) URL.revokeObjectURL(preview)
-                  setPreview(URL.createObjectURL(f))
-                }}
-              />
-              <button onClick={() => fileRef.current?.click()} style={{
-                background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)',
-                borderRadius: 8, color: file ? '#fff' : 'rgba(255,255,255,0.4)',
-                padding: '9px 16px', cursor: 'pointer', fontSize: 11,
-              }}>
-                {file ? `📎 ${file.name}` : '📎 Escolher imagem…'}
-              </button>
+          {/* Upload imagens */}
+          {isFuncionario ? (
+            /* FUNCIONARIO: dois uploads — VERDE e AMARELO */
+            <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
+              {(['VERDE', 'AMARELO'] as const).map(cor => {
+                const isVerde  = cor === 'VERDE'
+                const f        = isVerde ? fileVerde  : fileAmarelo
+                const prev     = isVerde ? prevVerde  : prevAmarelo
+                const ref      = isVerde ? fileVerdeRef : fileAmareloRef
+                const setF     = isVerde ? setFileVerde : setFileAmarelo
+                const setPrev  = isVerde ? setPrevVerde : setPrevAmarelo
+                const accentCor = isVerde ? '#4ade80' : '#fbbf24'
+                return (
+                  <div key={cor} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: accentCor }}>{cor}</div>
+                    {prev && <img src={prev} alt="" style={{ width: 52, height: 78, objectFit: 'cover', borderRadius: 7, border: `2px solid ${accentCor}` }} />}
+                    <input ref={ref} type="file" accept="image/*" style={{ display: 'none' }}
+                      onChange={e => {
+                        const fl = e.target.files?.[0]; if (!fl) return
+                        setF(fl); setErrForm('')
+                        const old = isVerde ? prevVerde : prevAmarelo
+                        if (old) URL.revokeObjectURL(old)
+                        setPrev(URL.createObjectURL(fl))
+                      }}
+                    />
+                    <button onClick={() => ref.current?.click()} style={{
+                      background: 'rgba(255,255,255,0.04)', border: `1px dashed ${f ? accentCor : 'rgba(255,255,255,0.2)'}`,
+                      borderRadius: 7, color: f ? accentCor : 'rgba(255,255,255,0.35)',
+                      padding: '7px 12px', cursor: 'pointer', fontSize: 10, whiteSpace: 'nowrap',
+                    }}>
+                      {f ? `✓ ${f.name.slice(0,18)}` : `📎 Imagem ${cor}`}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
-          </div>
+          ) : (
+            /* Outros tipos: upload único */
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+              {preview && <img src={preview} alt="" style={{ width: 64, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }} />}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                  onChange={e => {
+                    const f = e.target.files?.[0]; if (!f) return
+                    setFile(f); setErrForm('')
+                    if (preview) URL.revokeObjectURL(preview)
+                    setPreview(URL.createObjectURL(f))
+                  }}
+                />
+                <button onClick={() => fileRef.current?.click()} style={{
+                  background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)',
+                  borderRadius: 8, color: file ? '#fff' : 'rgba(255,255,255,0.4)',
+                  padding: '9px 16px', cursor: 'pointer', fontSize: 11,
+                }}>
+                  {file ? `📎 ${file.name}` : '📎 Escolher imagem…'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {errForm && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 12 }}>{errForm}</div>}
 
           <button
             onClick={handleCadastrar}
-            disabled={!file || uploading}
+            disabled={uploading || (isFuncionario ? (!fileVerde || !fileAmarelo) : !file)}
             style={{
               padding: '10px 28px', borderRadius: 10, border: 'none',
-              background: file && !uploading ? 'linear-gradient(135deg,#009c3b,#006b29)' : 'rgba(0,156,59,0.15)',
+              background: (!uploading && (isFuncionario ? (fileVerde && fileAmarelo) : file))
+                ? 'linear-gradient(135deg,#009c3b,#006b29)' : 'rgba(0,156,59,0.15)',
               color: '#f5c800', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-              cursor: file && !uploading ? 'pointer' : 'not-allowed',
+              cursor: 'pointer',
             }}
           >
             {uploading ? 'Cadastrando…' : 'Cadastrar Carta'}

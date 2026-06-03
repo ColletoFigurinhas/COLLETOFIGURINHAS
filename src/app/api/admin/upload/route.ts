@@ -11,15 +11,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const formData = await request.formData()
-  const file = formData.get('file') as File | null
+  const file     = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'Nenhum arquivo' }, { status: 400 })
 
-  const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-  const filename = `${Date.now()}.${ext}`
-  const dir      = path.join(process.cwd(), 'public', 'figuras', 'Especiais')
+  // folder: 'VERDE' | 'AMARELO' | 'Especiais' (default)
+  const folder   = (formData.get('folder') as string | null) ?? 'Especiais'
+  // filename: reutiliza nome gerado no upload anterior (para AMARELO = mesmo nome do VERDE)
+  const existing = formData.get('filename') as string | null
+  const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'png'
+  const filename = existing ?? `${Date.now()}.${ext}`
+  const dir      = path.join(process.cwd(), 'public', 'figuras', folder)
 
   await mkdir(dir, { recursive: true })
   await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()))
 
-  return NextResponse.json({ url: `/figuras/Especiais/${filename}` })
+  return NextResponse.json({ url: `/figuras/${folder}/${filename}`, filename })
 }
