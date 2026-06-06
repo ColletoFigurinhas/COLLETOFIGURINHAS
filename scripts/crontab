@@ -4,3 +4,6 @@
 
 # Distribuição diária de pacotes — 12:00 BRT (15:00 UTC), seg–sex
 0 15 * * 1-5 root /var/www/album-figurinhas/scripts/distribuir.sh
+
+# Pacote bônus de fim de semana — 13:00 BRT (16:00 UTC), sáb–dom, 5 figurinhas
+0 16 * * 0,6 root /var/www/album-figurinhas/scripts/fim-de-semana.sh

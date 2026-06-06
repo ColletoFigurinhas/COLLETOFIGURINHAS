@@ -9,6 +9,18 @@ export function isDiaUtil(date: Date): boolean {
   return d >= 1 && d <= 5
 }
 
+/** Retorna true se a data for sábado ou domingo */
+export function isFimDeSemana(date: Date): boolean {
+  const d = date.getDay()
+  return d === 0 || d === 6
+}
+
+/** Figurinhas no pacote bônus de fim de semana */
+export const FDS_STICKERS = 5
+
+/** Horário UTC do cron de fim de semana (13h BRT = 16h UTC) */
+export const CRON_FDS_HOUR_UTC = 16
+
 /** Lista de dias úteis entre duas datas (inclusive) */
 export function diasUteisEntre(inicio: Date, fim: Date): Date[] {
   const dias: Date[] = []
