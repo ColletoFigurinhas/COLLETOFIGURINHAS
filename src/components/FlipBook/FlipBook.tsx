@@ -93,27 +93,15 @@ const GESTOR_TOP   = 21
 const GESTOR_RIGHT = 13
 const GESTOR_H     = 237
 
-// Páginas por seção — chaves correspondem exatamente ao campo classificacao no banco
-const SECTION_PAGES: Record<string, { gestor: string; normal: string }> = {
-  'COMERCIAL':                  { gestor: '/album/page-02.png', normal: '/album/page-03.png' },
-  'ALMOXARIFADO':               { gestor: '/album/page-04.png', normal: '/album/page-05.png' },
-  'GARANTIA DA QUALIDADE':      { gestor: '/album/page-06.png', normal: '/album/page-07.png' },
-  'MARKETING / TI':             { gestor: '/album/page-08.png', normal: '/album/page-09.png' },
-  'FINANCEIRO':                 { gestor: '/album/page-10.png', normal: '/album/page-11.png' },
-  'COMPRAS':                    { gestor: '/album/page-12.png', normal: '/album/page-13.png' },
-  'RH / SERVIÇOS GERAIS':       { gestor: '/album/page-14.png', normal: '/album/page-15.png' },
-  'ESPECIAIS':                  { gestor: '/album/page-16.png', normal: '/album/page-16.png' },
-}
-
-const SECTION_COLOR: Record<string, string> = {
-  'COMERCIAL':                '#1e3a5f',
-  'ALMOXARIFADO':             '#14532d',
-  'GARANTIA DA QUALIDADE':    '#4c1d95',
-  'MARKETING / TI':           '#7f1d1d',
-  'FINANCEIRO':               '#78350f',
-  'COMPRAS':                  '#7c2d12',
-  'RH / SERVIÇOS GERAIS':     '#831843',
-  'ESPECIAIS':                '#713f12',
+// Paleta de fundos por seção — gerado deterministicamente pelo nome
+const SECTION_PALETTE = [
+  '#0a1628', '#0d1f40', '#091530', '#0b1a38',
+  '#0e2244', '#071228', '#0c1c3c', '#0a1832',
+]
+function getSectionColor(section: string): string {
+  let h = 5381
+  for (let i = 0; i < section.length; i++) h = ((h << 5) + h) ^ section.charCodeAt(i)
+  return SECTION_PALETTE[Math.abs(h) % SECTION_PALETTE.length]
 }
 
 // ── Cores alternadas (xadrez 4 colunas) ──────────────────────────
@@ -209,19 +197,13 @@ function SectionPage({ section, figs, isGestorPage, onPreview }: {
   isGestorPage: boolean
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
-  const pages   = SECTION_PAGES[section]
-  const bg      = pages ? (isGestorPage ? pages.gestor : pages.normal) : ''
-  const color   = SECTION_COLOR[section] ?? '#555'
+  const color = getSectionColor(section)
 
   const gestor   = isGestorPage ? figs.find(f => f.tipo === 'GESTOR') : null
   const normFigs = isGestorPage ? figs.filter(f => f.tipo !== 'GESTOR') : figs
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-      {bg && (
-        <img src={bg} alt="" draggable={false}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-      )}
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: color }}>
 
       {/* Gestor — 123×188 centrado no slot branco (x=362..529, y=0..239) */}
       {gestor && gestor.imagemUrl && (
@@ -252,12 +234,24 @@ function SectionPage({ section, figs, isGestorPage, onPreview }: {
   )
 }
 
-// ── Página de imagem inteira (capa / intro) ───────────────────────
-function FullImagePage({ src }: { src: string }) {
+// ── Capa ──────────────────────────────────────────────────────────
+function CoverPage() {
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-      <img src={src} alt="" draggable={false}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+    <div style={{
+      width: '100%', height: '100%',
+      background: 'linear-gradient(155deg, #0a1628 0%, #0d2040 50%, #0f2450 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'repeating-linear-gradient(45deg,rgba(59,130,246,0.04) 0,rgba(59,130,246,0.04) 1px,transparent 1px,transparent 20px)' }} />
+      <div style={{ fontSize: 80, marginBottom: 16, filter: 'drop-shadow(0 4px 24px rgba(59,130,246,0.5))', lineHeight: 1 }}>🃏</div>
+      <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 6, color: '#fff', textTransform: 'uppercase', textAlign: 'center' }}>
+        Colleto
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 4, color: 'rgba(96,165,250,0.8)', marginTop: 6, textTransform: 'uppercase' }}>
+        Figurinhas
+      </div>
     </div>
   )
 }
@@ -267,21 +261,26 @@ function BackCoverPage() {
   return (
     <div style={{
       width: '100%', height: '100%',
-      background: 'linear-gradient(155deg, #d96010 0%, #b04a08 100%)',
+      background: 'linear-gradient(155deg, #1d4ed8 0%, #1e3a8a 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'repeating-linear-gradient(45deg,rgba(0,0,0,0.03) 0,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 16px)' }} />
-      <div style={{ fontSize: 64, marginBottom: 14, filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))' }}>🏆</div>
+        backgroundImage: 'repeating-linear-gradient(45deg,rgba(0,0,0,0.04) 0,rgba(0,0,0,0.04) 1px,transparent 1px,transparent 16px)' }} />
+      <div style={{ fontSize: 64, marginBottom: 14, filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))' }}>🃏</div>
       <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 4, color: 'rgba(255,255,255,0.92)', textTransform: 'uppercase', textAlign: 'center' }}>
-        Super Copa 2026
+        Colleto Figurinhas
       </div>
       <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 10, letterSpacing: 3, textTransform: 'uppercase' }}>
-        Álbum Oficial Supermédica
+        Álbum Digital
       </div>
     </div>
   )
+}
+
+// ── Página de preenchimento ───────────────────────────────────────
+function PaddingPage() {
+  return <div style={{ width: '100%', height: '100%', background: '#070e1a' }} />
 }
 
 // ── Filmstrip ─────────────────────────────────────────────────────
@@ -323,8 +322,8 @@ function Filmstrip({ pages, current, onGo }: {
               width: TH_W, height: TH_H, flexShrink: 0,
               borderRadius: 5, overflow: 'hidden', cursor: 'pointer',
               position: 'relative',
-              border: active ? '2px solid #f5c800' : '2px solid rgba(255,255,255,0.08)',
-              boxShadow: active ? '0 0 10px rgba(245,200,0,0.4)' : 'none',
+              border: active ? '2px solid #60a5fa' : '2px solid rgba(255,255,255,0.08)',
+              boxShadow: active ? '0 0 10px rgba(96,165,250,0.4)' : 'none',
               transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
             }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'}
@@ -349,7 +348,7 @@ function Filmstrip({ pages, current, onGo }: {
             <div style={{
               position: 'absolute', bottom: 2, left: 0, right: 0,
               textAlign: 'center', fontSize: 7, fontWeight: 900,
-              color: active ? '#f5c800' : 'rgba(255,255,255,0.7)',
+              color: active ? '#60a5fa' : 'rgba(255,255,255,0.7)',
               textShadow: '0 1px 3px rgba(0,0,0,0.9)',
               pointerEvents: 'none',
             }}>
@@ -366,7 +365,7 @@ function Filmstrip({ pages, current, onGo }: {
 function buildPages(sections: SectionData[], onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void) {
   const pages: React.ReactNode[] = []
 
-  pages.push(<FullImagePage key="cover" src="/album/page-01.png" />)
+  pages.push(<CoverPage key="cover" />)
 
   sections.forEach(sec => {
     const SLOTS = 12
@@ -400,9 +399,9 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
   })
 
   if (pages.length % 2 === 0)
-    pages.push(<FullImagePage key="pad" src="/album/page-16.png" />)
+    pages.push(<PaddingPage key="pad" />)
 
-  pages.push(<FullImagePage key="contracapa" src="/album/page-17.png" />)
+  pages.push(<BackCoverPage key="contracapa" />)
 
   return pages
 }
@@ -453,7 +452,7 @@ function MobileFilmstrip({ pages, current, onGo, onClose }: {
                 cursor: 'pointer', flexShrink: 0,
                 position: 'relative',
                 border: active
-                  ? '2px solid #f5c800'
+                  ? '2px solid #60a5fa'
                   : '2px solid rgba(255,255,255,0.07)',
                 boxShadow: active ? '0 0 10px rgba(245,200,0,0.45)' : 'none',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
@@ -474,7 +473,7 @@ function MobileFilmstrip({ pages, current, onGo, onClose }: {
               <div style={{
                 position: 'absolute', bottom: 1, right: 2,
                 fontSize: 6, fontWeight: 900,
-                color: active ? '#f5c800' : 'rgba(255,255,255,0.55)',
+                color: active ? '#60a5fa' : 'rgba(255,255,255,0.55)',
                 textShadow: '0 1px 3px rgba(0,0,0,1)',
                 lineHeight: 1,
               }}>
@@ -729,8 +728,8 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
 
   const btnDesktop: React.CSSProperties = {
     fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-    color: 'rgba(240,192,64,0.9)', background: 'transparent',
-    border: '1px solid rgba(240,192,64,0.25)', borderRadius: 8,
+    color: 'rgba(96,165,250,0.9)', background: 'transparent',
+    border: '1px solid rgba(96,165,250,0.25)', borderRadius: 8,
     padding: '4px 10px', minHeight: 40, cursor: 'pointer', position: 'relative',
     display: 'flex', alignItems: 'center', gap: 4,
   }
@@ -783,16 +782,16 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
               <button
                 onClick={() => setFilmstripMobile(f => !f)}
                 style={{
-                  background: filmstripMobile ? 'rgba(245,200,0,0.18)' : 'transparent',
-                  border: `1px solid ${filmstripMobile ? 'rgba(245,200,0,0.5)' : 'rgba(255,255,255,0.15)'}`,
-                  borderRadius: 7, color: filmstripMobile ? '#f5c800' : 'rgba(255,255,255,0.5)',
+                  background: filmstripMobile ? 'rgba(96,165,250,0.18)' : 'transparent',
+                  border: `1px solid ${filmstripMobile ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                  borderRadius: 7, color: filmstripMobile ? '#60a5fa' : 'rgba(255,255,255,0.5)',
                   fontSize: 16, width: 36, height: 36,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s', flexShrink: 0,
                 }}
               >▤</button>
             )}
-            <div className="album-header-title">⚽ Supermédica · Super Copa 2026</div>
+            <div className="album-header-title">🃏 Colleto Figurinhas</div>
           </div>
 
           {/* ── Direita: Desktop ── */}
@@ -817,7 +816,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
                 </div>
               </div>
               {isAdmin && (
-                <a href="/admin" style={{ ...btnDesktop, textDecoration: 'none', color: 'rgba(240,192,64,0.7)', borderColor: 'rgba(240,192,64,0.2)', display: 'flex', alignItems: 'center' }}>
+                <a href="/admin" style={{ ...btnDesktop, textDecoration: 'none', color: 'rgba(96,165,250,0.7)', borderColor: 'rgba(96,165,250,0.2)', display: 'flex', alignItems: 'center' }}>
                   Admin
                 </a>
               )}
@@ -833,9 +832,9 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
               onClick={() => setMobileMenuOpen(o => !o)}
               style={{
                 position: 'relative',
-                background: mobileMenuOpen ? 'rgba(245,200,0,0.15)' : 'transparent',
-                border: `1px solid ${mobileMenuOpen ? 'rgba(245,200,0,0.45)' : 'rgba(255,255,255,0.2)'}`,
-                borderRadius: 8, color: mobileMenuOpen ? '#f5c800' : 'rgba(255,255,255,0.6)',
+                background: mobileMenuOpen ? 'rgba(96,165,250,0.15)' : 'transparent',
+                border: `1px solid ${mobileMenuOpen ? 'rgba(96,165,250,0.45)' : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: 8, color: mobileMenuOpen ? '#60a5fa' : 'rgba(255,255,255,0.6)',
                 width: 40, height: 40, fontSize: 18,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, transition: 'all 0.2s',
@@ -887,19 +886,19 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
               {[
                 {
                   label: 'Pacotes', icon: '🎴', badge: pacotesBadge,
-                  color: '#f5c800', onClick: () => { setPacotesOpen(true); setMobileMenuOpen(false) },
+                  color: '#60a5fa', onClick: () => { setPacotesOpen(true); setMobileMenuOpen(false) },
                 },
                 {
                   label: 'Inventário', icon: '📋', badge: 0,
-                  color: '#f5c800', onClick: () => { setInventarioOpen(true); setMobileMenuOpen(false) },
+                  color: '#60a5fa', onClick: () => { setInventarioOpen(true); setMobileMenuOpen(false) },
                 },
                 {
                   label: 'Trocas', icon: '🔄', badge: trocasBadge,
-                  color: '#f5c800', onClick: () => { setTrocasOpen(true); setTrocasBadge(0); setMobileMenuOpen(false) },
+                  color: '#60a5fa', onClick: () => { setTrocasOpen(true); setTrocasBadge(0); setMobileMenuOpen(false) },
                 },
                 ...(isAdmin ? [{
                   label: 'Admin', icon: '⚙️', badge: 0,
-                  color: 'rgba(240,192,64,0.7)', onClick: () => { window.location.href = '/admin' },
+                  color: 'rgba(96,165,250,0.7)', onClick: () => { window.location.href = '/admin' },
                 }] : []),
               ].map(item => (
                 <button key={item.label} onClick={item.onClick} style={{

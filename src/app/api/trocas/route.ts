@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   if (!destinatario.ativo) return NextResponse.json({ error: 'Participante inativo' }, { status: 400 })
   if (destinatario.id === userId) return NextResponse.json({ error: 'Não pode propor troca consigo mesmo' }, { status: 400 })
 
-  const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
+  const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
 
   const troca = await db.troca.create({
     data: {
@@ -76,3 +76,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, troca, destinatarioNome: destinatario.nome })
 }
+

@@ -10,8 +10,8 @@ const outfit = Outfit({
 })
 
 export const metadata: Metadata = {
-  title: 'Álbum Oficial Supermédica',
-  description: 'Álbum Oficial Supermédica — Super Copa 2026',
+  title: 'Colleto Figurinhas',
+  description: 'Colleto Figurinhas — Álbum Digital',
 }
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
     <html lang="pt-BR" className={outfit.variable}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-        <meta name="theme-color" content="#1a2218" />
+        <meta name="theme-color" content="#070e1a" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>

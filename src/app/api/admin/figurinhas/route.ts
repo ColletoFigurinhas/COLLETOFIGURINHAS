@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const tipoFiltro = searchParams.get('tipo')
 
-  const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
+  const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
   const figurinhas = await db.figurinha.findMany({
     where:   { campanhaId: campanha.id, ...(tipoFiltro ? { tipo: tipoFiltro } : {}) },
     orderBy: [{ classificacao: 'asc' }, { tipo: 'asc' }, { id: 'asc' }],
@@ -32,9 +32,10 @@ export async function POST(request: Request) {
   if (!classificacao || !tipo || !imagemUrl)
     return NextResponse.json({ error: 'classificacao, tipo e imagemUrl são obrigatórios' }, { status: 400 })
 
-  const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
+  const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
   const f = await db.figurinha.create({
     data: { campanhaId: campanha.id, classificacao, tipo, imagemUrl, ativo: true },
   })
   return NextResponse.json(f, { status: 201 })
 }
+

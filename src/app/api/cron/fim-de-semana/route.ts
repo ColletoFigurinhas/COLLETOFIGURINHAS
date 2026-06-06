@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { isFimDeSemana, sortearFigurinhas, FDS_STICKERS } from '@/lib/campanha'
 
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, msg: 'Dia útil — pacote de fim de semana não distribuído', distribuidos: 0 })
   }
 
-  const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
+  const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
 
   const inicio = new Date(campanha.dataInicio); inicio.setHours(0, 0, 0, 0)
   const fim    = new Date(campanha.dataFim);    fim.setHours(23, 59, 59, 999)
@@ -62,3 +62,4 @@ export async function POST(request: Request) {
   console.log(`[cron-fds] ${new Date().toISOString()} — distribuídos: ${distribuidos}/${participantes.length}`)
   return NextResponse.json({ ok: true, distribuidos, total: participantes.length, data: hoje.toISOString().slice(0, 10) })
 }
+

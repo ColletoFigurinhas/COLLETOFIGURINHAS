@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     if (!await auth()) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const q = new URL(request.url).searchParams.get('q')?.trim() ?? ''
-    const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
+    const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
 
     const itens = await db.albumItem.findMany({
       where: {
@@ -66,3 +66,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: err?.message ?? 'Erro interno' }, { status: 500 })
   }
 }
+

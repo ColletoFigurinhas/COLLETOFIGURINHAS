@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 
@@ -25,7 +25,7 @@ export async function GET() {
 
     const [figurinhas, albumItens] = await Promise.all([
       db.figurinha.findMany({
-        where:   { campanha: { slug: 'super-copa-2026' }, ativo: true },
+        where:   { campanha: { status: 'ativo' }, ativo: true },
         select:  { id: true, classificacao: true, imagemUrl: true },
         orderBy: { id: 'asc' },
       }),
@@ -68,3 +68,4 @@ export async function GET() {
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }
+

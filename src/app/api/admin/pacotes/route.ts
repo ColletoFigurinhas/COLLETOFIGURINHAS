@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 import { sortearFigurinhas } from '@/lib/campanha'
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     })
     if (!participante) return NextResponse.json({ error: 'Participante não encontrado.' }, { status: 404 })
 
-    const campanha = await db.campanha.findFirstOrThrow({ where: { slug: 'super-copa-2026' } })
+    const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
 
     // 5 figurinhas normais para PLUS e PREMIUM
     const qtdNormais = tipo === 'PADRAO' ? campanha.stickersPorDiaPadrao : 5
@@ -83,3 +83,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err?.message ?? 'Erro interno' }, { status: 500 })
   }
 }
+

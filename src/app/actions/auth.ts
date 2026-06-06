@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { z }        from 'zod'
 import bcrypt       from 'bcryptjs'
@@ -109,7 +109,7 @@ export async function cadastrar(matriculaRaw: string, email: string, senha: stri
   })
 
   // Nivelamento: distribui pacotes de todos os dias úteis desde o início da campanha
-  const campanha = await db.campanha.findFirst({ where: { slug: 'super-copa-2026' } })
+  const campanha = await db.campanha.findFirst({ where: { status: 'ativo' } })
   if (campanha) {
     await nivelarParticipante(db, campanha.id, participante.id)
   }
@@ -318,3 +318,4 @@ export async function logout(): Promise<void> {
   await deleteSession()
   redirect('/login')
 }
+

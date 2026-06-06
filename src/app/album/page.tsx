@@ -2,35 +2,22 @@ import { db } from '@/lib/db'
 import { verifySession } from '@/lib/dal'
 import AlbumClient from './AlbumClient'
 
-// Ordem exata conforme os valores no banco (resultado do groupBy)
-const ORDEM_SECOES = [
-  'COMERCIAL',
-  'ALMOXARIFADO',
-  'GARANTIA DA QUALIDADE',
-  'MARKETING / TI',
-  'FINANCEIRO',
-  'COMPRAS',
-  'RH / SERVIÇOS GERAIS',
-  'ESPECIAIS',
-]
-
 export type FigurinhaSlot = {
   id:        number
   imagemUrl: string | null
-  tipo:      string   // 'FUNCIONARIO' | 'GESTOR'
+  tipo:      string
 }
 export type SectionData = { classificacao: string; figurinhas: FigurinhaSlot[] }
 
 export default async function AlbumPage() {
   const { userId, nome, matricula } = await verifySession()
 
-  // Role sempre lido do banco — evita que sessão desatualizada mostre botão Admin indevidamente
   const participante = await db.participante.findUnique({ where: { id: userId }, select: { role: true } })
   const role = participante?.role ?? 'PARTICIPANTE'
 
   const [todasFigurinhas, albumItens] = await Promise.all([
     db.figurinha.findMany({
-      where:   { campanha: { slug: 'super-copa-2026' }, ativo: true },
+      where:   { campanha: { status: 'ativo' }, ativo: true },
       select:  { id: true, classificacao: true, imagemUrl: true, tipo: true },
       orderBy: { id: 'asc' },
     }),
@@ -42,12 +29,21 @@ export default async function AlbumPage() {
 
   const coletadas = new Set(albumItens.map(a => a.figurinhaId))
 
-  const sections: SectionData[] = ORDEM_SECOES
+  // Ordem dinâmica: seções na ordem em que aparecem no banco
+  const ordemVista: string[] = []
+  const seenSet = new Set<string>()
+  for (const f of todasFigurinhas) {
+    if (!seenSet.has(f.classificacao)) {
+      seenSet.add(f.classificacao)
+      ordemVista.push(f.classificacao)
+    }
+  }
+
+  const sections: SectionData[] = ordemVista
     .map(classificacao => ({
       classificacao,
       figurinhas: todasFigurinhas
         .filter(f => f.classificacao === classificacao)
-        // Gestor primeiro, depois os demais por id
         .sort((a, b) => {
           if (a.tipo === 'GESTOR' && b.tipo !== 'GESTOR') return -1
           if (a.tipo !== 'GESTOR' && b.tipo === 'GESTOR') return 1

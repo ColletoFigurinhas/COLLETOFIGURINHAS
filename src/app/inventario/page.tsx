@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+﻿import { db } from '@/lib/db'
 import { verifySession } from '@/lib/dal'
 import InventarioClient from './InventarioClient'
 
@@ -28,7 +28,7 @@ export default async function InventarioPage() {
 
   const [figurinhas, albumItens] = await Promise.all([
     db.figurinha.findMany({
-      where:   { campanha: { slug: 'super-copa-2026' }, ativo: true },
+      where:   { campanha: { status: 'ativo' }, ativo: true },
       select:  { id: true, classificacao: true, imagemUrl: true },
       orderBy: { id: 'asc' },
     }),
@@ -68,3 +68,4 @@ export default async function InventarioPage() {
 
   return <InventarioClient secoes={secoes} premios={premios} />
 }
+

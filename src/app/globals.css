@@ -6,20 +6,20 @@
 :root {
   --font-primary: 'Outfit', sans-serif;
 
-  /* Fundo quente claro */
-  --color-bg:         #2a1f14;
-  --color-bg-mid:     #3a2a1a;
+  /* Fundo escuro azul */
+  --color-bg:         #070e1a;
+  --color-bg-mid:     #0d1a2e;
   --color-surface:    rgba(255,255,255,0.03);
 
-  /* Verde e Amarelo — Brasil */
-  --color-gold:       #f5c800;
-  --color-gold-light: #ffe535;
-  --color-gold-dim:   rgba(245,200,0,0.18);
-  --color-gold-dark:  #c9a000;
+  /* Azul — Colleto */
+  --color-gold:       #60a5fa;
+  --color-gold-light: #93c5fd;
+  --color-gold-dim:   rgba(96,165,250,0.18);
+  --color-gold-dark:  #3b82f6;
 
-  --color-verde:      #009c3b;
-  --color-verde-light:#00c44a;
-  --color-verde-dim:  rgba(0,156,59,0.15);
+  --color-verde:      #1d4ed8;
+  --color-verde-light:#3b82f6;
+  --color-verde-dim:  rgba(29,78,216,0.15);
 
   /* Paper */
   --color-paper:      #f4eedc;
@@ -65,19 +65,19 @@ html, body {
   overflow: hidden;
   contain: paint;
   background:
-    radial-gradient(ellipse 80% 55% at 50% 0%,   rgba(0,156,59,0.22)   0%, transparent 65%),
-    radial-gradient(ellipse 55% 40% at 100% 100%, rgba(245,200,0,0.18)  0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 0%   85%,  rgba(0,100,40,0.12)   0%, transparent 55%),
-    #1a2218;
+    radial-gradient(ellipse 80% 55% at 50% 0%,   rgba(29,78,216,0.20)   0%, transparent 65%),
+    radial-gradient(ellipse 55% 40% at 100% 100%, rgba(59,130,246,0.12)  0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 0%   85%,  rgba(15,50,120,0.10)   0%, transparent 55%),
+    #070e1a;
   overflow: hidden;
 }
 
-/* Pontilhado amarelo */
+/* Pontilhado azul */
 .album-scene::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(245,200,0,0.07) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(59,130,246,0.06) 1px, transparent 1px);
   background-size: 72px 72px;
   animation: scene-drift 40s linear infinite;
   pointer-events: none;
@@ -88,7 +88,7 @@ html, body {
   100% { transform: translate(72px, 72px); }
 }
 
-/* Glow amarelo sob o livro */
+/* Glow azul sob o livro */
 .album-scene::after {
   content: '';
   position: absolute;
@@ -97,7 +97,7 @@ html, body {
   transform: translateX(-50%);
   width: 55%;
   height: 80px;
-  background: radial-gradient(ellipse, rgba(245,200,0,0.1) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(59,130,246,0.08) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -916,8 +916,8 @@ html, body {
   justify-content: center;
   width: 44px; height: 44px;
   border-radius: 50%;
-  background: rgba(0,156,59,0.12);
-  border: 1px solid rgba(0,156,59,0.4);
+  background: rgba(29,78,216,0.12);
+  border: 1px solid rgba(29,78,216,0.4);
   color: var(--color-gold);
   font-size: 18px;
   cursor: pointer;
@@ -926,7 +926,7 @@ html, body {
   user-select: none;
 }
 .ctrl-btn:hover {
-  background: rgba(0,156,59,0.28);
+  background: rgba(29,78,216,0.28);
   border-color: var(--color-verde-light);
   color: #fff;
   transform: scale(1.1);
@@ -1035,7 +1035,7 @@ html, body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(240,192,64,0.2);
+  background: rgba(59,130,246,0.2);
   border-radius: 2px;
 }
 
