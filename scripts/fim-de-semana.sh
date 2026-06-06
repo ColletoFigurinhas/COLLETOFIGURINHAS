@@ -1,5 +1,5 @@
 #!/bin/bash
-# Distribuição de pacote bônus de fim de semana — chamado pelo cron às 16:00 UTC (13:00 BRT)
+# Distribuição de pacote bônus de fim de semana — chamado pelo cron às 17:00 UTC (14:00 BRT)
 # Para alterar horário, URL ou comportamento: edite este arquivo e faça git push.
 # O crontab do servidor aponta fixo para este script.
 

@@ -18,8 +18,8 @@ export function isFimDeSemana(date: Date): boolean {
 /** Figurinhas no pacote bônus de fim de semana */
 export const FDS_STICKERS = 5
 
-/** Horário UTC do cron de fim de semana (13h BRT = 16h UTC) */
-export const CRON_FDS_HOUR_UTC = 16
+/** Horário UTC do cron de fim de semana (14h BRT = 17h UTC) */
+export const CRON_FDS_HOUR_UTC = 17
 
 /** Lista de dias úteis entre duas datas (inclusive) */
 export function diasUteisEntre(inicio: Date, fim: Date): Date[] {
