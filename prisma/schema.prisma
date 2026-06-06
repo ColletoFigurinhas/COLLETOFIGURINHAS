@@ -32,13 +32,43 @@ enum StatusTroca {
   CANCELADA_PELO_SOLICITANTE
 }
 
+// ─── Empresas ─────────────────────────────────────────────────────
+model Empresa {
+  id          Int      @id @default(autoincrement())
+  nome        String
+  slug        String   @unique
+  cnpj        String   @unique
+  logoUrl     String?  @map("logo_url")
+  corPrimaria String   @default("#1d4ed8") @map("cor_primaria")
+  ativo       Boolean  @default(true)
+  plano       String   @default("basico")
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  participantes Participante[]
+  campanhas     Campanha[]
+
+  @@map("empresas")
+}
+
+// ─── Super Admins (equipe Colleto) ───────────────────────────────
+model SuperAdmin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  senhaHash String   @map("senha_hash")
+  nome      String
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  @@map("super_admins")
+}
+
 // ─── Participantes ────────────────────────────────────────────────
 model Participante {
   id                Int       @id @default(autoincrement())
-  matricula         String    @unique                     // login identifier
+  empresaId         Int       @map("empresa_id")
+  matricula         String
   nome              String
-  email             String?                               // notificações + recuperação
-  senha             String?                               // null = primeiro acesso pendente
+  email             String?
+  senha             String?
   role              Role      @default(PARTICIPANTE)
   ativo             Boolean   @default(true)
   dataEntrada       DateTime  @default(now()) @map("data_entrada")
@@ -47,35 +77,42 @@ model Participante {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt      @map("updated_at")
 
+  empresa           Empresa        @relation(fields: [empresaId], references: [id])
   albumItens        AlbumItem[]
   pacotes           Pacote[]
   trocasSolicitadas Troca[]        @relation("Solicitante")
   trocasRecebidas   Troca[]        @relation("Destinatario")
   ganhos            GanhadorAcao[]
 
+  @@unique([empresaId, matricula])
+  @@index([empresaId])
   @@map("participantes")
 }
 
 // ─── Campanhas ────────────────────────────────────────────────────
 model Campanha {
   id                    Int      @id @default(autoincrement())
+  empresaId             Int      @map("empresa_id")
   nome                  String
-  slug                  String   @unique
+  slug                  String
   dataInicio            DateTime @map("data_inicio")
   dataFim               DateTime @map("data_fim")
   stickersPorDiaPadrao  Int      @default(14)   @map("stickers_por_dia_padrao")
   stickersPorDiaPlus    Int      @default(15)   @map("stickers_por_dia_plus")
   stickersPorDiaPremium Int      @default(15)   @map("stickers_por_dia_premium")
   chanceEspecial        Float    @default(0.10) @map("chance_especial")
-  horarioCorteAcoes     String   @map("horario_corte_acoes")
+  horarioCorteAcoes     String   @default("18:00") @map("horario_corte_acoes")
   status                String   @default("ativo")
   createdAt             DateTime @default(now()) @map("created_at")
 
+  empresa    Empresa        @relation(fields: [empresaId], references: [id])
   figurinhas Figurinha[]
   pacotes    Pacote[]
   trocas     Troca[]
   acoes      AcaoCampanha[]
 
+  @@unique([empresaId, slug])
+  @@index([empresaId])
   @@map("campanhas")
 }
 
@@ -84,7 +121,7 @@ model Figurinha {
   id            Int      @id @default(autoincrement())
   campanhaId    Int      @map("campanha_id")
   classificacao String
-  tipo          String   @default("FUNCIONARIO") // "FUNCIONARIO" | "GESTOR"
+  tipo          String   @default("FUNCIONARIO")
   imagemUrl     String?  @map("imagem_url")
   ativo         Boolean  @default(true)
   criadoEm     DateTime @default(now()) @map("criado_em")
@@ -100,11 +137,11 @@ model Figurinha {
 
 // ─── Album Itens ──────────────────────────────────────────────────
 model AlbumItem {
-  id             Int       @id @default(autoincrement())
-  participanteId Int       @map("participante_id")
-  figurinhaId    Int       @map("figurinha_id")
-  quantidade     Int       @default(1)
-  primeiraVezEm  DateTime  @default(now()) @map("primeira_vez_em")
+  id                 Int       @id @default(autoincrement())
+  participanteId     Int       @map("participante_id")
+  figurinhaId        Int       @map("figurinha_id")
+  quantidade         Int       @default(1)
+  primeiraVezEm      DateTime  @default(now()) @map("primeira_vez_em")
   quantidadeEntregue Int       @default(0)    @map("quantidade_entregue")
   entregueEm         DateTime? @map("entregue_em")
   entregueBy         String?   @map("entregue_by")
@@ -133,6 +170,7 @@ model Pacote {
   figurinhas   PacoteFigurinha[]
   premio       PremioFisico?
 
+  @@index([participanteId, campanhaId])
   @@map("pacotes")
 }
 
@@ -201,9 +239,10 @@ model AcaoCampanha {
   @@map("acoes_campanha")
 }
 
-// ─── Log de Distribuições Manuais ────────────────────────────────
+// ─── Log de Distribuições Manuais ─────────────────────────────────
 model LogDistribuicaoManual {
   id               Int        @id @default(autoincrement())
+  empresaId        Int        @map("empresa_id")
   pacoteId         Int        @map("pacote_id")
   participanteId   Int        @map("participante_id")
   participanteNome String     @map("participante_nome")
@@ -212,6 +251,7 @@ model LogDistribuicaoManual {
   distribuidoPor   String     @map("distribuido_por")
   criadoEm        DateTime   @default(now()) @map("criado_em")
 
+  @@index([empresaId])
   @@map("logs_distribuicao_manual")
 }
 

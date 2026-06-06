@@ -1,68 +1,63 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { isDiaUtil, sortearFigurinhas, CRON_HOUR_UTC } from '@/lib/campanha'
+import { isDiaUtil, sortearFigurinhas } from '@/lib/campanha'
 
 export async function POST(request: Request) {
-  // Autenticação via secret header
   const secret = request.headers.get('x-cron-secret')
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  if (!secret || secret !== process.env.CRON_SECRET)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
 
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
 
-  if (!isDiaUtil(hoje)) {
-    return NextResponse.json({ ok: true, msg: 'Fim de semana — nenhum pacote distribuído', distribuidos: 0 })
-  }
+  if (!isDiaUtil(hoje))
+    return NextResponse.json({ ok: true, msg: 'Fim de semana', distribuidos: 0 })
 
-  const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
+  const campanhas = await db.campanha.findMany({ where: { status: 'ativo' } })
+  let totalDistribuidos = 0
 
-  const inicio = new Date(campanha.dataInicio); inicio.setHours(0, 0, 0, 0)
-  const fim    = new Date(campanha.dataFim);    fim.setHours(23, 59, 59, 999)
+  for (const campanha of campanhas) {
+    const inicio = new Date(campanha.dataInicio); inicio.setHours(0, 0, 0, 0)
+    const fim    = new Date(campanha.dataFim);    fim.setHours(23, 59, 59, 999)
 
-  if (hoje < inicio || hoje > fim) {
-    return NextResponse.json({ ok: true, msg: 'Fora do período da campanha', distribuidos: 0 })
-  }
+    if (hoje < inicio || hoje > fim) continue
 
-  // Participantes ativos
-  const participantes = await db.participante.findMany({
-    where:  { ativo: true },
-    select: { id: true },
-  })
-
-  // Quem já recebeu pacote PADRÃO hoje (não nivelamento)
-  const amanha = new Date(hoje.getTime() + 86_400_000)
-  const pacotesHoje = await db.pacote.findMany({
-    where: {
-      campanhaId:    campanha.id,
-      tipo:          'PADRAO',
-      isNivelamento: false,
-      dataReferencia: { gte: hoje, lt: amanha },
-    },
-    select: { participanteId: true },
-  })
-  const jaReceberam = new Set(pacotesHoje.map(p => p.participanteId))
-  const pendentes = participantes.filter(p => !jaReceberam.has(p.id))
-
-  let distribuidos = 0
-  for (const p of pendentes) {
-    const picks = await sortearFigurinhas(db, campanha.id, campanha.stickersPorDiaPadrao, campanha.chanceEspecial)
-    await db.pacote.create({
-      data: {
-        campanhaId:    campanha.id,
-        participanteId: p.id,
-        tipo:           'PADRAO',
-        dataReferencia: hoje,
-        status:         'DISPONIVEL',
-        isNivelamento:  false,
-        figurinhas:     { create: picks.map(f => ({ figurinhaId: f.id, revelada: false })) },
-      },
+    const participantes = await db.participante.findMany({
+      where:  { empresaId: campanha.empresaId, ativo: true },
+      select: { id: true },
     })
-    distribuidos++
+
+    const amanha = new Date(hoje.getTime() + 86_400_000)
+    const pacotesHoje = await db.pacote.findMany({
+      where: {
+        campanhaId:    campanha.id,
+        tipo:          'PADRAO',
+        isNivelamento: false,
+        dataReferencia: { gte: hoje, lt: amanha },
+      },
+      select: { participanteId: true },
+    })
+    const jaReceberam = new Set(pacotesHoje.map(p => p.participanteId))
+    const pendentes = participantes.filter(p => !jaReceberam.has(p.id))
+
+    for (const p of pendentes) {
+      const picks = await sortearFigurinhas(db, campanha.id, campanha.stickersPorDiaPadrao, campanha.chanceEspecial)
+      await db.pacote.create({
+        data: {
+          campanhaId:     campanha.id,
+          participanteId: p.id,
+          tipo:           'PADRAO',
+          dataReferencia: hoje,
+          status:         'DISPONIVEL',
+          isNivelamento:  false,
+          figurinhas:     { create: picks.map(f => ({ figurinhaId: f.id, revelada: false })) },
+        },
+      })
+      totalDistribuidos++
+    }
+
+    console.log(`[cron] empresa ${campanha.empresaId} — distribuídos: ${pendentes.length}/${participantes.length}`)
   }
 
-  console.log(`[cron] ${new Date().toISOString()} — distribuídos: ${distribuidos}/${participantes.length}`)
-  return NextResponse.json({ ok: true, distribuidos, total: participantes.length, data: hoje.toISOString().slice(0, 10) })
+  return NextResponse.json({ ok: true, distribuidos: totalDistribuidos, campanhas: campanhas.length })
 }
-

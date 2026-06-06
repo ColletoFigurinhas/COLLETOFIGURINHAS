@@ -10,17 +10,21 @@ export type FigurinhaSlot = {
 export type SectionData = { classificacao: string; figurinhas: FigurinhaSlot[] }
 
 export default async function AlbumPage() {
-  const { userId, nome, matricula } = await verifySession()
+  const { userId, nome, matricula, empresaId } = await verifySession()
 
   const participante = await db.participante.findUnique({ where: { id: userId }, select: { role: true } })
   const role = participante?.role ?? 'PARTICIPANTE'
 
+  const campanha = await db.campanha.findFirst({ where: { empresaId, status: 'ativo' } })
+
   const [todasFigurinhas, albumItens] = await Promise.all([
-    db.figurinha.findMany({
-      where:   { campanha: { status: 'ativo' }, ativo: true },
-      select:  { id: true, classificacao: true, imagemUrl: true, tipo: true },
-      orderBy: { id: 'asc' },
-    }),
+    campanha
+      ? db.figurinha.findMany({
+          where:   { campanhaId: campanha.id, ativo: true },
+          select:  { id: true, classificacao: true, imagemUrl: true, tipo: true },
+          orderBy: { id: 'asc' },
+        })
+      : Promise.resolve([]),
     db.albumItem.findMany({
       where:  { participanteId: userId, quantidade: { gt: 0 } },
       select: { figurinhaId: true },
@@ -29,7 +33,6 @@ export default async function AlbumPage() {
 
   const coletadas = new Set(albumItens.map(a => a.figurinhaId))
 
-  // Ordem dinâmica: seções na ordem em que aparecem no banco
   const ordemVista: string[] = []
   const seenSet = new Set<string>()
   for (const f of todasFigurinhas) {

@@ -4,12 +4,19 @@ import { cookies } from 'next/headers'
 import type { Role } from '@prisma/client'
 
 export type SessionPayload = {
-  userId:       number
-  matricula:    string
-  nome:         string
-  role:         Role
+  // Participante
+  userId?:       number
+  matricula?:    string
+  nome:          string
+  role?:         Role
+  empresaId?:    number
+  empresaSlug?:  string
   primeiroAcesso?: boolean
-  expiresAt:    Date
+  // Super admin
+  superAdminId?: number
+  isSuperAdmin?: boolean
+
+  expiresAt: Date
 }
 
 const secretKey = process.env.SESSION_SECRET
@@ -17,7 +24,7 @@ if (!secretKey) throw new Error('SESSION_SECRET não definido no .env.local')
 const encodedKey = new TextEncoder().encode(secretKey)
 
 const COOKIE_NAME = 'album-session'
-const SESSION_DURATION_MS = 8 * 60 * 60 * 1000 // 8 horas
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000
 
 export async function encrypt(payload: SessionPayload): Promise<string> {
   return new SignJWT({ ...payload })

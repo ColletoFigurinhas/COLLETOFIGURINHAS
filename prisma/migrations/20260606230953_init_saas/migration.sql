@@ -1,24 +1,58 @@
 -- CreateTable
+CREATE TABLE `empresas` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nome` VARCHAR(191) NOT NULL,
+    `slug` VARCHAR(191) NOT NULL,
+    `cnpj` VARCHAR(191) NOT NULL,
+    `logo_url` VARCHAR(191) NULL,
+    `cor_primaria` VARCHAR(191) NOT NULL DEFAULT '#1d4ed8',
+    `ativo` BOOLEAN NOT NULL DEFAULT true,
+    `plano` VARCHAR(191) NOT NULL DEFAULT 'basico',
+    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `empresas_slug_key`(`slug`),
+    UNIQUE INDEX `empresas_cnpj_key`(`cnpj`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `super_admins` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(191) NOT NULL,
+    `senha_hash` VARCHAR(191) NOT NULL,
+    `nome` VARCHAR(191) NOT NULL,
+    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `super_admins_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `participantes` (
-    `id` VARCHAR(191) NOT NULL,
-    `cpf` VARCHAR(191) NOT NULL,
-    `matricula` VARCHAR(191) NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `empresa_id` INTEGER NOT NULL,
+    `matricula` VARCHAR(191) NOT NULL,
     `nome` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NULL,
+    `senha` VARCHAR(191) NULL,
     `role` ENUM('PARTICIPANTE', 'MARKETING', 'TI', 'ADMIN') NOT NULL DEFAULT 'PARTICIPANTE',
     `ativo` BOOLEAN NOT NULL DEFAULT true,
     `data_entrada` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `reset_token` VARCHAR(191) NULL,
+    `reset_token_expiry` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `participantes_cpf_key`(`cpf`),
-    UNIQUE INDEX `participantes_matricula_key`(`matricula`),
+    UNIQUE INDEX `participantes_reset_token_key`(`reset_token`),
+    INDEX `participantes_empresa_id_idx`(`empresa_id`),
+    UNIQUE INDEX `participantes_empresa_id_matricula_key`(`empresa_id`, `matricula`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `campanhas` (
-    `id` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `empresa_id` INTEGER NOT NULL,
     `nome` VARCHAR(191) NOT NULL,
     `slug` VARCHAR(191) NOT NULL,
     `data_inicio` DATETIME(3) NOT NULL,
@@ -27,20 +61,21 @@ CREATE TABLE `campanhas` (
     `stickers_por_dia_plus` INTEGER NOT NULL DEFAULT 15,
     `stickers_por_dia_premium` INTEGER NOT NULL DEFAULT 15,
     `chance_especial` DOUBLE NOT NULL DEFAULT 0.10,
-    `horario_corte_acoes` VARCHAR(191) NOT NULL,
+    `horario_corte_acoes` VARCHAR(191) NOT NULL DEFAULT '18:00',
     `status` VARCHAR(191) NOT NULL DEFAULT 'ativo',
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    UNIQUE INDEX `campanhas_slug_key`(`slug`),
+    INDEX `campanhas_empresa_id_idx`(`empresa_id`),
+    UNIQUE INDEX `campanhas_empresa_id_slug_key`(`empresa_id`, `slug`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `figurinhas` (
-    `id` VARCHAR(191) NOT NULL,
-    `campanha_id` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `campanha_id` INTEGER NOT NULL,
     `classificacao` VARCHAR(191) NOT NULL,
-    `tipo` ENUM('PADRAO', 'ESPECIAL') NOT NULL DEFAULT 'PADRAO',
+    `tipo` VARCHAR(191) NOT NULL DEFAULT 'FUNCIONARIO',
     `imagem_url` VARCHAR(191) NULL,
     `ativo` BOOLEAN NOT NULL DEFAULT true,
     `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -50,11 +85,14 @@ CREATE TABLE `figurinhas` (
 
 -- CreateTable
 CREATE TABLE `album_itens` (
-    `id` VARCHAR(191) NOT NULL,
-    `participante_id` VARCHAR(191) NOT NULL,
-    `figurinha_id` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `participante_id` INTEGER NOT NULL,
+    `figurinha_id` INTEGER NOT NULL,
     `quantidade` INTEGER NOT NULL DEFAULT 1,
     `primeira_vez_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `quantidade_entregue` INTEGER NOT NULL DEFAULT 0,
+    `entregue_em` DATETIME(3) NULL,
+    `entregue_by` VARCHAR(191) NULL,
 
     UNIQUE INDEX `album_itens_participante_id_figurinha_id_key`(`participante_id`, `figurinha_id`),
     PRIMARY KEY (`id`)
@@ -62,10 +100,9 @@ CREATE TABLE `album_itens` (
 
 -- CreateTable
 CREATE TABLE `pacotes` (
-    `id` VARCHAR(191) NOT NULL,
-    `campanha_id` VARCHAR(191) NOT NULL,
-    `participante_id` VARCHAR(191) NOT NULL,
-    `nome` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `campanha_id` INTEGER NOT NULL,
+    `participante_id` INTEGER NOT NULL,
     `tipo` ENUM('PADRAO', 'PLUS', 'PREMIUM') NOT NULL DEFAULT 'PADRAO',
     `data_referencia` DATETIME(3) NOT NULL,
     `aberto_em` DATETIME(3) NULL,
@@ -73,14 +110,15 @@ CREATE TABLE `pacotes` (
     `is_nivelamento` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `pacotes_participante_id_campanha_id_idx`(`participante_id`, `campanha_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `pacote_figurinhas` (
-    `id` VARCHAR(191) NOT NULL,
-    `pacote_id` VARCHAR(191) NOT NULL,
-    `figurinha_id` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `pacote_id` INTEGER NOT NULL,
+    `figurinha_id` INTEGER NOT NULL,
     `revelada` BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (`id`)
@@ -88,8 +126,8 @@ CREATE TABLE `pacote_figurinhas` (
 
 -- CreateTable
 CREATE TABLE `premios_fisicos` (
-    `id` VARCHAR(191) NOT NULL,
-    `pacote_id` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `pacote_id` INTEGER NOT NULL,
     `descricao` VARCHAR(191) NOT NULL,
     `registrado_por` VARCHAR(191) NOT NULL,
     `notificado_em` DATETIME(3) NULL,
@@ -102,12 +140,12 @@ CREATE TABLE `premios_fisicos` (
 
 -- CreateTable
 CREATE TABLE `trocas` (
-    `id` VARCHAR(191) NOT NULL,
-    `campanha_id` VARCHAR(191) NOT NULL,
-    `solicitante_id` VARCHAR(191) NOT NULL,
-    `figurinha_ofertada_id` VARCHAR(191) NOT NULL,
-    `destinatario_id` VARCHAR(191) NOT NULL,
-    `figurinha_recebida_id` VARCHAR(191) NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `campanha_id` INTEGER NOT NULL,
+    `solicitante_id` INTEGER NOT NULL,
+    `figurinha_ofertada_id` INTEGER NOT NULL,
+    `destinatario_id` INTEGER NOT NULL,
+    `figurinha_recebida_id` INTEGER NULL,
     `status` ENUM('PENDENTE', 'ACEITA', 'RECUSADA', 'CANCELADA_SEM_FIGURINHA', 'CANCELADA_PELO_SOLICITANTE') NOT NULL DEFAULT 'PENDENTE',
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `respondido_em` DATETIME(3) NULL,
@@ -117,8 +155,8 @@ CREATE TABLE `trocas` (
 
 -- CreateTable
 CREATE TABLE `acoes_campanha` (
-    `id` VARCHAR(191) NOT NULL,
-    `campanha_id` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `campanha_id` INTEGER NOT NULL,
     `nome` VARCHAR(191) NOT NULL,
     `descricao` TEXT NULL,
     `data_acao` DATETIME(3) NOT NULL,
@@ -129,18 +167,40 @@ CREATE TABLE `acoes_campanha` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `logs_distribuicao_manual` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `empresa_id` INTEGER NOT NULL,
+    `pacote_id` INTEGER NOT NULL,
+    `participante_id` INTEGER NOT NULL,
+    `participante_nome` VARCHAR(191) NOT NULL,
+    `matricula` VARCHAR(191) NOT NULL,
+    `tipo_pacote` ENUM('PADRAO', 'PLUS', 'PREMIUM') NOT NULL,
+    `distribuido_por` VARCHAR(191) NOT NULL,
+    `criado_em` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `logs_distribuicao_manual_empresa_id_idx`(`empresa_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `ganhadores_acao` (
-    `id` VARCHAR(191) NOT NULL,
-    `acao_id` VARCHAR(191) NOT NULL,
-    `participante_id` VARCHAR(191) NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `acao_id` INTEGER NOT NULL,
+    `participante_id` INTEGER NOT NULL,
     `tipo_pacote_premio` ENUM('PADRAO', 'PLUS', 'PREMIUM') NOT NULL,
     `registrado_por` VARCHAR(191) NOT NULL,
     `data_registro` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `pacote_id` VARCHAR(191) NULL,
+    `pacote_id` INTEGER NULL,
 
     UNIQUE INDEX `ganhadores_acao_acao_id_participante_id_key`(`acao_id`, `participante_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `participantes` ADD CONSTRAINT `participantes_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `campanhas` ADD CONSTRAINT `campanhas_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `figurinhas` ADD CONSTRAINT `figurinhas_campanha_id_fkey` FOREIGN KEY (`campanha_id`) REFERENCES `campanhas`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

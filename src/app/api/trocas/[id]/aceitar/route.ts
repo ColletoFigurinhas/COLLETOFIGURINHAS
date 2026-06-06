@@ -29,7 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       // Verifica B tem a figurinha que está oferecendo
       const itemB = await tx.albumItem.findUnique({
-        where: { participanteId_figurinhaId: { participanteId: session.userId, figurinhaId: figurinhaRecebidaId } },
+        where: { participanteId_figurinhaId: { participanteId: session.userId!, figurinhaId: figurinhaRecebidaId } },
       })
       if (!itemB || itemB.quantidade < 1) throw new Error('Você não tem essa figurinha')
 
@@ -55,19 +55,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Remove da coleção de B a figurinha oferecida (deleta se era a última)
       if (itemB.quantidade === 1) {
         await tx.albumItem.delete({
-          where: { participanteId_figurinhaId: { participanteId: session.userId, figurinhaId: figurinhaRecebidaId } },
+          where: { participanteId_figurinhaId: { participanteId: session.userId!, figurinhaId: figurinhaRecebidaId } },
         })
       } else {
         await tx.albumItem.update({
-          where: { participanteId_figurinhaId: { participanteId: session.userId, figurinhaId: figurinhaRecebidaId } },
+          where: { participanteId_figurinhaId: { participanteId: session.userId!, figurinhaId: figurinhaRecebidaId } },
           data: { quantidade: { decrement: 1 } },
         })
       }
 
       // Adiciona para B a figurinha de A
       await tx.albumItem.upsert({
-        where: { participanteId_figurinhaId: { participanteId: session.userId, figurinhaId: troca.figurinhaOfertadaId } },
-        create: { participanteId: session.userId, figurinhaId: troca.figurinhaOfertadaId, quantidade: 1 },
+        where: { participanteId_figurinhaId: { participanteId: session.userId!, figurinhaId: troca.figurinhaOfertadaId } },
+        create: { participanteId: session.userId!, figurinhaId: troca.figurinhaOfertadaId, quantidade: 1 },
         update: { quantidade: { increment: 1 } },
       })
 

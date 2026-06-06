@@ -1,34 +1,42 @@
 'use client'
 
-import { useActionState, useState } from 'react'
-import { enviarCodigo, verificarCodigo } from '@/app/actions/auth'
+import { useState, useTransition } from 'react'
+import { enviarCodigoParaMatricula, redefinirSenha } from '@/app/actions/auth'
 
 export default function RecuperarSenhaPage() {
-  const [matricula, setMatricula] = useState('')
-  const [etapa, setEtapa] = useState<'matricula' | 'codigo' | 'ok'>('matricula')
+  const [matricula,   setMatricula]   = useState('')
+  const [etapa,       setEtapa]       = useState<'matricula' | 'codigo' | 'ok'>('matricula')
   const [codigoDebug, setCodigoDebug] = useState('')
   const [emailFalhou, setEmailFalhou] = useState(false)
+  const [erro,        setErro]        = useState('')
 
-  const [stateEnvio, actionEnvio, pendingEnvio] = useActionState(
-    async (prev: any, form: FormData) => {
-      const result = await enviarCodigo(prev, form)
-      if (result?.codigoEnviado) {
-        if (result.codigoDebug) { setCodigoDebug(result.codigoDebug); setEmailFalhou(true) }
-        setEtapa('codigo')
-      }
-      return result
-    },
-    undefined
-  )
+  const [codigo,         setCodigo]         = useState('')
+  const [novaSenha,      setNovaSenha]      = useState('')
+  const [confirmacaoSenha, setConfirmacaoSenha] = useState('')
 
-  const [stateCodigo, actionCodigo, pendingCodigo] = useActionState(
-    async (prev: any, form: FormData) => {
-      const result = await verificarCodigo(prev, form)
-      if (result?.ok) setEtapa('ok')
-      return result
-    },
-    undefined
-  )
+  const [pendingEnvio,   startEnvio]   = useTransition()
+  const [pendingCodigo,  startCodigo]  = useTransition()
+
+  function handleEnviar(e: React.FormEvent) {
+    e.preventDefault(); setErro('')
+    startEnvio(async () => {
+      const r = await enviarCodigoParaMatricula(matricula)
+      if (!r.ok) { setErro(r.error ?? 'Erro ao enviar.'); return }
+      if (r.codigoDebug) { setCodigoDebug(r.codigoDebug); setEmailFalhou(true) }
+      setEtapa('codigo')
+    })
+  }
+
+  function handleCodigo(e: React.FormEvent) {
+    e.preventDefault(); setErro('')
+    if (novaSenha !== confirmacaoSenha) { setErro('As senhas não coincidem.'); return }
+    if (novaSenha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return }
+    startCodigo(async () => {
+      const r = await redefinirSenha(matricula, codigo, novaSenha)
+      if (!r.ok) { setErro(r.error ?? 'Código inválido.'); return }
+      setEtapa('ok')
+    })
+  }
 
   // ── Sucesso ────────────────────────────────────────────────────
   if (etapa === 'ok') return (
@@ -38,7 +46,7 @@ export default function RecuperarSenhaPage() {
       <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 28 }}>
         Agora entre com sua matrícula e a nova senha.
       </div>
-      <a href="/login" style={{ display: 'inline-block', background: 'linear-gradient(135deg,#009c3b,#006b29)', color: '#f5c800', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', borderRadius: 10, padding: '12px 28px', textDecoration: 'none' }}>
+      <a href="/login" style={{ display: 'inline-block', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', borderRadius: 10, padding: '12px 28px', textDecoration: 'none' }}>
         Ir para o login
       </a>
     </div>
@@ -49,7 +57,7 @@ export default function RecuperarSenhaPage() {
     <div style={{ width: '100%', maxWidth: 420, margin: '0 auto', padding: '0 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <div style={{ fontSize: 44, marginBottom: 10 }}>📧</div>
-        <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(240,192,64,0.6)', marginBottom: 6 }}>
+        <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(96,165,250,0.6)', marginBottom: 6 }}>
           Verifique seu e-mail
         </div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>
@@ -59,60 +67,39 @@ export default function RecuperarSenhaPage() {
         </div>
       </div>
 
-      {/* Código debug (dev sem SMTP) */}
       {codigoDebug && (
-        <div style={{
-          background: 'rgba(245,200,0,0.1)', border: '1px solid rgba(245,200,0,0.3)',
-          borderRadius: 12, padding: '16px', marginBottom: 20, textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 9, color: 'rgba(245,200,0,0.6)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 12, padding: 16, marginBottom: 20, textAlign: 'center' }}>
+          <div style={{ fontSize: 9, color: 'rgba(96,165,250,0.6)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
             Código (modo desenvolvimento)
           </div>
-          <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: 10, color: '#f5c800' }}>
+          <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: 10, color: '#60a5fa' }}>
             {codigoDebug}
-          </div>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>
-            Configure SMTP_HOST no .env.local para receber por e-mail
           </div>
         </div>
       )}
 
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(240,192,64,0.15)', borderRadius: 16, padding: '32px 28px', backdropFilter: 'blur(10px)' }}>
-        <form action={actionCodigo} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <input type="hidden" name="matricula" value={matricula} />
-
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.15)', borderRadius: 16, padding: '32px 28px' }}>
+        <form onSubmit={handleCodigo} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={lbl} htmlFor="codigo">Código de 6 dígitos</label>
-            <input
-              id="codigo" name="codigo" type="text"
-              inputMode="numeric" maxLength={6}
-              placeholder="000000"
-              style={{ ...inp, fontSize: 24, letterSpacing: 8, textAlign: 'center', fontWeight: 700 }}
-            />
-            {stateCodigo?.errors?.codigo?.map(e => <p key={e} style={err}>{e}</p>)}
+            <label style={lbl}>Código de 6 dígitos</label>
+            <input value={codigo} onChange={e => setCodigo(e.target.value)} type="text" inputMode="numeric" maxLength={6} placeholder="000000"
+              style={{ ...inp, fontSize: 24, letterSpacing: 8, textAlign: 'center', fontWeight: 700 }} />
           </div>
-
           <div>
-            <label style={lbl} htmlFor="senha">Nova senha</label>
-            <input id="senha" name="senha" type="password" placeholder="Nova senha" autoComplete="new-password" style={inp} />
-            {stateCodigo?.errors?.senha?.map(e => <p key={e} style={err}>{e}</p>)}
+            <label style={lbl}>Nova senha</label>
+            <input value={novaSenha} onChange={e => setNovaSenha(e.target.value)} type="password" placeholder="Nova senha" autoComplete="new-password" style={inp} />
           </div>
-
           <div>
-            <label style={lbl} htmlFor="confirmacao">Confirmar senha</label>
-            <input id="confirmacao" name="confirmacao" type="password" placeholder="Repita a senha" autoComplete="new-password" style={inp} />
-            {stateCodigo?.errors?.confirmacao?.map(e => <p key={e} style={err}>{e}</p>)}
+            <label style={lbl}>Confirmar senha</label>
+            <input value={confirmacaoSenha} onChange={e => setConfirmacaoSenha(e.target.value)} type="password" placeholder="Repita a senha" autoComplete="new-password" style={inp} />
           </div>
-
-          {stateCodigo?.errors?.geral?.map(e => <div key={e} style={alertStyle}>{e}</div>)}
-
-          <button type="submit" disabled={pendingCodigo} style={btnGold(pendingCodigo)}>
+          {erro && <div style={alertStyle}>{erro}</div>}
+          <button type="submit" disabled={pendingCodigo} style={btn(pendingCodigo)}>
             {pendingCodigo ? 'Verificando…' : 'Confirmar'}
           </button>
         </form>
-
         <div style={{ marginTop: 14, textAlign: 'center' }}>
-          <button onClick={() => setEtapa('matricula')} style={{ background: 'none', border: 'none', fontSize: 10, color: 'rgba(255,255,255,0.3)', cursor: 'pointer', letterSpacing: 1 }}>
+          <button onClick={() => { setEtapa('matricula'); setErro('') }} style={{ background: 'none', border: 'none', fontSize: 10, color: 'rgba(255,255,255,0.3)', cursor: 'pointer', letterSpacing: 1 }}>
             ← Tentar outra matrícula
           </button>
         </div>
@@ -124,23 +111,17 @@ export default function RecuperarSenhaPage() {
   return (
     <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', padding: '0 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 36 }}>
-        <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(240,192,64,0.6)', marginBottom: 6 }}>Recuperar senha</div>
+        <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(96,165,250,0.6)', marginBottom: 6 }}>Recuperar senha</div>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Informe sua matrícula</div>
       </div>
-
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(240,192,64,0.15)', borderRadius: 16, padding: '36px 32px', backdropFilter: 'blur(10px)' }}>
-        <form action={actionEnvio} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.15)', borderRadius: 16, padding: '36px 32px' }}>
+        <form onSubmit={handleEnviar} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={lbl} htmlFor="matricula">Matrícula</label>
-            <input
-              id="matricula" name="matricula" type="text" placeholder="Sua matrícula"
-              value={matricula} onChange={e => setMatricula(e.target.value)}
-              style={inp}
-            />
-            {stateEnvio?.errors?.matricula?.map(e => <p key={e} style={err}>{e}</p>)}
+            <label style={lbl}>Matrícula</label>
+            <input value={matricula} onChange={e => setMatricula(e.target.value)} type="text" placeholder="Sua matrícula" style={inp} />
           </div>
-          {stateEnvio?.errors?.geral?.map(e => <div key={e} style={alertStyle}>{e}</div>)}
-          <button type="submit" disabled={pendingEnvio} style={btnGold(pendingEnvio)}>
+          {erro && <div style={alertStyle}>{erro}</div>}
+          <button type="submit" disabled={pendingEnvio} style={btn(pendingEnvio)}>
             {pendingEnvio ? 'Enviando…' : 'Enviar código'}
           </button>
         </form>
@@ -154,6 +135,5 @@ export default function RecuperarSenhaPage() {
 
 const lbl: React.CSSProperties = { display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }
 const inp: React.CSSProperties = { width: '100%', height: 44, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 14, padding: '0 14px', outline: 'none', boxSizing: 'border-box' }
-const err: React.CSSProperties = { fontSize: 10, color: '#ff6b6b', marginTop: 4 }
 const alertStyle: React.CSSProperties = { background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#ff9999' }
-const btnGold = (d: boolean): React.CSSProperties => ({ height: 48, borderRadius: 10, border: 'none', background: d ? 'rgba(0,156,59,0.3)' : 'linear-gradient(135deg,#009c3b,#006b29)', color: '#f5c800', fontSize: 12, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', cursor: d ? 'not-allowed' : 'pointer' })
+const btn = (d: boolean): React.CSSProperties => ({ height: 48, borderRadius: 10, border: 'none', background: d ? 'rgba(29,78,216,0.3)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', cursor: d ? 'not-allowed' : 'pointer' })

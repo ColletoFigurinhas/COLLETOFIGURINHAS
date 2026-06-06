@@ -12,18 +12,19 @@ import {
 type Step = 'matricula' | 'senha' | 'cadastro' | 'recuperar_enviando' | 'recuperar_codigo' | 'recuperar_ok'
 
 export default function LoginPage() {
-  const [step,      setStep]      = useState<Step>('matricula')
-  const [matricula, setMatricula] = useState('')
-  const [nome,      setNome]      = useState('')
-  const [senha,     setSenha]     = useState('')
-  const [email,     setEmail]     = useState('')
-  const [confirmar, setConfirmar] = useState('')
-  const [codigo,    setCodigo]    = useState('')
-  const [novaSenha, setNovaSenha] = useState('')
-  const [confirmarNova, setConfirmarNova] = useState('')
-  const [codigoDebug, setCodigoDebug] = useState('')
-  const [erro,      setErro]      = useState('')
-  const [pending,   startTransition] = useTransition()
+  const [step,         setStep]         = useState<Step>('matricula')
+  const [matricula,    setMatricula]    = useState('')
+  const [nome,         setNome]         = useState('')
+  const [isNovo,       setIsNovo]       = useState(false)
+  const [senha,        setSenha]        = useState('')
+  const [email,        setEmail]        = useState('')
+  const [confirmar,    setConfirmar]    = useState('')
+  const [codigo,       setCodigo]       = useState('')
+  const [novaSenha,    setNovaSenha]    = useState('')
+  const [confirmarNova,setConfirmarNova]= useState('')
+  const [codigoDebug,  setCodigoDebug]  = useState('')
+  const [erro,         setErro]         = useState('')
+  const [pending,      startTransition] = useTransition()
 
   function voltarMatricula() {
     setStep('matricula'); setSenha(''); setEmail(''); setConfirmar('')
@@ -36,6 +37,7 @@ export default function LoginPage() {
       const r = await verificarMatricula(matricula)
       if (!r.ok) { setErro(r.error); return }
       setNome(r.nome)
+      setIsNovo(r.isNovo)
       setStep(r.temSenha ? 'senha' : 'cadastro')
     })
   }
@@ -50,11 +52,12 @@ export default function LoginPage() {
 
   function handleCadastro(e: React.FormEvent) {
     e.preventDefault()
+    if (!nome.trim())      { setErro('Informe seu nome.'); return }
     if (senha !== confirmar) { setErro('As senhas não conferem.'); return }
     if (senha.length < 6)    { setErro('A senha deve ter no mínimo 6 caracteres.'); return }
     setErro('')
     startTransition(async () => {
-      const r = await cadastrar(matricula, email, senha)
+      const r = await cadastrar(matricula, nome, email, senha)
       if (r?.error) setErro(r.error)
     })
   }
@@ -82,8 +85,7 @@ export default function LoginPage() {
     })
   }
 
-  const primeiroNome = nome.split(' ')[0]
-  const mat = matricula.replace(/\D/g, '').padStart(5, '0')
+  const primeiroNome = nome.split(' ')[0] || 'você'
 
   return (
     <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', padding: '0 20px' }}>
@@ -110,7 +112,7 @@ export default function LoginPage() {
                   value={matricula} onChange={e => setMatricula(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(29,78,216,0.3)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: pending ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending || !matricula.trim()} style={{ ...btn, background: (pending || !matricula.trim()) ? 'rgba(29,78,216,0.3)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: (pending || !matricula.trim()) ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Verificando…' : 'Continuar →'}
               </button>
             </form>
@@ -121,7 +123,6 @@ export default function LoginPage() {
         {step === 'senha' && (
           <>
             <div style={{ ...title, marginBottom: 4 }}>Olá, {primeiroNome}!</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, textAlign: 'center', marginBottom: 24 }}>#{mat}</div>
             <form onSubmit={handleLogin} style={form}>
               <div>
                 <label style={lbl} htmlFor="senha">Senha</label>
@@ -142,17 +143,28 @@ export default function LoginPage() {
           </>
         )}
 
-        {/* ── STEP 2b: Cadastro (primeiro acesso) ── */}
+        {/* ── STEP 2b: Cadastro ── */}
         {step === 'cadastro' && (
           <>
-            <div style={{ ...title, marginBottom: 4 }}>Bem-vindo, {primeiroNome}!</div>
+            <div style={{ ...title, marginBottom: 4 }}>
+              {isNovo ? 'Criar acesso' : `Olá, ${primeiroNome}!`}
+            </div>
             <div style={{ fontSize: 10, color: 'rgba(96,165,250,0.6)', letterSpacing: 1, textAlign: 'center', marginBottom: 24 }}>
-              Crie seu acesso para entrar no álbum
+              {isNovo ? 'Preencha seus dados para entrar no álbum' : 'Defina sua senha para entrar'}
             </div>
             <form onSubmit={handleCadastro} style={form}>
+              {/* Nome só aparece para usuários novos */}
+              {isNovo && (
+                <div>
+                  <label style={lbl} htmlFor="nome">Seu nome completo</label>
+                  <input id="nome" type="text" placeholder="Nome Sobrenome" autoFocus
+                    value={nome} onChange={e => setNome(e.target.value)} style={inp} />
+                </div>
+              )}
               <div>
                 <label style={lbl} htmlFor="email">E-mail</label>
-                <input id="email" type="email" placeholder="Seu e-mail" autoComplete="email" autoFocus
+                <input id="email" type="email" placeholder="Seu e-mail" autoComplete="email"
+                  autoFocus={!isNovo}
                   value={email} onChange={e => setEmail(e.target.value)} style={inp} />
               </div>
               <div>
@@ -192,16 +204,12 @@ export default function LoginPage() {
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>
                 Verifique seu e-mail
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
-                Enviamos um código de 6 dígitos para o e-mail cadastrado.
-              </div>
             </div>
 
-            {/* Debug em dev */}
             {codigoDebug && (
-              <div style={{ background: 'rgba(245,200,0,0.08)', border: '1px solid rgba(245,200,0,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, textAlign: 'center' }}>
-                <div style={{ fontSize: 8, color: 'rgba(245,200,0,0.5)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Código (dev)</div>
-                <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 8, color: '#f5c800' }}>{codigoDebug}</div>
+              <div style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 8, color: 'rgba(96,165,250,0.5)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Código (dev)</div>
+                <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 8, color: '#60a5fa' }}>{codigoDebug}</div>
               </div>
             )}
 
@@ -223,7 +231,7 @@ export default function LoginPage() {
                   value={confirmarNova} onChange={e => setConfirmarNova(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending || codigo.length < 6} style={{ ...btn, background: (pending || codigo.length < 6) ? 'rgba(0,156,59,0.25)' : 'linear-gradient(135deg,#009c3b,#006b29)', color: '#f5c800', cursor: (pending || codigo.length < 6) ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending || codigo.length < 6} style={{ ...btn, background: (pending || codigo.length < 6) ? 'rgba(29,78,216,0.25)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: (pending || codigo.length < 6) ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Confirmando…' : 'Confirmar nova senha'}
               </button>
             </form>
@@ -242,7 +250,7 @@ export default function LoginPage() {
               Agora entre com sua matrícula e a nova senha.
             </div>
             <button onClick={() => { setSenha(''); setStep('senha') }}
-              style={{ ...btn, background: 'linear-gradient(135deg,#009c3b,#006b29)', color: '#f5c800', cursor: 'pointer', width: '100%' }}>
+              style={{ ...btn, background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: 'pointer', width: '100%' }}>
               Entrar agora
             </button>
           </div>

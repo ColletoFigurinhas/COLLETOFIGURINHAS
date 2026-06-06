@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 
@@ -6,16 +6,18 @@ const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
 
 async function auth() {
   const s = await getSession()
-  if (!s?.userId || !ROLES.includes(s.role as any)) return null
+  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any)) return null
   return s
 }
 
 export async function GET(request: Request) {
   try {
-    if (!await auth()) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    const s = await auth()
+    if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const q = new URL(request.url).searchParams.get('q')?.trim() ?? ''
-    const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
+    const campanha = await db.campanha.findFirst({ where: { empresaId: s.empresaId, status: 'ativo' } })
+    if (!campanha) return NextResponse.json([])
 
     const itens = await db.albumItem.findMany({
       where: {
@@ -25,9 +27,12 @@ export async function GET(request: Request) {
         },
         ...(q ? {
           participante: {
+            empresaId: s.empresaId,
             OR: [{ nome: { contains: q } }, { matricula: { contains: q } }],
           },
-        } : {}),
+        } : {
+          participante: { empresaId: s.empresaId },
+        }),
       },
       select: {
         id:                 true,
@@ -41,7 +46,6 @@ export async function GET(request: Request) {
       orderBy: { id: 'asc' },
     })
 
-    // Expande: uma entrada por unidade
     const linhas = itens.flatMap(item =>
       Array.from({ length: item.quantidade }, (_, i) => ({
         albumItemId:  item.id,
@@ -54,7 +58,6 @@ export async function GET(request: Request) {
       }))
     )
 
-    // Pendentes primeiro, depois por nome
     linhas.sort((a, b) => {
       if (a.entregue !== b.entregue) return a.entregue ? 1 : -1
       return a.participante.nome.localeCompare(b.participante.nome)
@@ -66,4 +69,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: err?.message ?? 'Erro interno' }, { status: 500 })
   }
 }
-

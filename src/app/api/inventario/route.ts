@@ -1,31 +1,24 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
-
-const ORDEM_SECOES = [
-  'COMERCIAL',
-  'ALMOXARIFADO',
-  'GARANTIA DA QUALIDADE',
-  'MARKETING / TI',
-  'FINANCEIRO',
-  'COMPRAS',
-  'RH / SERVIÇOS GERAIS',
-  'ESPECIAIS',
-]
 
 const PREMIOS_CLASSIF = ['PREMIO PRATA', 'PREMIO OURO']
 
 export async function GET() {
   try {
     const session = await getSession()
-    const userId  = Number(session?.userId)
-    if (!session?.userId || !Number.isInteger(userId) || userId <= 0) {
+    const userId = Number(session?.userId)
+    if (!session?.userId || !session.empresaId || !Number.isInteger(userId) || userId <= 0)
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
+
+    const campanha = await db.campanha.findFirst({
+      where: { empresaId: session.empresaId, status: 'ativo' },
+    })
+    if (!campanha) return NextResponse.json({ secoes: [], premios: [] })
 
     const [figurinhas, albumItens] = await Promise.all([
       db.figurinha.findMany({
-        where:   { campanha: { status: 'ativo' }, ativo: true },
+        where:   { campanhaId: campanha.id, ativo: true },
         select:  { id: true, classificacao: true, imagemUrl: true },
         orderBy: { id: 'asc' },
       }),
@@ -35,29 +28,32 @@ export async function GET() {
       }),
     ])
 
-    const qtdMap            = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
-    const qtdEntregueMap    = new Map(albumItens.map(a => [a.figurinhaId, a.quantidadeEntregue]))
+    const qtdMap         = new Map(albumItens.map(a => [a.figurinhaId, a.quantidade]))
+    const qtdEntregueMap = new Map(albumItens.map(a => [a.figurinhaId, a.quantidadeEntregue]))
 
-    const figurinhasNormais   = figurinhas.filter(f => !PREMIOS_CLASSIF.includes(f.classificacao))
-    const figurinhasPremiadas = figurinhas.filter(f =>  PREMIOS_CLASSIF.includes(f.classificacao))
+    const normais   = figurinhas.filter(f => !PREMIOS_CLASSIF.includes(f.classificacao))
+    const premiadas = figurinhas.filter(f =>  PREMIOS_CLASSIF.includes(f.classificacao))
 
-    const colecao = figurinhasNormais.map(f => ({
-      id:            f.id,
-      classificacao: f.classificacao,
-      imagemUrl:     f.imagemUrl,
-      quantidade:    qtdMap.get(f.id) ?? 0,
+    const colecao = normais.map(f => ({
+      id: f.id, classificacao: f.classificacao, imagemUrl: f.imagemUrl,
+      quantidade: qtdMap.get(f.id) ?? 0,
     }))
 
-    const secoes = ORDEM_SECOES
+    // Ordem dinâmica: seções na ordem em que aparecem no banco
+    const ordemVista: string[] = []
+    const seen = new Set<string>()
+    for (const f of normais) {
+      if (!seen.has(f.classificacao)) { seen.add(f.classificacao); ordemVista.push(f.classificacao) }
+    }
+
+    const secoes = ordemVista
       .map(c => ({ classificacao: c, figurinhas: colecao.filter(f => f.classificacao === c) }))
       .filter(s => s.figurinhas.length > 0)
 
-    const premios = figurinhasPremiadas
+    const premios = premiadas
       .filter(f => (qtdMap.get(f.id) ?? 0) > 0)
       .map(f => ({
-        id:            f.id,
-        classificacao: f.classificacao,
-        imagemUrl:     f.imagemUrl,
+        id: f.id, classificacao: f.classificacao, imagemUrl: f.imagemUrl,
         quantidade:         qtdMap.get(f.id) ?? 0,
         quantidadeEntregue: qtdEntregueMap.get(f.id) ?? 0,
       }))
@@ -68,4 +64,3 @@ export async function GET() {
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }
-

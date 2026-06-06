@@ -1,14 +1,14 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 import { sortearFigurinhas } from '@/lib/campanha'
 
-const ROLES_PERMITIDOS = ['MARKETING', 'TI', 'ADMIN'] as const
+const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
 
 export async function POST(request: Request) {
   try {
     const s = await getSession()
-    if (!s?.userId || !ROLES_PERMITIDOS.includes(s.role as any))
+    if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any))
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const { participanteId, tipo, premioPrataId, premioOuroId } = await request.json()
@@ -20,30 +20,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Selecione a carta Prêmio Prata.' }, { status: 400 })
 
     if (tipo === 'PREMIUM' && (!premioPrataId || !premioOuroId))
-      return NextResponse.json({ error: 'Selecione a carta Prêmio Prata e a carta Prêmio Ouro.' }, { status: 400 })
+      return NextResponse.json({ error: 'Selecione as cartas Prêmio Prata e Prêmio Ouro.' }, { status: 400 })
 
     const participante = await db.participante.findFirst({
-      where:  { id: participanteId },
+      where:  { id: participanteId, empresaId: s.empresaId },
       select: { nome: true, matricula: true },
     })
     if (!participante) return NextResponse.json({ error: 'Participante não encontrado.' }, { status: 404 })
 
-    const campanha = await db.campanha.findFirstOrThrow({ where: { status: 'ativo' } })
+    const campanha = await db.campanha.findFirst({ where: { empresaId: s.empresaId, status: 'ativo' } })
+    if (!campanha) return NextResponse.json({ error: 'Nenhuma campanha ativa.' }, { status: 400 })
 
-    // 5 figurinhas normais para PLUS e PREMIUM
     const qtdNormais = tipo === 'PADRAO' ? campanha.stickersPorDiaPadrao : 5
     const normais = await sortearFigurinhas(db, campanha.id, qtdNormais, campanha.chanceEspecial)
 
     let cartas: { id: number }[]
-    if (tipo === 'PADRAO') {
-      cartas = normais
-    } else if (tipo === 'PLUS') {
-      // 5 normais + 1 prêmio prata
-      cartas = [...normais, { id: premioPrataId }]
-    } else {
-      // 5 normais + 1 prêmio prata + 1 prêmio ouro
-      cartas = [...normais, { id: premioPrataId }, { id: premioOuroId }]
-    }
+    if (tipo === 'PADRAO')        cartas = normais
+    else if (tipo === 'PLUS')     cartas = [...normais, { id: premioPrataId }]
+    else                          cartas = [...normais, { id: premioPrataId }, { id: premioOuroId }]
 
     const pacote = await db.pacote.create({
       data: {
@@ -52,9 +46,7 @@ export async function POST(request: Request) {
         tipo,
         dataReferencia: new Date(),
         status:         'DISPONIVEL',
-        figurinhas: {
-          create: cartas.map(f => ({ figurinhaId: f.id, revelada: false })),
-        },
+        figurinhas: { create: cartas.map(f => ({ figurinhaId: f.id, revelada: false })) },
         ...(tipo === 'PREMIUM' ? {
           premio: {
             create: {
@@ -68,6 +60,7 @@ export async function POST(request: Request) {
 
     await db.logDistribuicaoManual.create({
       data: {
+        empresaId:        s.empresaId!,
         pacoteId:         pacote.id,
         participanteId,
         participanteNome: participante.nome,
@@ -79,8 +72,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, pacoteId: pacote.id })
   } catch (err: any) {
-    console.error('[pacotes] Erro ao distribuir:', err)
+    console.error('[pacotes] Erro:', err)
     return NextResponse.json({ error: err?.message ?? 'Erro interno' }, { status: 500 })
   }
 }
-
