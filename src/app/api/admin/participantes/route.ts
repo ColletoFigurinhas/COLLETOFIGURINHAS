@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 import bcrypt from 'bcryptjs'
 
+export const dynamic = 'force-dynamic'
+
 const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
 
 async function auth() {

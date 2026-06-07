@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/session'
 
+export const dynamic = 'force-dynamic'
+
 const ROLES = ['ADMIN'] as const
 
 async function auth() {

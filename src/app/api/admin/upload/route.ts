@@ -20,8 +20,8 @@ export async function POST(request: Request) {
   const existing = formData.get('filename') as string | null
   const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = existing ?? `${Date.now()}.${ext}`
-  const filePath = path.join(process.cwd(), 'public', 'figuras', folder, filename)
-  const dir      = path.join(process.cwd(), 'public', 'figuras', folder)
+  const filePath = path.join(process.cwd(), 'uploads', 'figuras', folder, filename)
+  const dir      = path.join(process.cwd(), 'uploads', 'figuras', folder)
 
   try {
     await mkdir(dir, { recursive: true })
@@ -36,5 +36,5 @@ export async function POST(request: Request) {
     )
   }
 
-  return NextResponse.json({ url: `/figuras/${folder}/${filename}`, filename })
+  return NextResponse.json({ url: `/api/figuras/${folder}/${filename}`, filename })
 }

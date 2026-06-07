@@ -50,3 +50,6 @@ public/figuras/**/*.png
 !public/figuras/**/Figura-*.png
 tmp/campanha_pages/
 tmp/*-prod.mjs
+
+# uploads (user-generated content, not tracked)
+/uploads/figuras/
