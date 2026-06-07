@@ -24,20 +24,20 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const host = request.headers.get('host') ?? ''
 
-  // Server Actions nunca devem ser interceptadas
+  const slug = extractSubdomain(host)
+
+  // Propaga o slug para server components / actions via header (sempre, antes de qualquer early return)
+  const requestHeaders = new Headers(request.headers)
+  if (slug) requestHeaders.set('x-empresa-slug', slug)
+  const next = NextResponse.next({ request: { headers: requestHeaders } })
+
+  // Server Actions passam direto — mas já carregam o header x-empresa-slug
   if (request.method === 'POST' && request.headers.get('Next-Action')) {
-    return NextResponse.next()
+    return next
   }
 
   // Assets e crons passam direto
   if (SKIP_PATHS.some(p => pathname.startsWith(p))) return NextResponse.next()
-
-  const slug = extractSubdomain(host)
-
-  // Propaga o slug para server components / actions via header
-  const requestHeaders = new Headers(request.headers)
-  if (slug) requestHeaders.set('x-empresa-slug', slug)
-  const next = NextResponse.next({ request: { headers: requestHeaders } })
 
   // ── Super admin (domínio raiz ou super.localhost / super.colleto.com.br) ──
   if (!slug || slug === 'super') {
