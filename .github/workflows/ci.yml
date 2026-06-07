@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Type-check & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # Vars mínimas para o build não explodir na validação de env
+      DATABASE_URL:   "mysql://root:root@127.0.0.1:3306/album_ci"
+      DB_NAME:        "album_ci"
+      SESSION_SECRET: "ci-secret-placeholder-32-characters-long"
+      BASE_DOMAIN:    "localhost"
+      NODE_ENV:       "production"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar tipos TypeScript
+        run: npx tsc --noEmit
+
+      - name: Build de produção
+        run: npm run build

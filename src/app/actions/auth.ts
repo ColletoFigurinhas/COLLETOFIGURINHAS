@@ -8,6 +8,13 @@ import { db }       from '@/lib/db'
 import { createSession, deleteSession, getSession } from '@/lib/session'
 import { nivelarParticipante } from '@/lib/campanha'
 import { enviarCodigoRecuperacao } from '@/lib/email'
+import { rateLimit } from '@/lib/ratelimit'
+import { log } from '@/lib/logger'
+
+async function getClientIp(): Promise<string> {
+  const h = await headers()
+  return h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+}
 
 // ── Helpers ───────────────────────────────────────────────────────
 async function getEmpresaDoSlug() {
@@ -48,6 +55,10 @@ export async function verificarMatricula(matriculaRaw: string): Promise<
 export async function loginComSenha(matriculaRaw: string, senha: string): Promise<{ error: string } | void> {
   if (!senha) return { error: 'Informe a senha.' }
   const matricula = matriculaRaw.trim()
+
+  const ip = await getClientIp()
+  if (!rateLimit(`login:${ip}`, 10, 60_000).allowed)
+    return { error: 'Muitas tentativas. Aguarde 1 minuto.' }
 
   const empresa = await getEmpresaDoSlug()
   if (!empresa) return { error: 'Empresa não encontrada.' }
@@ -155,6 +166,10 @@ export async function definirSenha(
 export async function enviarCodigoParaMatricula(
   matriculaRaw: string,
 ): Promise<{ ok: boolean; error?: string; codigoDebug?: string }> {
+  const ip = await getClientIp()
+  if (!rateLimit(`recuperar:${ip}`, 5, 60_000).allowed)
+    return { ok: false, error: 'Muitas tentativas. Aguarde 1 minuto.' }
+
   const matricula = matriculaRaw.trim()
 
   const empresa = await getEmpresaDoSlug()
@@ -180,7 +195,7 @@ export async function enviarCodigoParaMatricula(
     emailEnviado = true
   } catch (err: any) {
     emailErro = err?.message ?? String(err)
-    console.error('[Email] Falha:', emailErro)
+    log.error('Falha ao enviar email de recuperação', { error: emailErro, matricula })
   }
 
   if (!emailEnviado) {
