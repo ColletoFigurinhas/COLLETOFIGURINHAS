@@ -4,21 +4,13 @@ import { decryptEdge } from '@/lib/session-edge'
 
 function extractSubdomain(host: string): string | null {
   const hostname = host.split(':')[0]
-  const parts = hostname.split('.')
+  const base = process.env.BASE_DOMAIN ?? 'localhost'
 
-  // x.localhost → subdomain = x
-  if (parts[parts.length - 1] === 'localhost') {
-    return parts.length >= 2 && parts[0] !== 'localhost' ? parts[0] : null
-  }
+  if (hostname === base || hostname === `www.${base}`) return null
 
-  // x.colleto.com.br (4+ parts) → subdomain = x, exceto "www"
-  if (parts.length >= 4) {
-    return parts[0] === 'www' ? null : parts[0]
-  }
-
-  // x.colleto.com (3 parts) → subdomain = x, exceto "www"
-  if (parts.length === 3) {
-    return parts[0] === 'www' ? null : parts[0]
+  if (hostname.endsWith(`.${base}`)) {
+    const sub = hostname.slice(0, hostname.length - base.length - 1)
+    return sub === 'www' ? null : sub
   }
 
   return null
