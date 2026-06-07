@@ -5,7 +5,13 @@ import { useState, useEffect, useRef } from 'react'
 // ─── Tipos ────────────────────────────────────────────────────────
 type Figurinha   = { id: number; classificacao: string; tipo: string; imagemUrl: string | null; ativo: boolean }
 type Participante = { id: number; matricula: string; nome: string; email: string | null; role: string; ativo: boolean }
-type Campanha    = { id: number; nome: string; dataInicio: string; dataFim: string; stickersPorDiaPadrao: number; chanceEspecial: number; status: string } | null
+type Campanha    = {
+  id: number; nome: string; dataInicio: string; dataFim: string
+  stickersPorDiaPadrao: number; chanceEspecial: number; status: string
+  horarioInicio: string; horarioFim: string; frequenciaMinutos: number
+  diasSemana: string; qtdCartasFds: number; timezone: string
+  ultimaDistribuicao: string | null
+} | null
 
 type Tab = 'figurinhas' | 'participantes' | 'campanha'
 
@@ -441,6 +447,17 @@ function AbaParticipantes() {
 // ═══════════════════════════════════════════════════════════════════
 // ABA CAMPANHA
 // ═══════════════════════════════════════════════════════════════════
+const DIAS_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const FREQ_OPCOES = [
+  { label: '30 min',  value: 30 },
+  { label: '1 hora',  value: 60 },
+  { label: '2 horas', value: 120 },
+  { label: '4 horas', value: 240 },
+  { label: '6 horas', value: 360 },
+  { label: '8 horas', value: 480 },
+  { label: '1x / dia', value: 1440 },
+]
+
 function AbaCampanha() {
   const [campanha, setCampanha] = useState<Campanha>(null)
   const [loading,  setLoading]  = useState(true)
@@ -449,46 +466,154 @@ function AbaCampanha() {
   const [saving,   setSaving]   = useState(false)
   const [err,      setErr]      = useState('')
 
-  // form edição
-  const [nome,     setNome]     = useState('')
-  const [inicio,   setInicio]   = useState('')
-  const [fim,      setFim]      = useState('')
-  const [stickers, setStickers] = useState(14)
-  const [chance,   setChance]   = useState(10)
+  // form
+  const [nome,       setNome]       = useState('')
+  const [inicio,     setInicio]     = useState('')
+  const [fim,        setFim]        = useState('')
+  const [stickers,   setStickers]   = useState(14)
+  const [stickersFds,setStickersFds]= useState(5)
+  const [chance,     setChance]     = useState(10)
+  const [hInicio,    setHInicio]    = useState('08:00')
+  const [hFim,       setHFim]       = useState('18:00')
+  const [freq,       setFreq]       = useState(1440)
+  const [dias,       setDias]       = useState<number[]>([1, 2, 3, 4, 5])
+
+  function preencherForm(data: NonNullable<Campanha>) {
+    setNome(data.nome)
+    setInicio(data.dataInicio.slice(0, 10))
+    setFim(data.dataFim.slice(0, 10))
+    setStickers(data.stickersPorDiaPadrao)
+    setStickersFds(data.qtdCartasFds)
+    setChance(Math.round(data.chanceEspecial * 100))
+    setHInicio(data.horarioInicio)
+    setHFim(data.horarioFim)
+    setFreq(data.frequenciaMinutos)
+    try { setDias(JSON.parse(data.diasSemana)) } catch { setDias([1,2,3,4,5]) }
+  }
 
   async function load() {
     setLoading(true)
     const r = await fetch('/api/admin/campanha')
     const data = await r.json()
     setCampanha(data)
-    if (data) {
-      setNome(data.nome); setInicio(data.dataInicio.slice(0, 10)); setFim(data.dataFim.slice(0, 10))
-      setStickers(data.stickersPorDiaPadrao); setChance(Math.round(data.chanceEspecial * 100))
-    }
+    if (data) preencherForm(data)
     setLoading(false)
   }
   useEffect(() => { load() }, [])
 
+  function toggleDia(d: number) {
+    setDias(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort())
+  }
+
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault(); setErr(''); setSaving(true)
-    const body = { nome, dataInicio: inicio, dataFim: fim, stickersPorDiaPadrao: stickers, chanceEspecial: chance / 100 }
-    const r = await fetch('/api/admin/campanha', { method: campanha ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if (dias.length === 0) { setErr('Selecione pelo menos um dia da semana.'); setSaving(false); return }
+    const body = {
+      nome, dataInicio: inicio, dataFim: fim,
+      stickersPorDiaPadrao: stickers, chanceEspecial: chance / 100,
+      horarioInicio: hInicio, horarioFim: hFim,
+      frequenciaMinutos: freq,
+      diasSemana: JSON.stringify(dias),
+      qtdCartasFds: stickersFds,
+    }
+    const r = await fetch('/api/admin/campanha', {
+      method: campanha ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
     setSaving(false)
     if (!r.ok) { const j = await r.json(); setErr(j.error ?? 'Erro'); return }
     setEditing(false); setShowNew(false); load()
   }
 
+  const temFds = dias.includes(0) || dias.includes(6)
+
   const form = (
-    <form onSubmit={handleSalvar} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16 }}>
-      <div style={{ gridColumn: '1/-1' }}><label style={lbl}>Nome da Campanha</label><input value={nome} onChange={e => setNome(e.target.value)} style={inpSm} placeholder="Copa Figurinhas 2026" required /></div>
-      <div><label style={lbl}>Data Início</label><input type="date" value={inicio} onChange={e => setInicio(e.target.value)} style={inpSm} required /></div>
-      <div><label style={lbl}>Data Fim</label><input type="date" value={fim} onChange={e => setFim(e.target.value)} style={inpSm} required /></div>
-      <div><label style={lbl}>Figurinhas por dia (padrão)</label><input type="number" min={1} max={50} value={stickers} onChange={e => setStickers(Number(e.target.value))} style={inpSm} /></div>
-      <div><label style={lbl}>Chance especial (%)</label><input type="number" min={0} max={100} value={chance} onChange={e => setChance(Number(e.target.value))} style={inpSm} /></div>
-      {err && <div style={{ ...alertStyle, gridColumn: '1/-1' }}>{err}</div>}
-      <div style={{ gridColumn: '1/-1', display: 'flex', gap: 10 }}>
-        <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Salvando…' : campanha ? 'Salvar alterações' : 'Criar campanha'}</button>
-        <button type="button" onClick={() => { setEditing(false); setShowNew(false) }} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 10, cursor: 'pointer' }}>Cancelar</button>
+    <form onSubmit={handleSalvar} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Nome e período */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14 }}>
+        <div style={{ gridColumn: '1/-1' }}>
+          <label style={lbl}>Nome da Campanha</label>
+          <input value={nome} onChange={e => setNome(e.target.value)} style={inpSm} placeholder="Copa Figurinhas 2026" required />
+        </div>
+        <div><label style={lbl}>Data Início</label><input type="date" value={inicio} onChange={e => setInicio(e.target.value)} style={inpSm} required /></div>
+        <div><label style={lbl}>Data Fim</label><input type="date" value={fim} onChange={e => setFim(e.target.value)} style={inpSm} required /></div>
+      </div>
+
+      {/* Separador */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18 }}>
+        <div style={{ ...sectionLabel, marginBottom: 14 }}>Agendamento do Cron</div>
+
+        {/* Dias da semana */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={lbl}>Dias da Semana</label>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {DIAS_LABELS.map((label, idx) => {
+              const ativo = dias.includes(idx)
+              return (
+                <button key={idx} type="button" onClick={() => toggleDia(idx)} style={{
+                  padding: '7px 12px', borderRadius: 8,
+                  border: `1px solid ${ativo ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                  background: ativo ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.03)',
+                  color: ativo ? '#93c5fd' : 'rgba(255,255,255,0.3)',
+                  fontSize: 10, fontWeight: 700, letterSpacing: 1, cursor: 'pointer',
+                }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Horário e frequência */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14 }}>
+          <div>
+            <label style={lbl}>Horário início</label>
+            <input type="time" value={hInicio} onChange={e => setHInicio(e.target.value)} style={inpSm} />
+          </div>
+          <div>
+            <label style={lbl}>Horário fim</label>
+            <input type="time" value={hFim} onChange={e => setHFim(e.target.value)} style={inpSm} />
+          </div>
+          <div>
+            <label style={lbl}>Frequência</label>
+            <select value={freq} onChange={e => setFreq(Number(e.target.value))} style={{ ...inpSm, cursor: 'pointer' }}>
+              {FREQ_OPCOES.map(o => <option key={o.value} value={o.value} style={{ background: '#0d1a2e' }}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Cartas por pacote */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18 }}>
+        <div style={{ ...sectionLabel, marginBottom: 14 }}>Cartas por Pacote</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14 }}>
+          <div>
+            <label style={lbl}>Dias úteis</label>
+            <input type="number" min={1} max={99} value={stickers} onChange={e => setStickers(Number(e.target.value))} style={inpSm} />
+          </div>
+          {temFds && (
+            <div>
+              <label style={lbl}>Fim de semana</label>
+              <input type="number" min={1} max={99} value={stickersFds} onChange={e => setStickersFds(Number(e.target.value))} style={inpSm} />
+            </div>
+          )}
+          <div>
+            <label style={lbl}>Chance especial (%)</label>
+            <input type="number" min={0} max={100} value={chance} onChange={e => setChance(Number(e.target.value))} style={inpSm} />
+          </div>
+        </div>
+      </div>
+
+      {err && <div style={alertStyle}>{err}</div>}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          {saving ? 'Salvando…' : campanha ? 'Salvar alterações' : 'Criar campanha'}
+        </button>
+        <button type="button" onClick={() => { setEditing(false); setShowNew(false) }} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 10, cursor: 'pointer' }}>
+          Cancelar
+        </button>
       </div>
     </form>
   )
@@ -500,7 +625,7 @@ function AbaCampanha() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Campanha</h2>
         {!editing && !showNew && (
-          <button onClick={() => campanha ? setEditing(true) : setShowNew(true)} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={() => { campanha ? setEditing(true) : setShowNew(true) }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {campanha ? 'Editar' : '+ Nova Campanha'}
           </button>
         )}
@@ -515,23 +640,54 @@ function AbaCampanha() {
 
       {campanha && !editing ? (
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 14, padding: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: campanha.status === 'ativo' ? '#4ade80' : '#f87171' }} />
+          {/* Cabeçalho */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: campanha.status === 'ativo' ? '#4ade80' : '#f87171', flexShrink: 0 }} />
             <div style={{ fontSize: 16, fontWeight: 700 }}>{campanha.nome}</div>
-            <div style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: campanha.status === 'ativo' ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: campanha.status === 'ativo' ? '#4ade80' : '#f87171', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>{campanha.status}</div>
+            <div style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: campanha.status === 'ativo' ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: campanha.status === 'ativo' ? '#4ade80' : '#f87171', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>
+              {campanha.status}
+            </div>
+            {campanha.ultimaDistribuicao && (
+              <div style={{ marginLeft: 'auto', fontSize: 9, color: 'rgba(255,255,255,0.25)' }}>
+                última dist. {new Date(campanha.ultimaDistribuicao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+              </div>
+            )}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16 }}>
+
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 12, marginBottom: 20 }}>
             {[
-              { label: 'Início',               value: new Date(campanha.dataInicio).toLocaleDateString('pt-BR') },
-              { label: 'Fim',                  value: new Date(campanha.dataFim).toLocaleDateString('pt-BR') },
-              { label: 'Figurinhas / dia',     value: campanha.stickersPorDiaPadrao },
-              { label: 'Chance especial',      value: `${Math.round(campanha.chanceEspecial * 100)}%` },
+              { label: 'Início',           value: new Date(campanha.dataInicio).toLocaleDateString('pt-BR') },
+              { label: 'Fim',              value: new Date(campanha.dataFim).toLocaleDateString('pt-BR') },
+              { label: 'Cartas (úteis)',   value: campanha.stickersPorDiaPadrao },
+              { label: 'Cartas (FDS)',     value: campanha.qtdCartasFds },
+              { label: 'Chance especial',  value: `${Math.round(campanha.chanceEspecial * 100)}%` },
+              { label: 'Frequência',       value: FREQ_OPCOES.find(o => o.value === campanha.frequenciaMinutos)?.label ?? `${campanha.frequenciaMinutos} min` },
             ].map(s => (
-              <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '14px 16px' }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#60a5fa' }}>{s.value}</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{s.label}</div>
+              <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#60a5fa' }}>{s.value}</div>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 3 }}>{s.label}</div>
               </div>
             ))}
+          </div>
+
+          {/* Agendamento */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '14px 16px', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>Horário</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{campanha.horarioInicio} – {campanha.horarioFim}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>Dias</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {DIAS_LABELS.map((label, idx) => {
+                let ativos: number[] = []
+                try { ativos = JSON.parse(campanha.diasSemana) } catch {}
+                const ativo = ativos.includes(idx)
+                return (
+                  <span key={idx} style={{ fontSize: 9, padding: '3px 7px', borderRadius: 4, background: ativo ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.03)', color: ativo ? '#60a5fa' : 'rgba(255,255,255,0.18)', fontWeight: 700 }}>
+                    {label}
+                  </span>
+                )
+              })}
+            </div>
           </div>
         </div>
       ) : !campanha && !showNew ? (

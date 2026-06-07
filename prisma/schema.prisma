@@ -105,6 +105,15 @@ model Campanha {
   status                String   @default("ativo")
   createdAt             DateTime @default(now()) @map("created_at")
 
+  // ── Agendamento do cron ──────────────────────────────────────
+  horarioInicio       String    @default("08:00")        @map("horario_inicio")
+  horarioFim          String    @default("18:00")        @map("horario_fim")
+  frequenciaMinutos   Int       @default(1440)           @map("frequencia_minutos")
+  diasSemana          String    @default("[1,2,3,4,5]")  @map("dias_semana")
+  qtdCartasFds        Int       @default(5)              @map("qtd_cartas_fds")
+  ultimaDistribuicao  DateTime? @map("ultima_distribuicao")
+  timezone            String    @default("America/Sao_Paulo")
+
   empresa    Empresa        @relation(fields: [empresaId], references: [id])
   figurinhas Figurinha[]
   pacotes    Pacote[]

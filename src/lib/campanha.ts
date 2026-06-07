@@ -1,38 +1,5 @@
 import type { PrismaClient } from '@prisma/client'
 
-/** Horário da distribuição diária em UTC (12:00 BRT = 15:00 UTC) */
-export const CRON_HOUR_UTC = 15
-
-/** Retorna true se a data for segunda a sexta */
-export function isDiaUtil(date: Date): boolean {
-  const d = date.getDay()
-  return d >= 1 && d <= 5
-}
-
-/** Retorna true se a data for sábado ou domingo */
-export function isFimDeSemana(date: Date): boolean {
-  const d = date.getDay()
-  return d === 0 || d === 6
-}
-
-/** Figurinhas no pacote bônus de fim de semana */
-export const FDS_STICKERS = 5
-
-/** Horário UTC do cron de fim de semana (14h BRT = 17h UTC) */
-export const CRON_FDS_HOUR_UTC = 17
-
-/** Lista de dias úteis entre duas datas (inclusive) */
-export function diasUteisEntre(inicio: Date, fim: Date): Date[] {
-  const dias: Date[] = []
-  const cur = new Date(inicio); cur.setHours(0, 0, 0, 0)
-  const end = new Date(fim);    end.setHours(0, 0, 0, 0)
-  while (cur <= end) {
-    if (isDiaUtil(cur)) dias.push(new Date(cur))
-    cur.setDate(cur.getDate() + 1)
-  }
-  return dias
-}
-
 /** Monta as figurinhas de um pacote respeitando chance especial por carta */
 export async function sortearFigurinhas(
   db: PrismaClient,
@@ -41,7 +8,7 @@ export async function sortearFigurinhas(
   chanceEspecial: number
 ): Promise<{ id: number }[]> {
   const normais   = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: { notIn: ['ESPECIAIS', 'PREMIO PRATA', 'PREMIO OURO'] } }, select: { id: true } })
-  const especiais = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: 'ESPECIAIS' },               select: { id: true } })
+  const especiais = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: 'ESPECIAIS' }, select: { id: true } })
 
   const shuffled = [...normais].sort(() => Math.random() - 0.5)
   let normalIdx = 0
@@ -51,6 +18,7 @@ export async function sortearFigurinhas(
     if (especiais.length > 0 && Math.random() < chanceEspecial) {
       picks.push(especiais[Math.floor(Math.random() * especiais.length)])
     } else {
+      if (shuffled.length === 0) break
       picks.push(shuffled[normalIdx % shuffled.length])
       normalIdx++
     }
@@ -59,15 +27,14 @@ export async function sortearFigurinhas(
 }
 
 /**
- * Calcula os dias que um participante deve receber pacotes ao cadastrar:
+ * Nivelamanto: cria pacotes retroativos para um participante que chegou
+ * depois do início da campanha.
  *
- * - Dia 1 (data de início da campanha): sempre conta — pacote de lançamento
- * - Dias 2+ até ontem: sempre contam (distribuições passadas)
- * - Hoje: só conta se a distribuição das 18h BRT (21h UTC) já rodou
- *
- * Assim:
- *   Cadastro antes das 18h → recebe só os dias passados (sem hoje)
- *   Cadastro depois das 18h → recebe os dias passados + hoje
+ * Lógica:
+ *  - Itera cada dia desde o início até ontem
+ *  - Respeita diasSemana configurado na campanha
+ *  - Usa qtdCartasFds para sáb/dom, stickersPorDiaPadrao para dias úteis
+ *  - Hoje só entra se ultimaDistribuicao já ocorreu hoje (cron já rodou)
  */
 export async function nivelarParticipante(
   db: PrismaClient,
@@ -76,6 +43,7 @@ export async function nivelarParticipante(
 ): Promise<number> {
   const campanha = await db.campanha.findFirstOrThrow({ where: { id: campanhaId } })
 
+  const diasSemana: number[] = JSON.parse(campanha.diasSemana)
   const agora  = new Date()
   const hoje   = new Date(agora); hoje.setHours(0, 0, 0, 0)
   const inicio = new Date(campanha.dataInicio); inicio.setHours(0, 0, 0, 0)
@@ -83,30 +51,31 @@ export async function nivelarParticipante(
 
   if (hoje < inicio || hoje > fim) return 0
 
-  // ── Dias a distribuir ──────────────────────────────────────────
+  // ── Coleta dias passados que deveriam ter distribuição ─────────
   const diasParaDar: Date[] = []
+  const cursor = new Date(inicio)
 
-  // 1. Dia de início (lançamento) — sempre conta se for dia útil
-  if (isDiaUtil(inicio)) {
-    diasParaDar.push(new Date(inicio))
-  }
+  while (cursor <= hoje) {
+    const diaCursor = new Date(cursor)
+    const dow = diaCursor.getDay()
 
-  // 2. Dias úteis do dia 2 até ontem — sempre contam
-  if (hoje > inicio) {
-    const diaDois = new Date(inicio); diaDois.setDate(diaDois.getDate() + 1)
-    const ontem   = new Date(hoje);   ontem.setDate(ontem.getDate() - 1)
-    if (diaDois <= ontem) {
-      diasParaDar.push(...diasUteisEntre(diaDois, ontem))
+    // Só inclui se está nos dias configurados pela empresa
+    if (diasSemana.includes(dow)) {
+      if (diaCursor < hoje) {
+        // Dias passados: sempre incluir
+        diasParaDar.push(new Date(diaCursor))
+      } else {
+        // Hoje: só inclui se o cron já rodou (ultimaDistribuicao é hoje)
+        if (campanha.ultimaDistribuicao) {
+          const ultimaHoje = new Date(campanha.ultimaDistribuicao)
+          ultimaHoje.setHours(0, 0, 0, 0)
+          if (ultimaHoje.getTime() === hoje.getTime()) {
+            diasParaDar.push(new Date(diaCursor))
+          }
+        }
+      }
     }
-  }
-
-  // 3. Hoje — só conta se a distribuição das 18h BRT (21h UTC) já rodou
-  if (isDiaUtil(hoje) && hoje.getTime() !== inicio.getTime()) {
-    const cronHoje = new Date(agora)
-    cronHoje.setUTCHours(CRON_HOUR_UTC, 0, 0, 0)
-    if (agora >= cronHoje) {
-      diasParaDar.push(new Date(hoje))
-    }
+    cursor.setDate(cursor.getDate() + 1)
   }
 
   if (diasParaDar.length === 0) return 0
@@ -116,13 +85,21 @@ export async function nivelarParticipante(
     where:  { participanteId, campanhaId },
     select: { dataReferencia: true },
   })
-  const datasExistentes = new Set(jaExistem.map(p => p.dataReferencia.toISOString().slice(0, 10)))
-  const diasPendentes = diasParaDar.filter(d => !datasExistentes.has(d.toISOString().slice(0, 10)))
+  const datasExistentes = new Set(
+    jaExistem.map(p => p.dataReferencia.toISOString().slice(0, 10))
+  )
+  const diasPendentes = diasParaDar.filter(
+    d => !datasExistentes.has(d.toISOString().slice(0, 10))
+  )
 
   if (diasPendentes.length === 0) return 0
 
   for (const dia of diasPendentes) {
-    const picks = await sortearFigurinhas(db, campanhaId, campanha.stickersPorDiaPadrao, campanha.chanceEspecial)
+    const dow = dia.getDay()
+    const isFds = dow === 0 || dow === 6
+    const qtd   = isFds ? campanha.qtdCartasFds : campanha.stickersPorDiaPadrao
+
+    const picks = await sortearFigurinhas(db, campanhaId, qtd, campanha.chanceEspecial)
     await db.pacote.create({
       data: {
         campanhaId,

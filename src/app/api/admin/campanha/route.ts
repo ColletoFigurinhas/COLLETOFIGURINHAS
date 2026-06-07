@@ -25,13 +25,24 @@ export async function POST(request: Request) {
   const s = await auth()
   if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { nome, dataInicio, dataFim, stickersPorDiaPadrao, chanceEspecial } = await request.json()
+  const body = await request.json()
+  const { nome, dataInicio, dataFim } = body
   if (!nome || !dataInicio || !dataFim)
     return NextResponse.json({ error: 'nome, dataInicio e dataFim são obrigatórios' }, { status: 400 })
 
-  // Desativa campanhas anteriores da empresa
+  // Valida diasSemana se fornecido
+  if (body.diasSemana !== undefined) {
+    try {
+      const dias = JSON.parse(body.diasSemana)
+      if (!Array.isArray(dias) || dias.some((d: any) => typeof d !== 'number' || d < 0 || d > 6))
+        return NextResponse.json({ error: 'diasSemana inválido' }, { status: 400 })
+    } catch {
+      return NextResponse.json({ error: 'diasSemana deve ser JSON válido' }, { status: 400 })
+    }
+  }
+
   await db.campanha.updateMany({
-    where: { empresaId: s.empresaId, status: 'ativo' },
+    where: { empresaId: s.empresaId!, status: 'ativo' },
     data:  { status: 'encerrado' },
   })
 
@@ -39,14 +50,20 @@ export async function POST(request: Request) {
 
   const campanha = await db.campanha.create({
     data: {
-      empresaId:           s.empresaId!,
+      empresaId:            s.empresaId!,
       nome,
       slug,
-      dataInicio:          new Date(dataInicio),
-      dataFim:             new Date(dataFim),
-      stickersPorDiaPadrao: stickersPorDiaPadrao ?? 14,
-      chanceEspecial:       chanceEspecial ?? 0.10,
-      status:              'ativo',
+      dataInicio:           new Date(dataInicio),
+      dataFim:              new Date(dataFim),
+      stickersPorDiaPadrao: body.stickersPorDiaPadrao  ?? 14,
+      chanceEspecial:       body.chanceEspecial         ?? 0.10,
+      status:               'ativo',
+      horarioInicio:        body.horarioInicio          ?? '08:00',
+      horarioFim:           body.horarioFim             ?? '18:00',
+      frequenciaMinutos:    body.frequenciaMinutos      ?? 1440,
+      diasSemana:           body.diasSemana             ?? '[1,2,3,4,5]',
+      qtdCartasFds:         body.qtdCartasFds           ?? 5,
+      timezone:             body.timezone               ?? 'America/Sao_Paulo',
     },
   })
   return NextResponse.json(campanha, { status: 201 })
@@ -60,13 +77,33 @@ export async function PATCH(request: Request) {
   if (!campanha) return NextResponse.json({ error: 'Nenhuma campanha ativa' }, { status: 404 })
 
   const body = await request.json()
+
+  if (body.diasSemana !== undefined) {
+    try {
+      const dias = JSON.parse(body.diasSemana)
+      if (!Array.isArray(dias) || dias.some((d: any) => typeof d !== 'number' || d < 0 || d > 6))
+        return NextResponse.json({ error: 'diasSemana inválido' }, { status: 400 })
+    } catch {
+      return NextResponse.json({ error: 'diasSemana deve ser JSON válido' }, { status: 400 })
+    }
+  }
+
   const data: Record<string, any> = {}
-  if (body.nome                !== undefined) data.nome                = body.nome
-  if (body.dataInicio          !== undefined) data.dataInicio          = new Date(body.dataInicio)
-  if (body.dataFim             !== undefined) data.dataFim             = new Date(body.dataFim)
+  const campos = [
+    'nome', 'status',
+    'stickersPorDiaPadrao', 'chanceEspecial',
+    'horarioInicio', 'horarioFim', 'frequenciaMinutos',
+    'diasSemana', 'qtdCartasFds', 'timezone',
+  ]
+  for (const c of campos) {
+    if (body[c] !== undefined) data[c] = body[c]
+  }
+  if (body.dataInicio !== undefined) data.dataInicio = new Date(body.dataInicio)
+  if (body.dataFim    !== undefined) data.dataFim    = new Date(body.dataFim)
   if (body.stickersPorDiaPadrao !== undefined) data.stickersPorDiaPadrao = Number(body.stickersPorDiaPadrao)
-  if (body.chanceEspecial      !== undefined) data.chanceEspecial      = Number(body.chanceEspecial)
-  if (body.status              !== undefined) data.status              = body.status
+  if (body.chanceEspecial       !== undefined) data.chanceEspecial       = Number(body.chanceEspecial)
+  if (body.frequenciaMinutos    !== undefined) data.frequenciaMinutos    = Number(body.frequenciaMinutos)
+  if (body.qtdCartasFds         !== undefined) data.qtdCartasFds         = Number(body.qtdCartasFds)
 
   const updated = await db.campanha.update({ where: { id: campanha.id }, data })
   return NextResponse.json(updated)
