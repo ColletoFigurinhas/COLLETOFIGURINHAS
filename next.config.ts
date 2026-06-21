@@ -4,7 +4,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.1.103', '192.168.1.*'],
   experimental: {
-    staleTimes: { dynamic: 0, static: 0 },
+    staleTimes: { dynamic: 0 },
   },
   turbopack: {
     rules: {
@@ -18,10 +18,9 @@ const nextConfig: NextConfig = {
 
 export default withSentryConfig(nextConfig, {
   // Sentry só ativo quando SENTRY_DSN está definido
-  silent:          true,
-  disableLogger:   true,
+  silent:    true,
   // Sem upload de source maps se não tiver auth token configurado
-  authToken:       process.env.SENTRY_AUTH_TOKEN,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
   org:             process.env.SENTRY_ORG,
   project:         process.env.SENTRY_PROJECT,
   telemetry:       false,

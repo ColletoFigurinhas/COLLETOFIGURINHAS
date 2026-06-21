@@ -995,7 +995,9 @@ html, body {
 .loading-screen.fade-out { opacity: 0; pointer-events: none; }
 
 .loading-book {
-  font-size: 60px;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
   animation: book-pulse 1.2s ease-in-out infinite;
 }
 @keyframes book-pulse {

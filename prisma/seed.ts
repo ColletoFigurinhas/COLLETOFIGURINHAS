@@ -95,34 +95,30 @@ async function main() {
   })
   console.log('✓ Campanha:', campanha.nome, `(id=${campanha.id})`)
 
-  // ── 6. Figurinhas placeholder ──────────────────────────────────
-  const grupos = ['GRUPO A', 'GRUPO B', 'GRUPO C', 'GRUPO D']
+  // ── 6. Figurinhas demo (3 departamentos com imagens reais) ────────
+  // Distribuição: VENDAS 3+gestor | ALMOXARIFADO 2+gestor | COMPRAS 2+gestor
+  // Imagens em Material/ copiadas para public/figuras/{dept}/ + VERDE/ + AMARELO/
+  const demoFigs = [
+    { classificacao: 'VENDAS',       tipo: 'FUNCIONARIO', imagemUrl: '/figuras/vendas/Figura-201.png' },
+    { classificacao: 'VENDAS',       tipo: 'FUNCIONARIO', imagemUrl: '/figuras/vendas/Figura-202.png' },
+    { classificacao: 'VENDAS',       tipo: 'FUNCIONARIO', imagemUrl: '/figuras/vendas/Figura-203.png' },
+    { classificacao: 'VENDAS',       tipo: 'GESTOR',      imagemUrl: '/figuras/vendas/Figura-204.png' },
+    { classificacao: 'ALMOXARIFADO', tipo: 'FUNCIONARIO', imagemUrl: '/figuras/almoxarifado/Figura-205.png' },
+    { classificacao: 'ALMOXARIFADO', tipo: 'FUNCIONARIO', imagemUrl: '/figuras/almoxarifado/Figura-206.png' },
+    { classificacao: 'ALMOXARIFADO', tipo: 'GESTOR',      imagemUrl: '/figuras/almoxarifado/Figura-207.png' },
+    { classificacao: 'COMPRAS',      tipo: 'FUNCIONARIO', imagemUrl: '/figuras/compras/Figura-208.png' },
+    { classificacao: 'COMPRAS',      tipo: 'FUNCIONARIO', imagemUrl: '/figuras/compras/Figura-209.png' },
+    { classificacao: 'COMPRAS',      tipo: 'GESTOR',      imagemUrl: '/figuras/compras/Figura-210.png' },
+  ]
   let figCount = 0
-  for (const grupo of grupos) {
-    // 5 cartas FUNCIONARIO por grupo
-    for (let i = 1; i <= 5; i++) {
-      const existing = await db.figurinha.findFirst({ where: { campanhaId: campanha.id, classificacao: grupo, tipo: 'FUNCIONARIO' } })
-      if (!existing) {
-        await db.figurinha.create({ data: { campanhaId: campanha.id, classificacao: grupo, tipo: 'FUNCIONARIO', ativo: true } })
-        figCount++
-      }
-    }
-    // 1 carta GESTOR
-    const gestor = await db.figurinha.findFirst({ where: { campanhaId: campanha.id, classificacao: grupo, tipo: 'GESTOR' } })
-    if (!gestor) {
-      await db.figurinha.create({ data: { campanhaId: campanha.id, classificacao: grupo, tipo: 'GESTOR', ativo: true } })
-      figCount++
-    }
-  }
-  // Especiais
-  for (let i = 0; i < 3; i++) {
-    const existing = await db.figurinha.findFirst({ where: { campanhaId: campanha.id, tipo: 'ESPECIAL' } })
+  for (const fig of demoFigs) {
+    const existing = await db.figurinha.findFirst({ where: { campanhaId: campanha.id, imagemUrl: fig.imagemUrl } })
     if (!existing) {
-      await db.figurinha.create({ data: { campanhaId: campanha.id, classificacao: 'ESPECIAIS', tipo: 'ESPECIAL', ativo: true } })
+      await db.figurinha.create({ data: { campanhaId: campanha.id, ...fig, ativo: true } })
       figCount++
     }
   }
-  console.log(`✓ ${figCount} figurinhas criadas (sem imagem — cadastre via painel)`)
+  console.log(`✓ ${figCount} figurinhas demo criadas (VENDAS × 4 | ALMOXARIFADO × 3 | COMPRAS × 3)`)
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('Seed concluído!\n')

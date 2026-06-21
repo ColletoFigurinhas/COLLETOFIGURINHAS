@@ -48,8 +48,8 @@ public/figuras/**/*.png
 !public/figuras/VERDE/*.png
 !public/figuras/AMARELO/*.png
 !public/figuras/**/Figura-*.png
-tmp/campanha_pages/
-tmp/*-prod.mjs
+tmp/
+campanha_album_extracted.txt
 
 # uploads (user-generated content, not tracked)
 /uploads/figuras/

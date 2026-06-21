@@ -40,23 +40,14 @@ function StatusBadge({ status }: { status: Troca['status'] }) {
   )
 }
 
-// ── Cor alternada e URL colorida ──────────────────────────────────
-function corAlternada(i: number): 'VERDE' | 'AMARELO' { return i % 2 === 0 ? 'VERDE' : 'AMARELO' }
-function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
-  const base = (url.split('/').pop() ?? '').replace(/\.[^.]+$/, '')
-  return `/figuras/${cor}/${base}.png`
-}
-
 // ── Mini card ─────────────────────────────────────────────────────
-function MiniCard({ fig, index = 0, selecionado, onClick }: {
+function MiniCard({ fig, selecionado, onClick }: {
   fig: { id: number; imagemUrl: string | null; quantidade?: number }
-  index?: number
   selecionado?: boolean
   onClick?: () => void
 }) {
   const repetida   = (fig.quantidade ?? 0) >= 2
-  const cor        = corAlternada(index)
-  const displaySrc = fig.imagemUrl ? urlComCor(fig.imagemUrl, cor) : null
+  const displaySrc = fig.imagemUrl
   return (
     <div onClick={onClick} style={{
       width: 52, height: 70, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
@@ -68,8 +59,7 @@ function MiniCard({ fig, index = 0, selecionado, onClick }: {
     }}>
       {fig.imagemUrl
         ? <img
-            src={displaySrc ?? fig.imagemUrl}
-            onError={e => { if (displaySrc) (e.currentTarget as HTMLImageElement).src = fig.imagemUrl! }}
+            src={displaySrc ?? undefined}
             alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'rgba(255,255,255,0.3)' }}>#{fig.id}</div>
       }
@@ -179,7 +169,7 @@ function TrocaRecebidaPendente({ troca, onAtualizar, onTrocaConcluida }: { troca
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
             {(soRepetidas ? minhasFigs.filter(f => f.quantidade >= 2) : minhasFigs).map((f, i) => (
-              <MiniCard key={f.id} fig={f} index={i} selecionado={selecionada === f.id} onClick={() => setSelecionada(f.id)} />
+              <MiniCard key={f.id} fig={f} selecionado={selecionada === f.id} onClick={() => setSelecionada(f.id)} />
             ))}
           </div>
           {erro && <div style={{ fontSize: 10, color: '#f87171', marginTop: 6 }}>{erro}</div>}

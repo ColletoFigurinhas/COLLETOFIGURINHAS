@@ -7,7 +7,6 @@ import type { SectionData } from '@/app/album/page'
 import InventarioModal from '@/components/InventarioModal'
 import TrocasModal from '@/components/TrocasModal'
 import PacoteAbertura from '@/components/PacoteAbertura'
-import FigurinhaPreview from '@/components/FigurinhaPreview'
 import { logout } from '@/app/actions/auth'
 
 // ── Toast ─────────────────────────────────────────────────────────
@@ -104,15 +103,11 @@ function getSectionColor(section: string): string {
   return SECTION_PALETTE[Math.abs(h) % SECTION_PALETTE.length]
 }
 
-// ── Cores alternadas (xadrez 4 colunas) ──────────────────────────
-function corXadrez(globalIndex: number): 'VERDE' | 'AMARELO' {
-  const row = Math.floor(globalIndex / COLS)
-  const col = globalIndex % COLS
-  return (row + col) % 2 === 0 ? 'VERDE' : 'AMARELO'
-}
-function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
-  const baseName = (url.split('/').pop() ?? '').replace(/\.[^.]+$/, '')
-  return `/figuras/${cor}/${baseName}.png`
+// Imagens de fundo por departamento
+const SECTION_BG: Record<string, string> = {
+  'VENDAS':       '/album/demo-fundo-vendas.png',
+  'ALMOXARIFADO': '/album/demo-fundo-almoxarifado.png',
+  'COMPRAS':      '/album/demo-fundo-compras.png',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -152,13 +147,11 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
       gridAutoRows: `${rowH}px`,
       gap,
     }}>
-      {slots.map((f, i) => {
-        const cor        = f.tipo === 'FUNCIONARIO' ? corXadrez(i) : null
-        const displayUrl = f.imagemUrl && cor ? urlComCor(f.imagemUrl, cor) : f.imagemUrl
+      {slots.map((f) => {
         return (
           <div key={f.id}
             data-figurinha={f.imagemUrl ? 'true' : undefined}
-            onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: displayUrl ?? f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
+            onClick={e => { if (f.imagemUrl && onPreview) { e.stopPropagation(); onPreview({ id: f.id, imagemUrl: f.imagemUrl, classificacao: (f as any).classificacao ?? '' }) } }}
             style={{
               borderRadius: 10, overflow: 'hidden',
               background: f.imagemUrl ? '#fff' : 'rgba(0,0,0,0.06)',
@@ -169,8 +162,7 @@ function StickerGrid({ figs, top, color, maxSlots = PER_PAGE, onPreview }: {
             }}>
             {f.imagemUrl ? (
               <img
-                src={displayUrl ?? f.imagemUrl}
-                onError={e => { (e.currentTarget as HTMLImageElement).src = f.imagemUrl! }}
+                src={f.imagemUrl}
                 alt="" draggable={false}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
@@ -198,17 +190,22 @@ function SectionPage({ section, figs, isGestorPage, onPreview }: {
   onPreview?: (f: { id: number; imagemUrl: string; classificacao: string }) => void
 }) {
   const color = getSectionColor(section)
+  const bgImg = SECTION_BG[section]
 
   const gestor   = isGestorPage ? figs.find(f => f.tipo === 'GESTOR') : null
   const normFigs = isGestorPage ? figs.filter(f => f.tipo !== 'GESTOR') : figs
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: color }}>
+      {bgImg && (
+        <img src={bgImg} alt="" draggable={false}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
+      )}
 
       {/* Gestor — 123×188 centrado no slot branco (x=362..529, y=0..239) */}
       {gestor && gestor.imagemUrl && (
         <div
-          onClick={e => { e.stopPropagation(); onPreview?.({ id: gestor.id, imagemUrl: gestor.imagemUrl!, classificacao: section }) }}
+          onClick={e => { if (onPreview) { e.stopPropagation(); onPreview({ id: gestor.id, imagemUrl: gestor.imagemUrl!, classificacao: section }) } }}
           style={{
             position: 'absolute',
             top: 26, right: 6,
@@ -237,21 +234,9 @@ function SectionPage({ section, figs, isGestorPage, onPreview }: {
 // ── Capa ──────────────────────────────────────────────────────────
 function CoverPage() {
   return (
-    <div style={{
-      width: '100%', height: '100%',
-      background: 'linear-gradient(155deg, #0a1628 0%, #0d2040 50%, #0f2450 100%)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'repeating-linear-gradient(45deg,rgba(59,130,246,0.04) 0,rgba(59,130,246,0.04) 1px,transparent 1px,transparent 20px)' }} />
-      <div style={{ fontSize: 80, marginBottom: 16, filter: 'drop-shadow(0 4px 24px rgba(59,130,246,0.5))', lineHeight: 1 }}>🃏</div>
-      <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 6, color: '#fff', textTransform: 'uppercase', textAlign: 'center' }}>
-        Colleto
-      </div>
-      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 4, color: 'rgba(96,165,250,0.8)', marginTop: 6, textTransform: 'uppercase' }}>
-        Figurinhas
-      </div>
+    <div style={{ width: '100%', height: '100%', background: '#0a1628', overflow: 'hidden' }}>
+      <img src="/album/demo-capa.png" alt="Capa" draggable={false}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
     </div>
   )
 }
@@ -259,28 +244,21 @@ function CoverPage() {
 // ── Contracapa ────────────────────────────────────────────────────
 function BackCoverPage() {
   return (
-    <div style={{
-      width: '100%', height: '100%',
-      background: 'linear-gradient(155deg, #1d4ed8 0%, #1e3a8a 100%)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'repeating-linear-gradient(45deg,rgba(0,0,0,0.04) 0,rgba(0,0,0,0.04) 1px,transparent 1px,transparent 16px)' }} />
-      <div style={{ fontSize: 64, marginBottom: 14, filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))' }}>🃏</div>
-      <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 4, color: 'rgba(255,255,255,0.92)', textTransform: 'uppercase', textAlign: 'center' }}>
-        Colleto Figurinhas
-      </div>
-      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 10, letterSpacing: 3, textTransform: 'uppercase' }}>
-        Álbum Digital
-      </div>
+    <div style={{ width: '100%', height: '100%', background: '#0a1628', overflow: 'hidden' }}>
+      <img src="/album/demo-final.png" alt="Final" draggable={false}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
     </div>
   )
 }
 
 // ── Página de preenchimento ───────────────────────────────────────
 function PaddingPage() {
-  return <div style={{ width: '100%', height: '100%', background: '#070e1a' }} />
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#070e1a', overflow: 'hidden' }}>
+      <img src="/album/demo-contracapa.png" alt="" draggable={false}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+    </div>
+  )
 }
 
 // ── Filmstrip ─────────────────────────────────────────────────────
@@ -366,6 +344,7 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
   const pages: React.ReactNode[] = []
 
   pages.push(<CoverPage key="cover" />)
+  pages.push(<PaddingPage key="intro" />)
 
   sections.forEach(sec => {
     const SLOTS = 12
@@ -397,9 +376,6 @@ function buildPages(sections: SectionData[], onPreview?: (f: { id: number; image
       )
     })
   })
-
-  if (pages.length % 2 === 0)
-    pages.push(<PaddingPage key="pad" />)
 
   pages.push(<BackCoverPage key="contracapa" />)
 
@@ -518,7 +494,6 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
   const [pacotesOpen,      setPacotesOpen]      = useState(false)
   const [pacotesBadge,     setPacotesBadge]     = useState(0)
   const [toasts,           setToasts]           = useState<Toast[]>([])
-  const [preview,          setPreview]          = useState<{ id: number; imagemUrl: string; classificacao: string } | null>(null)
   const [filmstripMobile,  setFilmstripMobile]  = useState(false)
   const [mobileMenuOpen,   setMobileMenuOpen]   = useState(false)
 
@@ -598,7 +573,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
     const interval = setInterval(poll, 10000)
     return () => clearInterval(interval)
   }, [])
-  const pages = useMemo(() => buildPages(sections, setPreview), [sections])
+  const pages = useMemo(() => buildPages(sections), [sections])
   const total     = pages.length
   const progress  = total > 1 ? (cur / (total - 1)) * 100 : 0
 
@@ -748,14 +723,6 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
         if (type === 'pacote') { setPacotesOpen(true) }
         else { setTrocasOpen(true); setTrocasBadge(0) }
       }} />
-      {preview && (
-        <FigurinhaPreview
-          id={preview.id}
-          imagemUrl={preview.imagemUrl}
-          classificacao={preview.classificacao}
-          onClose={() => setPreview(null)}
-        />
-      )}
       {!isPortrait && <Filmstrip pages={pages} current={cur} onGo={i => navRef.current(i)} />}
       {isPortrait && filmstripMobile && (
         <MobileFilmstrip
@@ -768,7 +735,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
 
       {loading && (
         <div className={`loading-screen${fadeOut ? ' fade-out' : ''}`}>
-          <div className="loading-book">📖</div>
+          <img src="/logo-icon.png" alt="Colleto" draggable={false} className="loading-book" />
           <div className="loading-label">Carregando Álbum</div>
           <div className="loading-dots"><span /><span /><span /></div>
         </div>
@@ -791,7 +758,10 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
                 }}
               >▤</button>
             )}
-            <div className="album-header-title">🃏 Colleto Figurinhas</div>
+            <div className="album-header-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src="/logo-icon.png" alt="Colleto" draggable={false} style={{ width: 22, height: 22, objectFit: 'contain' }} />
+              Colleto Figurinhas
+            </div>
           </div>
 
           {/* ── Direita: Desktop ── */}

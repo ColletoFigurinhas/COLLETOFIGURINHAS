@@ -15,9 +15,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           borderBottom: '1px solid rgba(59,130,246,0.12)',
           display: 'flex', alignItems: 'center', padding: '0 24px', gap: 16,
         }}>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(96,165,250,0.7)', flexShrink: 0 }}>
-            🃏 Colleto · Admin
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <img src="/logo-icon.png" alt="Colleto" draggable={false}
+              style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(96,165,250,0.7)' }}>
+              Colleto · Admin
+            </span>
+          </div>
           <Link href="/album" style={{ marginLeft: 'auto', fontSize: 9, color: 'rgba(255,255,255,0.3)', textDecoration: 'none', letterSpacing: 1, flexShrink: 0 }}>
             ← Voltar ao álbum
           </Link>

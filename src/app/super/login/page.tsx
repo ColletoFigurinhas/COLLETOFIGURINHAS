@@ -21,7 +21,8 @@ export default function SuperLoginPage() {
     <div style={{ minHeight: '100vh', background: '#070e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ fontSize: 44, marginBottom: 10 }}>🃏</div>
+          <img src="/logo-icon.png" alt="Colleto" draggable={false}
+            style={{ width: 60, height: 60, objectFit: 'contain', marginBottom: 10, filter: 'drop-shadow(0 0 18px rgba(59,130,246,0.45))' }} />
           <div style={{ fontSize: 9, letterSpacing: 5, textTransform: 'uppercase', color: 'rgba(96,165,250,0.6)', marginBottom: 4 }}>Colleto</div>
           <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: 2, color: '#fff' }}>Super Admin</div>
         </div>

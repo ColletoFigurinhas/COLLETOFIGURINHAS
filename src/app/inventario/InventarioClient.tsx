@@ -18,22 +18,12 @@ const SECTION_COLOR: Record<string, string> = {
   'ESPECIAIS':             '#713f12',
 }
 
-// ── Cores alternadas (xadrez 4 colunas) ──────────────────────────
-function corAlternada(i: number): 'VERDE' | 'AMARELO' {
-  return i % 2 === 0 ? 'VERDE' : 'AMARELO'
-}
-function urlComCor(url: string, cor: 'VERDE' | 'AMARELO'): string {
-  const base = (url.split('/').pop() ?? '').replace(/\.[^.]+$/, '')
-  return `/figuras/${cor}/${base}.png`
-}
-
 // ── Card de figurinha ─────────────────────────────────────────────
-function FigurinhaCard({ fig, index }: { fig: FigurinhaInventario; index: number }) {
+function FigurinhaCard({ fig }: { fig: FigurinhaInventario }) {
   const tem       = fig.quantidade >= 1
   const repetida  = fig.quantidade >= 2
   const color     = SECTION_COLOR[fig.classificacao] ?? '#333'
-  const cor       = corAlternada(index)
-  const src       = tem && fig.imagemUrl ? urlComCor(fig.imagemUrl, cor) : fig.imagemUrl
+  const src       = tem ? fig.imagemUrl : null
 
   return (
     <div style={{
@@ -239,7 +229,7 @@ export default function InventarioClient({ secoes, premios = [] }: { secoes: Sec
                 gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
                 gap: 8,
               }}>
-                {figs.map((fig, i) => <FigurinhaCard key={fig.id} fig={fig} index={i} />)}
+                {figs.map((fig) => <FigurinhaCard key={fig.id} fig={fig} />)}
               </div>
             </div>
           )

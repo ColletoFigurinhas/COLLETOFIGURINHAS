@@ -92,7 +92,8 @@ export default function LoginPage() {
 
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ fontSize: 52, marginBottom: 12, filter: 'drop-shadow(0 0 24px rgba(59,130,246,0.5))' }}>🃏</div>
+        <img src="/logo-icon.png" alt="Colleto" draggable={false}
+          style={{ width: 72, height: 72, objectFit: 'contain', marginBottom: 12, filter: 'drop-shadow(0 0 24px rgba(59,130,246,0.5))' }} />
         <div style={{ fontSize: 9, letterSpacing: 6, textTransform: 'uppercase', color: 'rgba(96,165,250,0.7)', marginBottom: 4 }}>Colleto</div>
         <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase', background: 'linear-gradient(90deg,#3b82f6,#93c5fd,#3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
           Figurinhas
