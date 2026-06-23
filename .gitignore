@@ -51,5 +51,8 @@ public/figuras/**/*.png
 tmp/
 campanha_album_extracted.txt
 
+# assets de design (originais locais, nao versionar)
+/Material/
+
 # uploads (user-generated content, not tracked)
 /uploads/figuras/
