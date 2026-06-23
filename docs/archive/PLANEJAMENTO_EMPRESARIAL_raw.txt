@@ -1,0 +1,32 @@
+O produto em si é o álbum de figurinhas, funcionando como uma campanha de interação social para vários públicos. Porém, por experiência própria na Supermedica, tiveram subcampanhas onde as pessoas recebiam pacotinhos de figurinha para a campanha do álbum.
+
+Logo, pensando em um âmbito mais empresarial, pensamos em oferecer campanhas de endomarketing planejadas por nossa equipe.
+
+Basicamente, são 4 pessoas envolvidas:
+Eu Raul, focado mais para desenvolvimento;
+O Rhuan, voltado mais para administração e gestão (porém ele é da área de dados juntamente comigo na Supermedica);
+E a Barbara, que basicamente é uma gestora do marketing;
+E um designer o Vitor.
+
+Teremos uma vendedora onde n faz parte da equipe principal onde tera a venda e atendimento
+
+logo teremos 2 produtos basicamente o real e o album, apos isso oferecemos campanhas para impulsionar o album e se a pessoa quiser fazemos campanhas mensais para a empresa pagando mensalmente, e ter variações de album, algo basico, meido e completo, pra oferecer e ter preços diferentes
+
+vamos separar 3 niveis Usuario comum acessa o album e interage, o ADM da empresa onde tem o album e as configurações da campanha, e o nosso adm onde controlamos a empresa e tudo mais que for necessario, precisamos planejar isso
+
+pensando na area de desenvolvimento, ja temos o album basicamente funcioanado oq precisamos rever é a parte de ADM da empresa, e como ele fará esse controle da campanha pelo admin sem precisar de mexermos no banco de dados, isso tbm é uma coisa q queremos evitar, dar suporte pois no inicio estaremos emrpegados ainda ent durante o dia teria que rodar liso pra evitar suporte ou sairmos do serviço pra isso, logo temos q fazer uma aba de estatistica para as empresas acompanhar o desenvolvimento da campanha, quem tem mais cartas , quem ta mais perto, repetidas, total de cartas, isso pra metrificar e decidir a temperatura da campanha
+
+temos q pensar em como os usuarios irao acessar o album e como vao fazer o cadastro e login, se a empresa ja tiver sistema integrar via api, e se n tver arruma uma forma tipo cadastro manual ou usar CPF telefone, algo seguro de login, e tbm ver a questao de envio de emails de recuperação de senha onde parece q o digital ocenan n permite a porta de envio de email
+
+focando na parte do controle dos adm na campanhas, eles tem q poder ativar e desativar cartas, decidir a quantidade de cartas em cada pacote, pdoer tbm deciidr a temperatura da campanha tava imaginando em low medium e high onde low ficaria com full aleatorio, medium onde colcoa peso nas cartas e evita repetidas, e high onde colcoa peso nas cartas faltantes dosusuarios tbm e assim diminui as repetidas e acelera a cmapnhas, eles devem escolher o horario dos disparos, basicamente devemos citar isso e deixar no controle pela interface sem necessidade de suporte e de acessar o banco rpa corrigir
+
+Agora na infraestrutura estrutura devemos planejar o que sera necessario rpa aguentar tudo isso sem cair ou engasgar, devido o volume de pessoas que ainda n temos noção, e levnado em conta q tera acessos simultaneos, trocas rolando e tendo a separação por empreasas q decidomos cada uma ter o acesso via empresa.colleto, temso q decidir qual serviço de servidor q vamos pegar um digital ocean ou outras opções de droplet, teremos o nosso produto em um servidor comportando varias emrpesas e tbm nosso sistema q irá crescer e se desensolver com o tempo, q no qual sera no mesmo servidor eu imagino, logo a estrutura do projeto tem q ser bem feita e escalavel
+
+em si tbm temos q fazer a nossa parte, e desenvolver nosso sistema odne controlamos tudo isso, no inicio e so o necessario mas se a empresa crescer temso q expandir, escolher uma linguagem, um framework, algo escalavel  viavel e penasr no servidor pra isso, pensnado tbm em um pponto crucial e a segurança teremos dados sensiveis de login de bastante gente e imagens, n podemos permitir acesso e a segurança é o principal, e tbm tem possibilidade de
+
+pensando tbm na nossa parte temos q ter uma organizaçã ode tudo isso, separar vem e cordenar , criamos um trelo tbm, e pensar em algo no sistema nosso pra irmos adicionando e evoluindo
+
+tem q questao da parte juridica onde vmaos criar termos e condições, colocar um aceite ao fazer o primiero login do adm da empresa, e tbm um contrato bem feito, devido ter imagens acessivei e n termoes responsabilidade devido ao uso do print
+
+teremos instagram, meta, trello varias contas pra administração e ferramentas temos q ter um controle disso e metrifciar os custo vendo possiveis alternativas ou colcoar dentro desenvolvendo pra eleimniar custos
+

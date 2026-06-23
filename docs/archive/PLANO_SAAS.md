@@ -1,5 +1,11 @@
 # Colleto Figurinhas — Plano de Escalada para SaaS Multi-Tenant
 
+> ⚠️ **DOCUMENTO ARQUIVADO / SUPERADO (mantido por histórico).**
+> Este plano (06/06/2026) descreve roteamento por **slug-no-path** e banco **MySQL**.
+> A realidade implementada é **multi-tenant por subdomínio** — ver `docs/ARCHITECTURE.md`.
+> O rumo de negócio atual está em `docs/PLANEJAMENTO_EMPRESARIAL.md` (Supabase/Postgres é passo futuro).
+> Não use este arquivo como fonte da verdade.
+>
 > Data: 06/06/2026 | Status: planejado, pronto para execução
 > Dados atuais são fictícios — banco será zerado e recriado do zero.
 
