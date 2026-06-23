@@ -12,12 +12,29 @@ export async function POST(request: Request) {
   const file     = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'Nenhum arquivo' }, { status: 400 })
 
-  // folder: 'VERDE' | 'AMARELO' | 'Especiais' (default)
-  const folder   = (formData.get('folder') as string | null) ?? 'Especiais'
-  // filename: reutiliza nome gerado no upload anterior (para AMARELO = mesmo nome do VERDE)
+  // Validação de tipo e tamanho (defesa contra uploads maliciosos)
+  const TIPOS_PERMITIDOS = new Map([
+    ['image/png',  'png'],
+    ['image/jpeg', 'jpg'],
+    ['image/webp', 'webp'],
+  ])
+  const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
+  const extPorTipo = TIPOS_PERMITIDOS.get(file.type)
+  if (!extPorTipo)
+    return NextResponse.json({ error: 'Formato inválido. Use PNG, JPG ou WEBP.' }, { status: 415 })
+  if (file.size > MAX_BYTES)
+    return NextResponse.json({ error: 'Arquivo muito grande (máx. 5 MB).' }, { status: 413 })
+
+  // Whitelist de pastas — evita path traversal no storage
+  const PASTAS = ['VERDE', 'AMARELO', 'Especiais']
+  const folderRaw = (formData.get('folder') as string | null) ?? 'Especiais'
+  const folder = PASTAS.includes(folderRaw) ? folderRaw : 'Especiais'
+
+  // filename reutilizado precisa bater o padrão seguro; senão gera um novo
   const existing = formData.get('filename') as string | null
-  const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'png'
-  const filename = existing ?? `${Date.now()}.${ext}`
+  const filename = existing && /^\d+\.(png|jpg|jpeg|webp)$/i.test(existing)
+    ? existing
+    : `${Date.now()}.${extPorTipo}`
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer())

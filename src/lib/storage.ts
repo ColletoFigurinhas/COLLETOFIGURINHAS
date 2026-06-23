@@ -26,11 +26,14 @@ export async function salvarArquivo(
 
 // ── Local ─────────────────────────────────────────────────────────
 async function salvarLocal(buffer: Buffer, folder: string, filename: string): Promise<string> {
-  const dir      = path.join(process.cwd(), 'uploads', 'figuras', folder)
-  const filePath = path.join(dir, filename)
+  // Defesa em profundidade: nunca permite componentes de caminho (../)
+  const safeFolder = path.basename(folder)
+  const safeName   = path.basename(filename)
+  const dir        = path.join(process.cwd(), 'uploads', 'figuras', safeFolder)
+  const filePath   = path.join(dir, safeName)
   await mkdir(dir, { recursive: true })
   await writeFile(filePath, buffer)
-  return `/api/figuras/${folder}/${filename}`
+  return `/api/figuras/${safeFolder}/${safeName}`
 }
 
 // ── DO Spaces (S3-compatible) ─────────────────────────────────────
