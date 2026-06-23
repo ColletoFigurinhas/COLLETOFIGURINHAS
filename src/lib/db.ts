@@ -1,17 +1,18 @@
 import 'server-only'
 import { PrismaClient } from '@prisma/client'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
+import { env } from '@/env'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
 function createPrismaClient() {
   const adapter = new PrismaMariaDb({
-    host:                   process.env.DB_HOST     ?? '127.0.0.1',
-    port:                   Number(process.env.DB_PORT ?? 3306),
-    user:                   process.env.DB_USER     ?? 'root',
-    password:               process.env.DB_PASSWORD ?? '',
-    database:               process.env.DB_NAME     ?? 'album_supermedica',
-    timezone:               '-03:00',
+    host:                    env.DB_HOST,
+    port:                    Number(env.DB_PORT),
+    user:                    env.DB_USER,
+    password:                env.DB_PASSWORD,
+    database:                env.DB_NAME,
+    timezone:                '-03:00',
     allowPublicKeyRetrieval: true,
   })
   return new PrismaClient({ adapter })
@@ -19,4 +20,4 @@ function createPrismaClient() {
 
 export const db: PrismaClient = globalForPrisma.prisma ?? createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+if (env.NODE_ENV !== 'production') globalForPrisma.prisma = db

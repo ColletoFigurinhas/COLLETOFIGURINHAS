@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { sortearFigurinhas } from '@/lib/campanha'
+import { sortearFigurinhas } from '@/server/services/campanha'
 
 // Retorna hora e dia da semana no fuso da campanha
 function localTime(timezone: string): { dayOfWeek: number; minutes: number } {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAdmin } from '@/server/auth/api'
-import { sortearFigurinhas } from '@/lib/campanha'
+import { sortearFigurinhas } from '@/server/services/campanha'
 
 export async function POST(request: Request) {
   try {
