@@ -24,8 +24,36 @@ Dados sensíveis em jogo: credenciais de login de muitas pessoas e **fotos** de 
 
 ## 3. Rate limiting
 
-- Aplicado em login e recuperação de senha (`src/lib/ratelimit.ts`), por IP.
-- ⚠️ **Limitação:** implementação em memória (Map) — funciona em 1 instância. No Vercel (serverless, multi-instância) **não é confiável**. **TODO:** migrar para store distribuído (Upstash/Redis) antes de escalar.
+- Aplicado em login e recuperação de senha (`src/lib/ratelimit.ts`), por IP (10 tentativas / 60s).
+
+### ⚠️ Limitação atual (corrigir antes/junto da ida pro Vercel)
+
+**Problema.** O contador de tentativas é um `Map` na memória do processo Node. Isso funciona num **servidor único** (ex.: droplet rodando 1 processo). Mas o **Vercel é serverless**: cada requisição pode cair numa **instância diferente e efêmera**, cada uma com sua própria memória — logo, seu próprio contador.
+
+Num brute-force de login, as tentativas se espalham por várias instâncias e **nenhuma chega ao limite**:
+
+```text
+Tentativa 1 → Instância A → contador A = 1
+Tentativa 2 → Instância B → contador B = 1   (não enxerga o A)
+Tentativa 3 → Instância C → contador C = 1
+```
+
+Resultado: no Vercel o rate limit vira **decorativo** (não quebra o app, mas não protege). Some-se a isso: instâncias reiniciam (cold start) zerando o contador, e o `setInterval` de limpeza não roda de forma confiável em serverless.
+
+**Como corrigir.** Tirar o contador da memória e usar um **store compartilhado** (Redis) que todas as instâncias enxergam.
+
+- Recomendado: **Upstash Redis** (serverless, free tier, integra com Vercel) + lib `@upstash/ratelimit`. Alternativa: **Vercel KV** (Upstash por baixo).
+- Mudança **isolada**: só `src/lib/ratelimit.ts` muda; quem chama (`actions/auth.ts`) continua igual.
+- Manter **fallback em memória no dev** (sem precisar de Redis local) e usar Redis quando as envs existirem.
+
+**O que precisamos.**
+
+1. Conta no **Upstash** (ou ativar **Vercel KV**) → criar um banco Redis.
+2. Variáveis de ambiente: `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` (no `.env.local` e nas envs do Vercel).
+3. Pacotes: `npm i @upstash/ratelimit @upstash/redis`.
+4. Adicionar essas vars (opcionais) no `src/env.ts` e reescrever `rateLimit()` para usar o sliding window do Upstash, com fallback para o `Map` quando as vars não estiverem setadas.
+
+**Esforço:** pequeno (~1 arquivo + config). Pode ser feito junto da migração pro Vercel/Supabase.
 
 ## 4. Headers de segurança (`next.config.ts`)
 
