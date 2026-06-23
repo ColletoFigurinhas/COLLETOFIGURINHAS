@@ -1,22 +1,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
-
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
-
-async function auth() {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any)) return null
-  return s
-}
+import { requireAdmin } from '@/server/auth/api'
 
 export async function GET(request: Request) {
   try {
-    const s = await auth()
-    if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    const auth = await requireAdmin()
+    if (!auth.ok) return auth.response
+    const { empresaId } = auth.session
 
     const q = new URL(request.url).searchParams.get('q')?.trim() ?? ''
-    const campanha = await db.campanha.findFirst({ where: { empresaId: s.empresaId, status: 'ativo' } })
+    const campanha = await db.campanha.findFirst({ where: { empresaId, status: 'ativo' } })
     if (!campanha) return NextResponse.json([])
 
     const itens = await db.albumItem.findMany({
@@ -27,11 +20,11 @@ export async function GET(request: Request) {
         },
         ...(q ? {
           participante: {
-            empresaId: s.empresaId,
+            empresaId,
             OR: [{ nome: { contains: q } }, { matricula: { contains: q } }],
           },
         } : {
-          participante: { empresaId: s.empresaId },
+          participante: { empresaId },
         }),
       },
       select: {

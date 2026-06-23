@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireUser } from '@/server/auth/api'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session?.userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId } = auth.session
 
   const { id } = await params
   const trocaId = parseInt(id, 10)
 
   const troca = await db.troca.findUnique({ where: { id: trocaId } })
   if (!troca) return NextResponse.json({ error: 'Troca não encontrada' }, { status: 404 })
-  if (troca.destinatarioId !== session.userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+  if (troca.destinatarioId !== userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
   if (troca.status !== 'PENDENTE') return NextResponse.json({ error: 'Troca não está pendente' }, { status: 400 })
 
   await db.troca.update({

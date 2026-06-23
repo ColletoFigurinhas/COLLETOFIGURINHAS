@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireUser } from '@/server/auth/api'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  const userId  = Number(session?.userId)
-  if (!userId || !Number.isInteger(userId)) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId } = auth.session
 
   const { id } = await params
   const pacoteId = parseInt(id, 10)

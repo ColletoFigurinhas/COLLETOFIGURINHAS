@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
-
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
+import { requireAdmin } from '@/server/auth/api'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any))
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId, nome } = auth.session
 
   const { id } = await params
   const albumItemId = parseInt(id)
@@ -15,8 +13,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { entregar } = await request.json()
 
-  const item = await db.albumItem.findUnique({
-    where: { id: albumItemId },
+  const item = await db.albumItem.findFirst({
+    where: { id: albumItemId, participante: { empresaId } },
     select: { quantidade: true, quantidadeEntregue: true },
   })
   if (!item) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
@@ -30,7 +28,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: {
       quantidadeEntregue: novaQtd,
       entregueEm: entregar ? new Date() : (novaQtd === 0 ? null : undefined),
-      entregueBy: entregar ? (s.nome ?? 'admin') : (novaQtd === 0 ? null : undefined),
+      entregueBy: entregar ? (nome ?? 'admin') : (novaQtd === 0 ? null : undefined),
     },
     select: { id: true, quantidadeEntregue: true, quantidade: true },
   })

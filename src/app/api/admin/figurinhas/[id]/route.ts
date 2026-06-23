@@ -1,24 +1,21 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
-
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
-
-async function auth() {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any)) return null
-  return s
-}
+import { requireAdmin } from '@/server/auth/api'
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const { id } = await params
+  const figId = Number(id)
   const body = await request.json()
+
+  const existe = await db.figurinha.findFirst({ where: { id: figId, campanha: { empresaId } }, select: { id: true } })
+  if (!existe) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
 
   const data: Record<string, any> = {}
   if (body.ativo         !== undefined) data.ativo         = body.ativo
@@ -26,7 +23,7 @@ export async function PATCH(
   if (body.tipo          !== undefined) data.tipo          = body.tipo
   if (body.imagemUrl     !== undefined) data.imagemUrl     = body.imagemUrl
 
-  const f = await db.figurinha.update({ where: { id: Number(id) }, data })
+  const f = await db.figurinha.update({ where: { id: figId }, data })
   return NextResponse.json(f)
 }
 
@@ -34,11 +31,15 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const { id } = await params
   const figId = Number(id)
+
+  const existe = await db.figurinha.findFirst({ where: { id: figId, campanha: { empresaId } }, select: { id: true } })
+  if (!existe) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
 
   const [emPacote, emAlbum] = await Promise.all([
     db.pacoteFigurinha.count({ where: { figurinhaId: figId } }),

@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
-
-async function authSuper() {
-  const s = await getSession()
-  if (!s?.isSuperAdmin) return null
-  return s
-}
+import { requireSuper } from '@/server/auth/api'
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await authSuper()) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireSuper()
+  if (!auth.ok) return auth.response
 
   const { id } = await params
   const body = await request.json()

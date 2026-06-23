@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireUser } from '@/server/auth/api'
 
 export async function GET() {
-  const session = await getSession()
-  const userId  = Number(session?.userId)
-  if (!userId || !Number.isInteger(userId)) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId } = auth.session
 
   const pacotes = await db.pacote.findMany({
     where:   { participanteId: userId, status: 'DISPONIVEL' },

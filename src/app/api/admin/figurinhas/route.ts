@@ -1,26 +1,19 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireAdmin } from '@/server/auth/api'
 
 export const dynamic = 'force-dynamic'
 
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
-
-async function auth() {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any)) return null
-  return s
-}
-
 export async function GET(request: Request) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const { searchParams } = new URL(request.url)
   const tipoFiltro = searchParams.get('tipo')
 
   const campanha = await db.campanha.findFirst({
-    where: { empresaId: s.empresaId, status: 'ativo' },
+    where: { empresaId, status: 'ativo' },
   })
   if (!campanha) return NextResponse.json([])
 
@@ -33,15 +26,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const { classificacao, tipo, imagemUrl } = await request.json()
   if (!classificacao || !tipo || !imagemUrl)
     return NextResponse.json({ error: 'classificacao, tipo e imagemUrl são obrigatórios' }, { status: 400 })
 
   const campanha = await db.campanha.findFirst({
-    where: { empresaId: s.empresaId, status: 'ativo' },
+    where: { empresaId, status: 'ativo' },
   })
   if (!campanha)
     return NextResponse.json({ error: 'Nenhuma campanha ativa' }, { status: 400 })

@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
-
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
+import { requireAdmin } from '@/server/auth/api'
 
 export async function GET() {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any))
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
-  const campanha = await db.campanha.findFirst({ where: { empresaId: s.empresaId, status: 'ativo' } })
+  const campanha = await db.campanha.findFirst({ where: { empresaId, status: 'ativo' } })
   if (!campanha) return NextResponse.json({ totalFigurinhas: 0, totalPorClassif: {}, participantes: [] })
 
   const [figurinhas, participantes, trocas] = await Promise.all([
@@ -18,7 +16,7 @@ export async function GET() {
       select: { id: true, classificacao: true },
     }),
     db.participante.findMany({
-      where:  { empresaId: s.empresaId, ativo: true },
+      where:  { empresaId, ativo: true },
       select: {
         id: true, nome: true, matricula: true,
         albumItens: {
@@ -29,7 +27,7 @@ export async function GET() {
       orderBy: { nome: 'asc' },
     }),
     db.troca.findMany({
-      where:  { campanha: { empresaId: s.empresaId }, status: 'ACEITA' },
+      where:  { campanha: { empresaId }, status: 'ACEITA' },
       select: { solicitanteId: true, destinatarioId: true },
     }),
   ])

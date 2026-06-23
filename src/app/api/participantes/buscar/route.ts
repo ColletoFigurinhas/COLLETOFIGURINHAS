@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireUser } from '@/server/auth/api'
 
 export async function GET(request: Request) {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId, empresaId } = auth.session
 
   const q = new URL(request.url).searchParams.get('q')?.trim() ?? ''
   if (q.length < 2) return NextResponse.json([])
@@ -13,9 +14,9 @@ export async function GET(request: Request) {
 
   const participantes = await db.participante.findMany({
     where: {
-      empresaId: s.empresaId,
+      empresaId,
       ativo:     true,
-      id:        { not: s.userId },
+      id:        { not: userId },
       ...(isNum ? { matricula: { contains: q } } : { nome: { contains: q } }),
     },
     select:  { id: true, nome: true, matricula: true },

@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireAdmin } from '@/server/auth/api'
 import { sortearFigurinhas } from '@/lib/campanha'
-
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
 
 export async function POST(request: Request) {
   try {
-    const s = await getSession()
-    if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any))
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    const auth = await requireAdmin()
+    if (!auth.ok) return auth.response
+    const { empresaId, nome } = auth.session
 
     const { participanteId, tipo, premioPrataId, premioOuroId } = await request.json()
 
@@ -23,12 +21,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Selecione as cartas Prêmio Prata e Prêmio Ouro.' }, { status: 400 })
 
     const participante = await db.participante.findFirst({
-      where:  { id: participanteId, empresaId: s.empresaId },
+      where:  { id: participanteId, empresaId },
       select: { nome: true, matricula: true },
     })
     if (!participante) return NextResponse.json({ error: 'Participante não encontrado.' }, { status: 404 })
 
-    const campanha = await db.campanha.findFirst({ where: { empresaId: s.empresaId, status: 'ativo' } })
+    const campanha = await db.campanha.findFirst({ where: { empresaId, status: 'ativo' } })
     if (!campanha) return NextResponse.json({ error: 'Nenhuma campanha ativa.' }, { status: 400 })
 
     const qtdNormais = tipo === 'PADRAO' ? campanha.stickersPorDiaPadrao : 5
@@ -51,7 +49,7 @@ export async function POST(request: Request) {
           premio: {
             create: {
               descricao:    `Carta prêmio ouro #${premioOuroId}`,
-              registradoPor: s.nome ?? 'admin',
+              registradoPor: nome ?? 'admin',
             },
           },
         } : {}),
@@ -60,13 +58,13 @@ export async function POST(request: Request) {
 
     await db.logDistribuicaoManual.create({
       data: {
-        empresaId:        s.empresaId!,
+        empresaId,
         pacoteId:         pacote.id,
         participanteId,
         participanteNome: participante.nome,
         matricula:        participante.matricula,
         tipoPacote:       tipo,
-        distribuidoPor:   s.nome ?? 'admin',
+        distribuidoPor:   nome ?? 'admin',
       },
     })
 

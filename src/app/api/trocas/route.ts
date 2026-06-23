@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
-
-function getUserId(session: Awaited<ReturnType<typeof getSession>>) {
-  const id = Number(session?.userId)
-  return Number.isInteger(id) && id > 0 ? id : null
-}
+import { requireUser } from '@/server/auth/api'
 
 export async function GET() {
-  const session = await getSession()
-  const userId  = getUserId(session)
-  if (!userId || !session?.empresaId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId } = auth.session
 
   const include = {
     solicitante:       { select: { id: true, nome: true, matricula: true } },
@@ -28,9 +23,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession()
-  const userId  = getUserId(session)
-  if (!userId || !session?.empresaId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId, empresaId } = auth.session
 
   const { figurinhaOfertadaId, matriculaDestinatario } = await req.json()
   if (!figurinhaOfertadaId || !matriculaDestinatario)
@@ -43,14 +38,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Você não tem essa figurinha' }, { status: 400 })
 
   const destinatario = await db.participante.findFirst({
-    where:  { matricula: String(matriculaDestinatario), empresaId: session.empresaId },
+    where:  { matricula: String(matriculaDestinatario), empresaId },
     select: { id: true, nome: true, ativo: true },
   })
   if (!destinatario)       return NextResponse.json({ error: 'Matrícula não encontrada' }, { status: 404 })
   if (!destinatario.ativo) return NextResponse.json({ error: 'Participante inativo' }, { status: 400 })
   if (destinatario.id === userId) return NextResponse.json({ error: 'Não pode propor troca consigo mesmo' }, { status: 400 })
 
-  const campanha = await db.campanha.findFirst({ where: { empresaId: session.empresaId, status: 'ativo' } })
+  const campanha = await db.campanha.findFirst({ where: { empresaId, status: 'ativo' } })
   if (!campanha) return NextResponse.json({ error: 'Nenhuma campanha ativa' }, { status: 400 })
 
   const troca = await db.troca.create({

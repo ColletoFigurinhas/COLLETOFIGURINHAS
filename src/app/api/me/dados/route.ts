@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession, deleteSession } from '@/lib/session'
+import { deleteSession } from '@/lib/session'
+import { requireUser } from '@/server/auth/api'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/me/dados — exporta todos os dados do participante (LGPD art. 18)
 export async function GET() {
-  const s = await getSession()
-  if (!s?.userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId } = auth.session
 
   const participante = await db.participante.findUnique({
-    where: { id: s.userId },
+    where: { id: userId },
     include: {
       pacotes: {
         include: { figurinhas: { include: { figurinha: true } } },
@@ -31,22 +33,23 @@ export async function GET() {
 
 // DELETE /api/me/dados — anonimiza dados do participante (LGPD art. 18 VI)
 export async function DELETE() {
-  const s = await getSession()
-  if (!s?.userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  const auth = await requireUser()
+  if (!auth.ok) return auth.response
+  const { userId } = auth.session
 
   await db.$transaction([
     // Remove figurinhas do pacote e os pacotes
-    db.pacoteFigurinha.deleteMany({ where: { pacote: { participanteId: s.userId } } }),
-    db.pacote.deleteMany({ where: { participanteId: s.userId } }),
+    db.pacoteFigurinha.deleteMany({ where: { pacote: { participanteId: userId } } }),
+    db.pacote.deleteMany({ where: { participanteId: userId } }),
     // Remove itens do álbum
-    db.albumItem.deleteMany({ where: { participanteId: s.userId } }),
+    db.albumItem.deleteMany({ where: { participanteId: userId } }),
     // Remove trocas relacionadas
     db.troca.deleteMany({
-      where: { OR: [{ solicitanteId: s.userId }, { destinatarioId: s.userId }] },
+      where: { OR: [{ solicitanteId: userId }, { destinatarioId: userId }] },
     }),
     // Anonimiza o participante (mantém id para integridade, apaga dados pessoais)
     db.participante.update({
-      where: { id: s.userId },
+      where: { id: userId },
       data: {
         nome:             'Usuário removido',
         email:            null,

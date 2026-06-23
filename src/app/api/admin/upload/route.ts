@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
+import { requireAdmin } from '@/server/auth/api'
 import { salvarArquivo } from '@/lib/storage'
 import { log } from '@/lib/logger'
 
-const ROLES_PERMITIDOS = ['MARKETING', 'TI', 'ADMIN'] as const
-
 export async function POST(request: Request) {
-  const s = await getSession()
-  if (!s?.userId || !ROLES_PERMITIDOS.includes(s.role as any))
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const formData = await request.formData()
   const file     = formData.get('file') as File | null
@@ -26,7 +24,7 @@ export async function POST(request: Request) {
     const url    = await salvarArquivo(buffer, folder, filename)
     return NextResponse.json({ url, filename })
   } catch (err: any) {
-    log.error('Falha ao salvar arquivo de upload', { err: err?.message, folder, empresaId: s.empresaId })
+    log.error('Falha ao salvar arquivo de upload', { err: err?.message, folder, empresaId })
     return NextResponse.json({ error: 'Falha ao salvar arquivo', detail: err?.message }, { status: 500 })
   }
 }

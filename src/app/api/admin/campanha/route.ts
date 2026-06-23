@@ -1,31 +1,25 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireRole } from '@/server/auth/api'
 
 export const dynamic = 'force-dynamic'
 
-const ROLES = ['ADMIN'] as const
-
-async function auth() {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any)) return null
-  return s
-}
-
 export async function GET() {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireRole('ADMIN')
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const campanha = await db.campanha.findFirst({
-    where:   { empresaId: s.empresaId },
+    where:   { empresaId },
     orderBy: { createdAt: 'desc' },
   })
   return NextResponse.json(campanha ?? null)
 }
 
 export async function POST(request: Request) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireRole('ADMIN')
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const body = await request.json()
   const { nome, dataInicio, dataFim } = body
@@ -44,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   await db.campanha.updateMany({
-    where: { empresaId: s.empresaId!, status: 'ativo' },
+    where: { empresaId, status: 'ativo' },
     data:  { status: 'encerrado' },
   })
 
@@ -52,7 +46,7 @@ export async function POST(request: Request) {
 
   const campanha = await db.campanha.create({
     data: {
-      empresaId:            s.empresaId!,
+      empresaId,
       nome,
       slug,
       dataInicio:           new Date(dataInicio),
@@ -72,10 +66,11 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireRole('ADMIN')
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
-  const campanha = await db.campanha.findFirst({ where: { empresaId: s.empresaId, status: 'ativo' } })
+  const campanha = await db.campanha.findFirst({ where: { empresaId, status: 'ativo' } })
   if (!campanha) return NextResponse.json({ error: 'Nenhuma campanha ativa' }, { status: 404 })
 
   const body = await request.json()

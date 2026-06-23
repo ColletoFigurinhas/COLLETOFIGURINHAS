@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireSuper } from '@/server/auth/api'
 import bcrypt from 'bcryptjs'
-
-async function authSuper() {
-  const s = await getSession()
-  if (!s?.isSuperAdmin) return null
-  return s
-}
 
 // POST — cria admin (participante com role ADMIN) para uma empresa
 export async function POST(request: Request) {
-  if (!await authSuper()) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireSuper()
+  if (!auth.ok) return auth.response
 
   const { empresaId, matricula, nome, email, senha } = await request.json()
   if (!empresaId || !matricula || !nome || !email || !senha)

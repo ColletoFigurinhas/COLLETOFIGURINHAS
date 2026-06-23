@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireUser } from '@/server/auth/api'
 
 const PREMIOS_CLASSIF = ['PREMIO PRATA', 'PREMIO OURO']
 
 export async function GET() {
   try {
-    const session = await getSession()
-    const userId = Number(session?.userId)
-    if (!session?.userId || !session.empresaId || !Number.isInteger(userId) || userId <= 0)
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    const auth = await requireUser()
+    if (!auth.ok) return auth.response
+    const { userId, empresaId } = auth.session
 
     const campanha = await db.campanha.findFirst({
-      where: { empresaId: session.empresaId, status: 'ativo' },
+      where: { empresaId, status: 'ativo' },
     })
     if (!campanha) return NextResponse.json({ secoes: [], premios: [] })
 

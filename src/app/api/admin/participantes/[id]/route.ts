@@ -1,30 +1,23 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireAdmin } from '@/server/auth/api'
 import bcrypt from 'bcryptjs'
-
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
-
-async function auth() {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any)) return null
-  return s
-}
 
 // PATCH — ativa/desativa, troca role, reseta senha
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const { id } = await params
   const pid = Number(id)
   const body = await request.json()
 
   const participante = await db.participante.findFirst({
-    where: { id: pid, empresaId: s.empresaId },
+    where: { id: pid, empresaId },
   })
   if (!participante) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
 

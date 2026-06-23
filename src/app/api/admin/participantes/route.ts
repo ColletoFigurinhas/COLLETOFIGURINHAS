@@ -1,28 +1,21 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/session'
+import { requireAdmin } from '@/server/auth/api'
 import bcrypt from 'bcryptjs'
 
 export const dynamic = 'force-dynamic'
 
-const ROLES = ['MARKETING', 'TI', 'ADMIN'] as const
-
-async function auth() {
-  const s = await getSession()
-  if (!s?.userId || !s.empresaId || !ROLES.includes(s.role as any)) return null
-  return s
-}
-
 // GET — lista participantes da empresa com filtro de busca
 export async function GET(request: Request) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const q = new URL(request.url).searchParams.get('q')?.trim() ?? ''
 
   const participantes = await db.participante.findMany({
     where: {
-      empresaId: s.empresaId,
+      empresaId,
       ...(q ? {
         OR: [
           { nome:      { contains: q } },
@@ -39,20 +32,21 @@ export async function GET(request: Request) {
 
 // POST — criar participante manualmente
 export async function POST(request: Request) {
-  const s = await auth()
-  if (!s) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const { empresaId } = auth.session
 
   const { matricula, nome, email, role, senha } = await request.json()
   if (!matricula || !nome) return NextResponse.json({ error: 'matricula e nome são obrigatórios' }, { status: 400 })
 
   const existe = await db.participante.findFirst({
-    where: { matricula: String(matricula), empresaId: s.empresaId },
+    where: { matricula: String(matricula), empresaId },
   })
   if (existe) return NextResponse.json({ error: 'Matrícula já cadastrada nesta empresa' }, { status: 409 })
 
   const p = await db.participante.create({
     data: {
-      empresaId: s.empresaId!,
+      empresaId,
       matricula: String(matricula),
       nome:      String(nome),
       email:     email ? String(email) : undefined,
