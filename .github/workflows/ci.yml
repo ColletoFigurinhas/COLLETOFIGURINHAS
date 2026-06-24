@@ -13,12 +13,17 @@ jobs:
     timeout-minutes: 15
 
     env:
-      # Vars mínimas para o build não explodir na validação de env
-      DATABASE_URL:   "mysql://root:root@127.0.0.1:3306/album_ci"
-      DB_NAME:        "album_ci"
-      SESSION_SECRET: "ci-secret-placeholder-32-characters-long"
-      BASE_DOMAIN:    "localhost"
-      NODE_ENV:       "production"
+      # Vars mínimas para o build não explodir na validação de env (src/env.ts)
+      DATABASE_URL:                 "postgresql://user:pass@localhost:5432/album_ci"
+      DIRECT_URL:                   "postgresql://user:pass@localhost:5432/album_ci"
+      SESSION_SECRET:               "ci-secret-placeholder-32-characters-long"
+      BASE_DOMAIN:                  "localhost"
+      NODE_ENV:                     "production"
+      STORAGE_S3_ENDPOINT:          "https://example.com/storage/v1/s3"
+      STORAGE_S3_REGION:            "us-east-1"
+      STORAGE_S3_ACCESS_KEY_ID:     "ci-placeholder"
+      STORAGE_S3_SECRET_ACCESS_KEY: "ci-placeholder"
+      STORAGE_BUCKET:               "figurinhas"
 
     steps:
       - uses: actions/checkout@v4

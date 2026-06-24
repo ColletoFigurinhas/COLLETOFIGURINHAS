@@ -1,19 +1,15 @@
 import 'server-only'
 import { PrismaClient } from '@prisma/client'
-import { PrismaMariaDb } from '@prisma/adapter-mariadb'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { env } from '@/env'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
 function createPrismaClient() {
-  const adapter = new PrismaMariaDb({
-    host:                    env.DB_HOST,
-    port:                    Number(env.DB_PORT),
-    user:                    env.DB_USER,
-    password:                env.DB_PASSWORD,
-    database:                env.DB_NAME,
-    timezone:                '-03:00',
-    allowPublicKeyRetrieval: true,
+  const adapter = new PrismaPg({
+    connectionString: env.DATABASE_URL,
+    // Supabase exige TLS; o pooler usa certificado gerenciado.
+    ssl: { rejectUnauthorized: false },
   })
   return new PrismaClient({ adapter })
 }

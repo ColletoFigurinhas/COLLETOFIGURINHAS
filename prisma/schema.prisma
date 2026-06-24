@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 enum Role {
@@ -47,7 +47,7 @@ model Empresa {
   participantes Participante[]
   campanhas     Campanha[]
 
-  @@map("empresas")
+  @@map("colleto_empresas")
 }
 
 // ─── Super Admins (equipe Colleto) ───────────────────────────────
@@ -58,7 +58,7 @@ model SuperAdmin {
   nome      String
   criadoEm DateTime @default(now()) @map("criado_em")
 
-  @@map("super_admins")
+  @@map("colleto_super_admins")
 }
 
 // ─── Participantes ────────────────────────────────────────────────
@@ -86,7 +86,7 @@ model Participante {
 
   @@unique([empresaId, matricula])
   @@index([empresaId])
-  @@map("participantes")
+  @@map("colleto_participantes")
 }
 
 // ─── Campanhas ────────────────────────────────────────────────────
@@ -122,7 +122,7 @@ model Campanha {
 
   @@unique([empresaId, slug])
   @@index([empresaId])
-  @@map("campanhas")
+  @@map("colleto_campanhas")
 }
 
 // ─── Figurinhas ───────────────────────────────────────────────────
@@ -141,7 +141,8 @@ model Figurinha {
   trocasSolicitadas Troca[]           @relation("FigurinhaOfertada")
   trocasRecebidas   Troca[]           @relation("FigurinhaRecebida")
 
-  @@map("figurinhas")
+  @@index([campanhaId, ativo])
+  @@map("colleto_figurinhas")
 }
 
 // ─── Album Itens ──────────────────────────────────────────────────
@@ -159,7 +160,8 @@ model AlbumItem {
   figurinha    Figurinha    @relation(fields: [figurinhaId],    references: [id])
 
   @@unique([participanteId, figurinhaId])
-  @@map("album_itens")
+  @@index([figurinhaId])
+  @@map("colleto_album_itens")
 }
 
 // ─── Pacotes ──────────────────────────────────────────────────────
@@ -180,7 +182,8 @@ model Pacote {
   premio       PremioFisico?
 
   @@index([participanteId, campanhaId])
-  @@map("pacotes")
+  @@index([participanteId, status])
+  @@map("colleto_pacotes")
 }
 
 // ─── Pacote Figurinhas ────────────────────────────────────────────
@@ -193,7 +196,8 @@ model PacoteFigurinha {
   pacote    Pacote    @relation(fields: [pacoteId],    references: [id])
   figurinha Figurinha @relation(fields: [figurinhaId], references: [id])
 
-  @@map("pacote_figurinhas")
+  @@index([pacoteId])
+  @@map("colleto_pacote_figurinhas")
 }
 
 // ─── Prêmios Físicos ──────────────────────────────────────────────
@@ -208,7 +212,7 @@ model PremioFisico {
 
   pacote Pacote @relation(fields: [pacoteId], references: [id])
 
-  @@map("premios_fisicos")
+  @@map("colleto_premios_fisicos")
 }
 
 // ─── Trocas ───────────────────────────────────────────────────────
@@ -229,7 +233,10 @@ model Troca {
   destinatario      Participante @relation("Destinatario",      fields: [destinatarioId],      references: [id])
   figurinhaRecebida Figurinha?   @relation("FigurinhaRecebida", fields: [figurinhaRecebidaId], references: [id])
 
-  @@map("trocas")
+  @@index([destinatarioId, status])
+  @@index([solicitanteId, status])
+  @@index([campanhaId])
+  @@map("colleto_trocas")
 }
 
 // ─── Ações de Campanha ────────────────────────────────────────────
@@ -245,7 +252,8 @@ model AcaoCampanha {
   campanha   Campanha       @relation(fields: [campanhaId], references: [id])
   ganhadores GanhadorAcao[]
 
-  @@map("acoes_campanha")
+  @@index([campanhaId])
+  @@map("colleto_acoes_campanha")
 }
 
 // ─── Log de Distribuições Manuais ─────────────────────────────────
@@ -261,7 +269,7 @@ model LogDistribuicaoManual {
   criadoEm        DateTime   @default(now()) @map("criado_em")
 
   @@index([empresaId])
-  @@map("logs_distribuicao_manual")
+  @@map("colleto_logs_distribuicao_manual")
 }
 
 // ─── Ganhadores de Ação ───────────────────────────────────────────
@@ -278,5 +286,5 @@ model GanhadorAcao {
   participante Participante @relation(fields: [participanteId], references: [id])
 
   @@unique([acaoId, participanteId])
-  @@map("ganhadores_acao")
+  @@map("colleto_ganhadores_acao")
 }

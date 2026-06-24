@@ -1,40 +1,35 @@
-import { readFile } from 'fs/promises'
-import path from 'path'
 import { NextResponse } from 'next/server'
+import { getSession } from '@/lib/session'
+import { lerFigurinha } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
-const MIME: Record<string, string> = {
-  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
-  gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml',
-}
-
+// Serve imagens do bucket PRIVADO do Supabase.
+// Chave: {empresaId}/{folder}/{filename} — só a própria empresa (ou super admin) acessa.
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path: segments } = await params
+  const safe = segments.map(s => s.replace(/[^a-zA-Z0-9._-]/g, '')).filter(Boolean)
+  if (safe.length < 2) return new NextResponse(null, { status: 404 })
 
-  // Prevent path traversal
-  const safe = segments.map(s => path.basename(s))
-  const base = path.join(process.cwd(), 'uploads', 'figuras')
-  const filePath = path.join(base, ...safe)
+  // Isolamento por tenant: a 1ª parte da chave é o empresaId.
+  const empresaIdDaChave = Number(safe[0])
+  const session = await getSession()
+  const autorizado =
+    !!session &&
+    (session.isSuperAdmin === true ||
+      (!!session.userId && session.empresaId === empresaIdDaChave))
+  if (!autorizado) return new NextResponse(null, { status: 403 })
 
-  if (!filePath.startsWith(base + path.sep) && filePath !== base) {
-    return new NextResponse(null, { status: 403 })
-  }
+  const obj = await lerFigurinha(safe.join('/'))
+  if (!obj) return new NextResponse(null, { status: 404 })
 
-  try {
-    const file = await readFile(filePath)
-    const ext = safe[safe.length - 1].split('.').pop()?.toLowerCase() ?? ''
-    const contentType = MIME[ext] ?? 'application/octet-stream'
-    return new NextResponse(file, {
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-    })
-  } catch {
-    return new NextResponse(null, { status: 404 })
-  }
+  return new NextResponse(Buffer.from(obj.body), {
+    headers: {
+      'Content-Type':  obj.contentType,
+      'Cache-Control': 'private, max-age=3600',
+    },
+  })
 }

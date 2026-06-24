@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/server/auth/api'
-import { salvarArquivo } from '@/lib/storage'
+import { salvarFigurinha } from '@/lib/storage'
 import { log } from '@/lib/logger'
 
 export async function POST(request: Request) {
@@ -38,8 +38,8 @@ export async function POST(request: Request) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer())
-    const url    = await salvarArquivo(buffer, folder, filename)
-    return NextResponse.json({ url, filename })
+    const key    = await salvarFigurinha(empresaId, folder, filename, buffer)
+    return NextResponse.json({ url: `/api/figuras/${key}`, filename })
   } catch (err: any) {
     log.error('Falha ao salvar arquivo de upload', { err: err?.message, folder, empresaId })
     return NextResponse.json({ error: 'Falha ao salvar arquivo', detail: err?.message }, { status: 500 })

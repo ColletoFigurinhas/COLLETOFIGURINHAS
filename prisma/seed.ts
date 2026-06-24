@@ -1,13 +1,13 @@
-import { PrismaMariaDb } from '@prisma/adapter-mariadb'
+import { config } from 'dotenv'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const adapter = new PrismaMariaDb({
-  host:     'localhost',
-  port:     3306,
-  user:     'root',
-  password: 'root',
-  database: 'album_supermedica',
+config({ path: '.env.local' })
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 })
 const db = new PrismaClient({ adapter })
 

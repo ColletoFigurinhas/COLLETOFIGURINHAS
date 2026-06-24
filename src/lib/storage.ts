@@ -1,72 +1,66 @@
 import 'server-only'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { env } from '@/env'
 
-// Verifica se DO Spaces está configurado
-function spacesConfigured(): boolean {
-  const { SPACES_KEY, SPACES_SECRET, SPACES_BUCKET, SPACES_ENDPOINT } = process.env
-  return !!(SPACES_KEY && SPACES_SECRET && SPACES_BUCKET && SPACES_ENDPOINT)
+// Cliente S3 apontando para o Storage do Supabase (endpoint S3-compatível).
+// Bucket é PRIVADO: nada é público — leitura sempre passa pela nossa rota autenticada.
+const s3 = new S3Client({
+  region:         env.STORAGE_S3_REGION,
+  endpoint:       env.STORAGE_S3_ENDPOINT,
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId:     env.STORAGE_S3_ACCESS_KEY_ID,
+    secretAccessKey: env.STORAGE_S3_SECRET_ACCESS_KEY,
+  },
+})
+
+const MIME: Record<string, string> = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
+}
+
+function contentType(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase() ?? ''
+  return MIME[ext] ?? 'application/octet-stream'
+}
+
+function sanitize(part: string): string {
+  return part.replace(/[^a-zA-Z0-9._-]/g, '')
 }
 
 /**
- * Salva um arquivo e retorna a URL pública.
- * - Se DO Spaces estiver configurado: faz upload para o bucket e retorna CDN URL.
- * - Caso contrário: salva em uploads/figuras/ e retorna rota local /api/figuras/...
+ * Monta a chave (key) do objeto isolando por empresa:
+ *   {empresaId}/{folder}/{filename}
  */
-export async function salvarArquivo(
-  buffer:   Buffer,
-  folder:   string,
-  filename: string,
+export function montarChave(empresaId: number, folder: string, filename: string): string {
+  return `${empresaId}/${sanitize(folder)}/${sanitize(filename)}`
+}
+
+/** Sobe a imagem para o bucket privado. Retorna a chave do objeto. */
+export async function salvarFigurinha(
+  empresaId: number,
+  folder:    string,
+  filename:  string,
+  buffer:    Buffer,
 ): Promise<string> {
-  if (spacesConfigured()) {
-    return uploadParaSpaces(buffer, folder, filename)
-  }
-  return salvarLocal(buffer, folder, filename)
-}
-
-// ── Local ─────────────────────────────────────────────────────────
-async function salvarLocal(buffer: Buffer, folder: string, filename: string): Promise<string> {
-  // Defesa em profundidade: nunca permite componentes de caminho (../)
-  const safeFolder = path.basename(folder)
-  const safeName   = path.basename(filename)
-  const dir        = path.join(process.cwd(), 'uploads', 'figuras', safeFolder)
-  const filePath   = path.join(dir, safeName)
-  await mkdir(dir, { recursive: true })
-  await writeFile(filePath, buffer)
-  return `/api/figuras/${safeFolder}/${safeName}`
-}
-
-// ── DO Spaces (S3-compatible) ─────────────────────────────────────
-async function uploadParaSpaces(buffer: Buffer, folder: string, filename: string): Promise<string> {
-  const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3')
-
-  const client = new S3Client({
-    region:   process.env.SPACES_REGION ?? 'nyc3',
-    endpoint: process.env.SPACES_ENDPOINT,
-    credentials: {
-      accessKeyId:     process.env.SPACES_KEY!,
-      secretAccessKey: process.env.SPACES_SECRET!,
-    },
-  })
-
-  const key = `figuras/${folder}/${filename}`
-  const ext  = filename.split('.').pop()?.toLowerCase() ?? 'png'
-  const contentType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
-    : ext === 'png'  ? 'image/png'
-    : ext === 'webp' ? 'image/webp'
-    : ext === 'gif'  ? 'image/gif'
-    : 'application/octet-stream'
-
-  await client.send(new PutObjectCommand({
-    Bucket:       process.env.SPACES_BUCKET!,
-    Key:          key,
-    Body:         buffer,
-    ContentType:  contentType,
-    ACL:          'public-read',
+  const key = montarChave(empresaId, folder, filename)
+  await s3.send(new PutObjectCommand({
+    Bucket:      env.STORAGE_BUCKET,
+    Key:         key,
+    Body:        buffer,
+    ContentType: contentType(key),
   }))
+  return key
+}
 
-  const base = process.env.SPACES_CDN_URL
-    ?? `https://${process.env.SPACES_BUCKET}.${process.env.SPACES_REGION}.digitaloceanspaces.com`
-
-  return `${base}/${key}`
+/** Lê um objeto do bucket (uso server-side, para servir via rota autenticada). */
+export async function lerFigurinha(
+  key: string,
+): Promise<{ body: Uint8Array; contentType: string } | null> {
+  try {
+    const out  = await s3.send(new GetObjectCommand({ Bucket: env.STORAGE_BUCKET, Key: key }))
+    const body = await out.Body!.transformToByteArray()
+    return { body, contentType: out.ContentType ?? contentType(key) }
+  } catch {
+    return null
+  }
 }
