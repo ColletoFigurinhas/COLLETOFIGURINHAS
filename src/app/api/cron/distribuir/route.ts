@@ -41,11 +41,15 @@ export async function POST(request: Request) {
 }
 
 async function handle(request: Request) {
-  // Autenticação: chave no header ou query string
+  // Autenticação aceita 3 formas:
+  //  - Vercel Cron: header "Authorization: Bearer <CRON_SECRET>" (automático)
+  //  - scripts legados: header "x-cron-secret" ou query "?key="
   const url    = new URL(request.url)
+  const auth   = request.headers.get('authorization')
   const key    = request.headers.get('x-cron-secret') ?? url.searchParams.get('key')
   const secret = process.env.CRON_SECRET
-  if (!secret || key !== secret)
+  const autorizado = !!secret && (key === secret || auth === `Bearer ${secret}`)
+  if (!autorizado)
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const agora = new Date()
