@@ -1,9 +1,27 @@
-# 🐘 Plano de Migração — MySQL → Supabase (PostgreSQL)
+# 🐘 Migração — MySQL → Supabase (PostgreSQL)
 
-> Documento de planejamento. **Nada aplicado ainda** — executar quando o projeto Supabase
-> estiver criado e as connection strings disponíveis. Complementa `docs/ARCHITECTURE.md`.
+> Complementa `docs/ARCHITECTURE.md`.
 >
-> Última atualização: 2026-06-22 · Status: **planejado, aguardando Supabase**
+> Última atualização: 2026-06-23 · Status: **✅ EXECUTADO** (cutover do banco + storage feito)
+
+## ✅ O que já foi feito (commit do cutover)
+
+- Provider `postgresql`; tabelas com prefixo **`colleto_`** (13 tabelas) + índices escaláveis.
+- `db.ts` com `@prisma/adapter-pg`; `env.ts` com `DATABASE_URL` (pooler) + `DIRECT_URL`.
+- Schema sincronizado no Supabase via `prisma db push` + `seed` rodando.
+- **Storage**: bucket **privado** `figurinhas`; upload por empresa (`{empresaId}/{folder}/{file}`);
+  imagens servidas pela rota `/api/figuras/[...path]` com auth + isolamento por empresa.
+
+## ⏭️ Pendências pós-cutover
+
+- **Enums** (`StatusCampanha`, `Plano`, `TipoFigurinha`) — adiados (hoje ainda `String`). Fazer com calma (ripple no código).
+- **Histórico de migrations**: usamos `db push` (sem migration). Baseline com `prisma migrate` quando o schema estabilizar.
+- **RLS** nas tabelas (2ª barreira) — ver `SECURITY.md`.
+- **Deploy no Vercel**: setar as env vars (DATABASE_URL, DIRECT_URL, STORAGE_*, SESSION_SECRET, etc.).
+
+---
+
+## (Referência) Plano original
 
 ---
 
