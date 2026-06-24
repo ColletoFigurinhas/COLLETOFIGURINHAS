@@ -12,6 +12,7 @@ export type SessionPayload = {
   empresaId?:    number
   empresaSlug?:  string
   primeiroAcesso?: boolean
+  termosAceitos?:  boolean
   // Super admin
   superAdminId?: number
   isSuperAdmin?: boolean

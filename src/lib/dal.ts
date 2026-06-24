@@ -25,6 +25,7 @@ export const verifySession = cache(async (): Promise<SessionUser> => {
   if (!session?.userId || !Number.isInteger(userId) || userId <= 0) redirect('/login')
   if (!session.empresaId || !session.empresaSlug) redirect('/login')
   if (session.primeiroAcesso) redirect('/primeiro-acesso')
+  if (!session.termosAceitos) redirect('/termos')
   return {
     userId,
     matricula:   session.matricula!,

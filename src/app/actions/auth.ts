@@ -72,12 +72,13 @@ export async function loginComSenha(matriculaRaw: string, senha: string): Promis
   if (!ok) return { error: 'Senha incorreta.' }
 
   await createSession({
-    userId:      participante.id,
+    userId:        participante.id,
     matricula,
-    nome:        participante.nome,
-    role:        participante.role,
-    empresaId:   empresa.id,
-    empresaSlug: empresa.slug,
+    nome:          participante.nome,
+    role:          participante.role,
+    empresaId:     empresa.id,
+    empresaSlug:   empresa.slug,
+    termosAceitos: !!participante.termosAceitosEm,
   })
   redirect('/album')
 }
@@ -117,12 +118,13 @@ export async function cadastrar(
   if (campanha) await nivelarParticipante(db, campanha.id, participante.id)
 
   await createSession({
-    userId:      participante.id,
+    userId:        participante.id,
     matricula,
-    nome:        participante.nome,
-    role:        participante.role,
-    empresaId:   empresa.id,
-    empresaSlug: empresa.slug,
+    nome:          participante.nome,
+    role:          participante.role,
+    empresaId:     empresa.id,
+    empresaSlug:   empresa.slug,
+    termosAceitos: !!participante.termosAceitosEm,
   })
   redirect('/album')
 }
@@ -146,18 +148,41 @@ export async function definirSenha(
   if (senha !== confirmacao)
     return { errors: { confirmacao: ['As senhas não conferem'] } }
 
-  await db.participante.update({
+  const p = await db.participante.update({
     where: { id: session.userId },
     data:  { email, senha: await bcrypt.hash(senha, 10) },
   })
 
   await createSession({
-    userId:      session.userId,
-    matricula:   session.matricula!,
-    nome:        session.nome,
-    role:        session.role!,
-    empresaId:   session.empresaId!,
-    empresaSlug: session.empresaSlug!,
+    userId:        session.userId,
+    matricula:     session.matricula!,
+    nome:          session.nome,
+    role:          session.role!,
+    empresaId:     session.empresaId!,
+    empresaSlug:   session.empresaSlug!,
+    termosAceitos: !!p.termosAceitosEm,
+  })
+  redirect('/album')
+}
+
+// ── Aceitar termos (gate de 1º acesso) ────────────────────────────
+export async function aceitarTermos(): Promise<{ error: string } | void> {
+  const session = await getSession()
+  if (!session?.userId || !session.empresaId || !session.empresaSlug) redirect('/login')
+
+  await db.participante.update({
+    where: { id: session.userId },
+    data:  { termosAceitosEm: new Date() },
+  })
+
+  await createSession({
+    userId:        session.userId,
+    matricula:     session.matricula!,
+    nome:          session.nome,
+    role:          session.role!,
+    empresaId:     session.empresaId,
+    empresaSlug:   session.empresaSlug,
+    termosAceitos: true,
   })
   redirect('/album')
 }

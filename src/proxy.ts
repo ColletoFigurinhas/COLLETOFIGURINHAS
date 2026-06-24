@@ -16,7 +16,7 @@ function extractSubdomain(host: string): string | null {
   return null
 }
 
-const PROTECTED  = ['/album', '/inventario', '/admin', '/primeiro-acesso']
+const PROTECTED  = ['/album', '/inventario', '/admin', '/primeiro-acesso', '/termos']
 const AUTH_ONLY  = ['/login', '/recuperar-senha']
 const SKIP_PATHS = ['/_next', '/api/cron', '/api/figuras', '/figuras', '/icon.png', '/favicon']
 
@@ -76,6 +76,9 @@ export async function proxy(request: NextRequest) {
     }
     if (session?.primeiroAcesso && pathname !== '/primeiro-acesso') {
       return NextResponse.redirect(new URL('/primeiro-acesso', request.url))
+    }
+    if (!session?.primeiroAcesso && !session?.termosAceitos && pathname !== '/termos') {
+      return NextResponse.redirect(new URL('/termos', request.url))
     }
   }
 
