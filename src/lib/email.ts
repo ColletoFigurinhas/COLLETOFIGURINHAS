@@ -1,11 +1,9 @@
 import 'server-only'
+import { env } from '@/env'
 
 export async function enviarCodigoRecuperacao(para: string, matricula: string, codigo: string) {
-  const apiUrl = process.env.COPA_API_URL
-  const apiKey = process.env.COPA_API_KEY
-
-  if (!apiUrl || !apiKey) {
-    throw new Error('COPA_API_URL ou COPA_API_KEY não configurados')
+  if (!env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY não configurado — envio de e-mail indisponível.')
   }
 
   const assunto = `${codigo} é seu código de acesso — Colleto Figurinhas`
@@ -62,17 +60,22 @@ export async function enviarCodigoRecuperacao(para: string, matricula: string, c
 </body>
 </html>`
 
-  const res = await fetch(`${apiUrl}/album/enviar-email-recuperacao`, {
+  const res = await fetch('https://api.resend.com/emails', {
     method:  'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
       'Content-Type':  'application/json',
     },
-    body: JSON.stringify({ para, matricula, assunto, html }),
+    body: JSON.stringify({
+      from:    env.RESEND_FROM ?? 'Colleto Figurinhas <onboarding@resend.dev>',
+      to:      [para],
+      subject: assunto,
+      html,
+    }),
   })
 
   if (!res.ok) {
     const body = await res.text().catch(() => '')
-    throw new Error(`Email API retornou ${res.status}: ${body}`)
+    throw new Error(`Resend retornou ${res.status}: ${body}`)
   }
 }

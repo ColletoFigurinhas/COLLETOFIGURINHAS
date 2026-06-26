@@ -27,10 +27,23 @@ export async function PATCH(
   if (body.senha  !== undefined) data.senha = await bcrypt.hash(String(body.senha), 10)
   if (body.email  !== undefined) data.email = body.email
 
-  const updated = await db.participante.update({
-    where:  { id: pid },
-    data,
-    select: { id: true, matricula: true, nome: true, email: true, role: true, ativo: true },
+  // Tombamento: ao desligar (ativo: true → false), cancela as trocas
+  // pendentes envolvendo o participante (não travam mais os colegas).
+  const desligando = body.ativo === false && participante.ativo
+
+  const updated = await db.$transaction(async tx => {
+    const up = await tx.participante.update({
+      where:  { id: pid },
+      data,
+      select: { id: true, matricula: true, nome: true, email: true, role: true, ativo: true },
+    })
+    if (desligando) {
+      await tx.troca.updateMany({
+        where: { status: 'PENDENTE', OR: [{ solicitanteId: pid }, { destinatarioId: pid }] },
+        data:  { status: 'CANCELADA_SEM_FIGURINHA', respondidoEm: new Date() },
+      })
+    }
+    return up
   })
   return NextResponse.json(updated)
 }
