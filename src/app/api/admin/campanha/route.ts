@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       diasSemana:           body.diasSemana             ?? '[1,2,3,4,5]',
       qtdCartasFds:         body.qtdCartasFds           ?? 5,
       timezone:             body.timezone               ?? 'America/Sao_Paulo',
+      temperatura:          ['LOW', 'MEDIUM', 'HIGH'].includes(body.temperatura) ? body.temperatura : 'LOW',
     },
   })
   return NextResponse.json(campanha, { status: 201 })
@@ -85,12 +86,15 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (body.temperatura !== undefined && !['LOW', 'MEDIUM', 'HIGH'].includes(body.temperatura))
+    return NextResponse.json({ error: 'temperatura inválida' }, { status: 400 })
+
   const data: Record<string, any> = {}
   const campos = [
     'nome', 'status',
     'stickersPorDiaPadrao', 'chanceEspecial',
     'horarioInicio', 'horarioFim', 'frequenciaMinutos',
-    'diasSemana', 'qtdCartasFds', 'timezone',
+    'diasSemana', 'qtdCartasFds', 'timezone', 'temperatura',
   ]
   for (const c of campos) {
     if (body[c] !== undefined) data[c] = body[c]

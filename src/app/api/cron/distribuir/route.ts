@@ -124,7 +124,7 @@ async function handle(request: Request) {
     const pendentes   = participantes.filter(p => !jaReceberam.has(p.id))
 
     for (const p of pendentes) {
-      const picks = await sortearFigurinhas(db, campanha.id, qtd, campanha.chanceEspecial)
+      const picks = await sortearFigurinhas(db, campanha.id, qtd, campanha.chanceEspecial, campanha.temperatura, p.id)
       await db.pacote.create({
         data: {
           campanhaId:     campanha.id,

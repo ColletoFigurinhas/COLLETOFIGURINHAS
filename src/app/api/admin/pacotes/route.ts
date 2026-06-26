@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     if (!campanha) return NextResponse.json({ error: 'Nenhuma campanha ativa.' }, { status: 400 })
 
     const qtdNormais = tipo === 'PADRAO' ? campanha.stickersPorDiaPadrao : 5
-    const normais = await sortearFigurinhas(db, campanha.id, qtdNormais, campanha.chanceEspecial)
+    const normais = await sortearFigurinhas(db, campanha.id, qtdNormais, campanha.chanceEspecial, campanha.temperatura, participanteId)
 
     let cartas: { id: number }[]
     if (tipo === 'PADRAO')        cartas = normais

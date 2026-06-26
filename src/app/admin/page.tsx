@@ -9,7 +9,7 @@ type Campanha    = {
   id: number; nome: string; dataInicio: string; dataFim: string
   stickersPorDiaPadrao: number; chanceEspecial: number; status: string
   horarioInicio: string; horarioFim: string; frequenciaMinutos: number
-  diasSemana: string; qtdCartasFds: number; timezone: string
+  diasSemana: string; qtdCartasFds: number; timezone: string; temperatura: string
   ultimaDistribuicao: string | null
 } | null
 
@@ -457,6 +457,11 @@ const FREQ_OPCOES = [
   { label: '8 horas', value: 480 },
   { label: '1x / dia', value: 1440 },
 ]
+const TEMP_OPCOES = [
+  { value: 'LOW',    label: 'Aleatório',   desc: 'Sorteio 100% aleatório' },
+  { value: 'MEDIUM', label: 'Equilibrado', desc: 'Reduz repetidas (peso 3× nas que faltam)' },
+  { value: 'HIGH',   label: 'Acelerado',   desc: 'Prioriza cartas que faltam (peso 12×)' },
+]
 
 function AbaCampanha() {
   const [campanha, setCampanha] = useState<Campanha>(null)
@@ -477,6 +482,7 @@ function AbaCampanha() {
   const [hFim,       setHFim]       = useState('18:00')
   const [freq,       setFreq]       = useState(1440)
   const [dias,       setDias]       = useState<number[]>([1, 2, 3, 4, 5])
+  const [temperatura, setTemperatura] = useState('LOW')
 
   function preencherForm(data: NonNullable<Campanha>) {
     setNome(data.nome)
@@ -489,6 +495,7 @@ function AbaCampanha() {
     setHFim(data.horarioFim)
     setFreq(data.frequenciaMinutos)
     try { setDias(JSON.parse(data.diasSemana)) } catch { setDias([1,2,3,4,5]) }
+    setTemperatura(data.temperatura ?? 'LOW')
   }
 
   async function load() {
@@ -515,6 +522,7 @@ function AbaCampanha() {
       frequenciaMinutos: freq,
       diasSemana: JSON.stringify(dias),
       qtdCartasFds: stickersFds,
+      temperatura,
     }
     const r = await fetch('/api/admin/campanha', {
       method: campanha ? 'PATCH' : 'POST',
@@ -606,6 +614,29 @@ function AbaCampanha() {
         </div>
       </div>
 
+      {/* Temperatura */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18 }}>
+        <div style={{ ...sectionLabel, marginBottom: 6 }}>Dinâmica do sorteio · Temperatura</div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 14, lineHeight: 1.6 }}>
+          Quanto mais quente, mais o sistema prioriza as cartas que faltam para cada pessoa — reduz repetidas e acelera o álbum.
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {TEMP_OPCOES.map(o => {
+            const ativo = temperatura === o.value
+            return (
+              <button key={o.value} type="button" onClick={() => setTemperatura(o.value)} style={{
+                flex: '1 1 160px', textAlign: 'left', padding: '12px 14px', borderRadius: 10,
+                border: `1px solid ${ativo ? 'rgba(96,165,250,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                background: ativo ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.03)', cursor: 'pointer',
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: ativo ? '#93c5fd' : 'rgba(255,255,255,0.7)' }}>{o.label}</div>
+                <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.4)', marginTop: 4, lineHeight: 1.5 }}>{o.desc}</div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {err && <div style={alertStyle}>{err}</div>}
       <div style={{ display: 'flex', gap: 10 }}>
         <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
@@ -663,6 +694,7 @@ function AbaCampanha() {
               { label: 'Cartas (FDS)',     value: campanha.qtdCartasFds },
               { label: 'Chance especial',  value: `${Math.round(campanha.chanceEspecial * 100)}%` },
               { label: 'Frequência',       value: FREQ_OPCOES.find(o => o.value === campanha.frequenciaMinutos)?.label ?? `${campanha.frequenciaMinutos} min` },
+              { label: 'Temperatura',      value: TEMP_OPCOES.find(o => o.value === campanha.temperatura)?.label ?? campanha.temperatura },
             ].map(s => (
               <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px' }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#60a5fa' }}>{s.value}</div>

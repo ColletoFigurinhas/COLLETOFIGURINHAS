@@ -1,27 +1,68 @@
 import type { PrismaClient } from '@prisma/client'
 
-/** Monta as figurinhas de um pacote respeitando chance especial por carta */
+/**
+ * Monta as figurinhas de um pacote. A `temperatura` controla o peso do sorteio:
+ *  - LOW    → totalmente aleatório (não olha o álbum do participante)
+ *  - MEDIUM → reduz repetidas: cartas que faltam têm peso 3×
+ *  - HIGH   → acelera o álbum: cartas que faltam têm peso 12×
+ * MEDIUM/HIGH precisam do `participanteId`; sem ele, cai no comportamento LOW.
+ */
 export async function sortearFigurinhas(
   db: PrismaClient,
   campanhaId: number,
   qtd: number,
-  chanceEspecial: number
+  chanceEspecial: number,
+  temperatura: string = 'LOW',
+  participanteId?: number,
 ): Promise<{ id: number }[]> {
   const normais   = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: { notIn: ['ESPECIAIS', 'PREMIO PRATA', 'PREMIO OURO'] } }, select: { id: true } })
   const especiais = await db.figurinha.findMany({ where: { campanhaId, ativo: true, classificacao: 'ESPECIAIS' }, select: { id: true } })
 
-  const shuffled = [...normais].sort(() => Math.random() - 0.5)
-  let normalIdx = 0
-  const picks: { id: number }[] = []
+  const temp = temperatura === 'MEDIUM' || temperatura === 'HIGH' ? temperatura : 'LOW'
 
+  // ── LOW (ou sem participante): clássico — embaralha e distribui ──
+  if (temp === 'LOW' || !participanteId) {
+    const shuffled = [...normais].sort(() => Math.random() - 0.5)
+    let idx = 0
+    const picks: { id: number }[] = []
+    for (let i = 0; i < qtd; i++) {
+      if (especiais.length > 0 && Math.random() < chanceEspecial) {
+        picks.push(especiais[Math.floor(Math.random() * especiais.length)])
+      } else {
+        if (shuffled.length === 0) break
+        picks.push(shuffled[idx % shuffled.length])
+        idx++
+      }
+    }
+    return picks
+  }
+
+  // ── MEDIUM / HIGH: peso maior para cartas que ainda faltam ──
+  const itens = await db.albumItem.findMany({ where: { participanteId, quantidade: { gt: 0 } }, select: { figurinhaId: true } })
+  const possui    = new Set(itens.map(i => i.figurinhaId))
+  const pesoFalta = temp === 'HIGH' ? 12 : 3
+
+  const dadosNoPacote = new Map<number, number>()
+  const pesoDe = (id: number) =>
+    possui.has(id) || (dadosNoPacote.get(id) ?? 0) > 0 ? 1 : pesoFalta
+
+  const picks: { id: number }[] = []
   for (let i = 0; i < qtd; i++) {
     if (especiais.length > 0 && Math.random() < chanceEspecial) {
       picks.push(especiais[Math.floor(Math.random() * especiais.length)])
-    } else {
-      if (shuffled.length === 0) break
-      picks.push(shuffled[normalIdx % shuffled.length])
-      normalIdx++
+      continue
     }
+    if (normais.length === 0) break
+    const pesos = normais.map(f => pesoDe(f.id))
+    const total = pesos.reduce((a, b) => a + b, 0)
+    let r = Math.random() * total
+    let escolhido = normais[normais.length - 1]
+    for (let j = 0; j < normais.length; j++) {
+      r -= pesos[j]
+      if (r <= 0) { escolhido = normais[j]; break }
+    }
+    picks.push(escolhido)
+    dadosNoPacote.set(escolhido.id, (dadosNoPacote.get(escolhido.id) ?? 0) + 1)
   }
   return picks
 }
@@ -99,7 +140,7 @@ export async function nivelarParticipante(
     const isFds = dow === 0 || dow === 6
     const qtd   = isFds ? campanha.qtdCartasFds : campanha.stickersPorDiaPadrao
 
-    const picks = await sortearFigurinhas(db, campanhaId, qtd, campanha.chanceEspecial)
+    const picks = await sortearFigurinhas(db, campanhaId, qtd, campanha.chanceEspecial, campanha.temperatura, participanteId)
     await db.pacote.create({
       data: {
         campanhaId,

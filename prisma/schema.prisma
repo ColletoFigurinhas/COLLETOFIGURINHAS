@@ -114,6 +114,7 @@ model Campanha {
   qtdCartasFds        Int       @default(5)              @map("qtd_cartas_fds")
   ultimaDistribuicao  DateTime? @map("ultima_distribuicao")
   timezone            String    @default("America/Sao_Paulo")
+  temperatura         String    @default("LOW")  // LOW | MEDIUM | HIGH — peso do sorteio
 
   empresa    Empresa        @relation(fields: [empresaId], references: [id])
   figurinhas Figurinha[]
