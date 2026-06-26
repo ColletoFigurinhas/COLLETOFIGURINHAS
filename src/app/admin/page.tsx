@@ -13,7 +13,10 @@ type Campanha    = {
   ultimaDistribuicao: string | null
 } | null
 
-type Tab = 'figurinhas' | 'participantes' | 'campanha'
+type Ganhador = { id: number; tipoPacotePremio: string; dataRegistro: string; participante: { id: number; nome: string; matricula: string } }
+type Acao = { id: number; nome: string; descricao: string | null; dataAcao: string; ganhadores: Ganhador[] }
+
+type Tab = 'figurinhas' | 'participantes' | 'campanha' | 'acoes'
 
 const CLASSIFICACOES = ['GRUPO A','GRUPO B','GRUPO C','GRUPO D','ESPECIAIS','PREMIO PRATA','PREMIO OURO']
 const TIPOS: Record<string, { label: string; desc: string }> = {
@@ -35,6 +38,7 @@ export default function AdminPage() {
           { key: 'figurinhas',    label: '🃏 Figurinhas' },
           { key: 'participantes', label: '👥 Participantes' },
           { key: 'campanha',      label: '📅 Campanha' },
+          { key: 'acoes',         label: '🎯 Ações' },
         ] as { key: Tab; label: string }[]).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '10px 20px', background: 'none', border: 'none',
@@ -51,6 +55,7 @@ export default function AdminPage() {
       {tab === 'figurinhas'    && <AbaFigurinhas />}
       {tab === 'participantes' && <AbaParticipantes />}
       {tab === 'campanha'      && <AbaCampanha />}
+      {tab === 'acoes'         && <AbaAcoes />}
     </div>
   )
 }
@@ -728,6 +733,189 @@ function AbaCampanha() {
           <div style={{ fontSize: 13, marginBottom: 16 }}>Nenhuma campanha ativa.</div>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ABA AÇÕES
+// ═══════════════════════════════════════════════════════════════════
+function AbaAcoes() {
+  const [acoes,   setAcoes]   = useState<Acao[]>([])
+  const [prata,   setPrata]   = useState<Figurinha[]>([])
+  const [ouro,    setOuro]    = useState<Figurinha[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showNew, setShowNew] = useState(false)
+  const [nome,    setNome]    = useState('')
+  const [descricao, setDescricao] = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [err,     setErr]     = useState('')
+  const [ganhadorPara, setGanhadorPara] = useState<number | null>(null)
+
+  async function load() {
+    setLoading(true)
+    const [ra, rf] = await Promise.all([fetch('/api/admin/acoes'), fetch('/api/admin/figurinhas')])
+    setAcoes(await ra.json())
+    const figs: Figurinha[] = await rf.json()
+    setPrata(figs.filter(f => f.classificacao === 'PREMIO PRATA' && f.ativo))
+    setOuro(figs.filter(f => f.classificacao === 'PREMIO OURO' && f.ativo))
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
+
+  async function criar(e: React.FormEvent) {
+    e.preventDefault(); setErr(''); setSaving(true)
+    const r = await fetch('/api/admin/acoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome, descricao: descricao || undefined }) })
+    setSaving(false)
+    if (!r.ok) { const j = await r.json(); setErr(j.error ?? 'Erro'); return }
+    setNome(''); setDescricao(''); setShowNew(false); load()
+  }
+
+  if (loading) return <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Ações do dia</h2>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>{acoes.length} ação(ões) · ganhadores recebem pacote bônus</div>
+        </div>
+        <button onClick={() => { setShowNew(v => !v); setErr('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showNew ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: showNew ? 'rgba(255,255,255,0.5)' : '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          {showNew ? '✕' : '+ Nova ação'}
+        </button>
+      </div>
+
+      {showNew && (
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+          <div style={sectionLabel}>Nova Ação</div>
+          <form onSubmit={criar} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+            <div><label style={lbl}>Nome</label><input value={nome} onChange={e => setNome(e.target.value)} style={inpSm} placeholder="Ex.: Quiz da manhã" required /></div>
+            <div><label style={lbl}>Descrição (opcional)</label><input value={descricao} onChange={e => setDescricao(e.target.value)} style={inpSm} placeholder="Detalhes da ação" /></div>
+            {err && <div style={{ ...alertStyle, gridColumn: '1/-1' }}>{err}</div>}
+            <div style={{ gridColumn: '1/-1' }}><button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Ação'}</button></div>
+          </form>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {acoes.map(a => (
+          <div key={a.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.1)', borderRadius: 12, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{a.nome}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{new Date(a.dataAcao).toLocaleDateString('pt-BR')}{a.descricao ? ` · ${a.descricao}` : ''} · {a.ganhadores.length} ganhador(es)</div>
+              </div>
+              <button onClick={() => setGanhadorPara(ganhadorPara === a.id ? null : a.id)} style={btnSm}>{ganhadorPara === a.id ? '✕ Fechar' : '+ Ganhador'}</button>
+            </div>
+
+            {ganhadorPara === a.id && <GanhadorForm acaoId={a.id} prata={prata} ouro={ouro} onDone={() => { setGanhadorPara(null); load() }} />}
+
+            {a.ganhadores.length > 0 && (
+              <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {a.ganhadores.map(g => (
+                  <span key={g.id} style={{ fontSize: 10, padding: '4px 10px', borderRadius: 20, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)', color: '#86efac' }}>
+                    🏆 {g.participante.nome} · {g.tipoPacotePremio}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {acoes.length === 0 && <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 32 }}>Nenhuma ação criada ainda.</div>}
+      </div>
+    </div>
+  )
+}
+
+function GanhadorForm({ acaoId, prata, ouro, onDone }: { acaoId: number; prata: Figurinha[]; ouro: Figurinha[]; onDone: () => void }) {
+  const [q,   setQ]   = useState('')
+  const [res, setRes] = useState<Participante[]>([])
+  const [sel, setSel] = useState<Participante | null>(null)
+  const [tipo,    setTipo]    = useState('PLUS')
+  const [prataId, setPrataId] = useState('')
+  const [ouroId,  setOuroId]  = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [err,     setErr]     = useState('')
+
+  useEffect(() => {
+    if (sel || q.trim().length < 2) { setRes([]); return }
+    const t = setTimeout(async () => {
+      const r = await fetch(`/api/admin/participantes?q=${encodeURIComponent(q)}`)
+      setRes((await r.json()).slice(0, 6))
+    }, 300)
+    return () => clearTimeout(t)
+  }, [q, sel])
+
+  async function salvar() {
+    setErr('')
+    if (!sel)     { setErr('Escolha o participante.'); return }
+    if (!prataId) { setErr('Escolha a carta Prêmio Prata.'); return }
+    if (tipo === 'PREMIUM' && !ouroId) { setErr('Escolha a carta Prêmio Ouro.'); return }
+    setSaving(true)
+    const r = await fetch(`/api/admin/acoes/${acaoId}/ganhador`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participanteId: sel.id, tipo, premioPrataId: Number(prataId), premioOuroId: tipo === 'PREMIUM' ? Number(ouroId) : undefined }),
+    })
+    setSaving(false)
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) { setErr(data.error ?? 'Erro'); return }
+    onDone()
+  }
+
+  return (
+    <div style={{ marginTop: 12, padding: 14, background: 'rgba(0,0,0,0.2)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+      <label style={lbl}>Participante</label>
+      {sel ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 13 }}>{sel.nome} <span style={{ opacity: 0.4 }}>#{sel.matricula}</span></span>
+          <button onClick={() => { setSel(null); setQ('') }} style={{ ...btnSm, padding: '3px 8px' }}>trocar</button>
+        </div>
+      ) : (
+        <div style={{ position: 'relative', marginBottom: 10 }}>
+          <input value={q} onChange={e => setQ(e.target.value)} style={inpSm} placeholder="Buscar por nome ou matrícula…" />
+          {res.length > 0 && (
+            <div style={{ position: 'absolute', zIndex: 5, top: 42, left: 0, right: 0, background: '#0d1a2e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden' }}>
+              {res.map(p => (
+                <button key={p.id} onClick={() => { setSel(p); setRes([]) }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
+                  {p.nome} <span style={{ opacity: 0.4 }}>#{p.matricula}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
+        <div>
+          <label style={lbl}>Tipo</label>
+          <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ ...inpSm, cursor: 'pointer' }}>
+            <option value="PLUS" style={opt}>Plus (Prêmio Prata)</option>
+            <option value="PREMIUM" style={opt}>Premium (Prata + Ouro)</option>
+          </select>
+        </div>
+        <div>
+          <label style={lbl}>Carta Prêmio Prata</label>
+          <select value={prataId} onChange={e => setPrataId(e.target.value)} style={{ ...inpSm, cursor: 'pointer' }}>
+            <option value="" style={opt}>—</option>
+            {prata.map(f => <option key={f.id} value={f.id} style={opt}>#{f.id}</option>)}
+          </select>
+        </div>
+        {tipo === 'PREMIUM' && (
+          <div>
+            <label style={lbl}>Carta Prêmio Ouro</label>
+            <select value={ouroId} onChange={e => setOuroId(e.target.value)} style={{ ...inpSm, cursor: 'pointer' }}>
+              <option value="" style={opt}>—</option>
+              {ouro.map(f => <option key={f.id} value={f.id} style={opt}>#{f.id}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {prata.length === 0 && <div style={{ fontSize: 10, color: '#fbbf24', marginTop: 8 }}>⚠️ Cadastre cartas &quot;Prêmio Prata&quot;/&quot;Prêmio Ouro&quot; na aba Figurinhas para liberar pacotes bônus.</div>}
+      {err && <div style={{ ...alertStyle, marginTop: 10 }}>{err}</div>}
+      <button onClick={salvar} disabled={saving} style={{ marginTop: 12, padding: '9px 20px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+        {saving ? 'Salvando…' : '🏆 Confirmar ganhador'}
+      </button>
     </div>
   )
 }
