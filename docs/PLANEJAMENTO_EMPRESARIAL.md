@@ -152,14 +152,18 @@ Serviço de prestação contínua de endomarketing. Para escalabilidade da equip
 | **D2** | **Modelo híbrido B2B:** SaaS (venda do álbum) + Agency (serviço mensal de campanhas). | 2026-06-21 |
 | **D3** | **Infraestrutura e segurança:** Vercel + Supabase (RLS p/ isolamento de tenants e wildcards). | 2026-06-22 |
 | **D4** | **Tabela de preços B2B:** setup do álbum (R$ 1,5K a 7K) e MRR de campanhas mensais (R$ 2,5K a 4K). | 2026-06-22 |
+| **D5** | **Onboarding de participantes:** suportar 3 métodos — cadastro manual, **importação por planilha (CSV/Excel)** e **API** para empresas com sistema próprio. | 2026-06-24 |
 
 ---
 
 ## 9. Decisões em aberto (a bater)
 
 - [ ] Definir o **nome da empresa principal** (agência prestadora de serviços)
-- [ ] Desenhar o **esquema SQL no Supabase** para suportar o multi-tenant (RLS)
-- [ ] Definir o **workflow de onboarding sem atrito** (como a empresa cliente sobe 500 funcionários rápido?)
+- [ ] Definir o **domínio do produto**: `empresa.colleto.com.br` (mesmo do marketing) vs `empresa.colletofigurinhas.com.br` — afeta `BASE_DOMAIN` e o wildcard no Vercel.
+
+✅ Resolvido recentemente: onboarding (D5) · **RLS ativada** no Supabase (ver `prisma/rls.sql` e `SECURITY.md`).
+
+> Execução técnica pendente (não são decisões, são tarefas): **construir** importação por planilha + API de participantes (D5) · termos/contrato jurídicos **reais** (o que está no app é modelo de exemplo) · finalizar deploy no Vercel (domínio wildcard + env vars) · enums · baseline de migrations · rate limit distribuído (Upstash). Detalhes em `SECURITY.md` e `MIGRACAO_SUPABASE.md`.
 
 ---
 

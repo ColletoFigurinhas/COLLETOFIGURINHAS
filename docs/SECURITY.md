@@ -95,7 +95,7 @@ Resultado: no Vercel o rate limit vira **decorativo** (não quebra o app, mas n�
 
 - [ ] Promover CSP de Report-Only para enforce (após staging) + nonce em `script-src`
 - [ ] Rate limit distribuído (Upstash/Redis)
-- [ ] RLS no Postgres/Supabase (2ª barreira de isolamento)
+- [x] RLS no Postgres/Supabase (2ª barreira) — **ativada** nas 13 tabelas `colleto_` (ver `prisma/rls.sql`)
 - [ ] 2FA para Super Admin
 - [ ] Log de auditoria (ações de admin/super admin)
 - [ ] Varredura de dependências (Dependabot / `npm audit` no CI)
