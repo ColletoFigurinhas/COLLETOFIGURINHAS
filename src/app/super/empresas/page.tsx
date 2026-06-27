@@ -6,8 +6,17 @@ type Empresa = {
   id: number; nome: string; slug: string; cnpj: string
   corPrimaria: string; ativo: boolean; plano: string
   apiKey: string | null
+  valorMensal: number | null
+  statusCobranca: string
+  proximoVencimento: string | null
   criadoEm: string
   _count: { participantes: number; campanhas: number }
+}
+
+const STATUS_COB: Record<string, { l: string; c: string; b: string }> = {
+  em_dia:   { l: 'Em dia',   c: '#4ade80', b: 'rgba(74,222,128,0.12)' },
+  atrasado: { l: 'Atrasado', c: '#f87171', b: 'rgba(248,113,113,0.12)' },
+  cortesia: { l: 'Cortesia', c: '#93c5fd', b: 'rgba(96,165,250,0.12)' },
 }
 
 export default function EmpresasPage() {
@@ -16,6 +25,11 @@ export default function EmpresasPage() {
   const [showForm,     setShowForm]     = useState(false)
   const [showAdmin,    setShowAdmin]    = useState<number | null>(null)
   const [keyRevelada,  setKeyRevelada]  = useState<{ id: number; key: string } | null>(null)
+  const [showCobranca, setShowCobranca] = useState<number | null>(null)
+  const [cobValor,  setCobValor]  = useState('')
+  const [cobStatus, setCobStatus] = useState('em_dia')
+  const [cobVenc,   setCobVenc]   = useState('')
+  const [savingCob, setSavingCob] = useState(false)
 
   // form nova empresa
   const [nome,  setNome]  = useState('')
@@ -85,6 +99,23 @@ export default function EmpresasPage() {
     setEmpresas(prev => prev.map(e => e.id === id ? { ...e, apiKey: data.apiKey } : e))
   }
 
+  function abrirCobranca(emp: Empresa) {
+    setShowCobranca(showCobranca === emp.id ? null : emp.id)
+    setCobValor(emp.valorMensal != null ? String(emp.valorMensal) : '')
+    setCobStatus(emp.statusCobranca ?? 'em_dia')
+    setCobVenc(emp.proximoVencimento ? emp.proximoVencimento.slice(0, 10) : '')
+  }
+
+  async function salvarCobranca(id: number) {
+    setSavingCob(true)
+    const r = await fetch(`/api/super/empresas/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valorMensal: cobValor === '' ? null : Number(cobValor), statusCobranca: cobStatus, proximoVencimento: cobVenc || null }),
+    })
+    setSavingCob(false)
+    if (r.ok) { setShowCobranca(null); load() }
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -134,12 +165,18 @@ export default function EmpresasPage() {
                 </div>
               </div>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 8, padding: '3px 8px', borderRadius: 4, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', background: (STATUS_COB[e.statusCobranca] ?? STATUS_COB.em_dia).b, color: (STATUS_COB[e.statusCobranca] ?? STATUS_COB.em_dia).c }}>
+                  {(STATUS_COB[e.statusCobranca] ?? STATUS_COB.em_dia).l}{e.valorMensal != null ? ` · R$ ${e.valorMensal}` : ''}
+                </span>
                 <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>{e._count.participantes} participantes · {e._count.campanhas} campanhas</span>
                 <button onClick={() => setShowAdmin(showAdmin === e.id ? null : e.id)} style={btnSm}>
                   + Admin
                 </button>
                 <button onClick={() => gerarApiKey(e.id)} style={btnSm}>
                   🔑 {e.apiKey ? 'Rotacionar API' : 'Gerar API'}
+                </button>
+                <button onClick={() => abrirCobranca(e)} style={btnSm}>
+                  💰 Cobrança
                 </button>
                 <button onClick={() => handleToggleAtivo(e)} style={{ ...btnSm, color: e.ativo ? '#f87171' : '#4ade80', borderColor: e.ativo ? 'rgba(248,113,113,0.3)' : 'rgba(74,222,128,0.3)' }}>
                   {e.ativo ? 'Desativar' : 'Ativar'}
@@ -171,6 +208,25 @@ export default function EmpresasPage() {
                     POST <b>/api/v1/participantes</b> · header <b>Authorization: Bearer &lt;key&gt;</b><br />
                     body: {'{ "participantes": [{ "matricula": "...", "nome": "...", "email": "..." }] }'}
                   </div>
+                </div>
+              )}
+
+              {showCobranca === e.id && (
+                <div style={{ width: '100%', marginTop: 12, paddingTop: 16, borderTop: '1px solid rgba(59,130,246,0.1)' }}>
+                  <div style={{ ...sectionLabel, marginBottom: 12 }}>Cobrança — {e.nome}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12 }}>
+                    <div><label style={lbl}>Valor mensal (R$)</label><input type="number" value={cobValor} onChange={ev => setCobValor(ev.target.value)} style={inp} placeholder="2500" /></div>
+                    <div>
+                      <label style={lbl}>Status</label>
+                      <select value={cobStatus} onChange={ev => setCobStatus(ev.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+                        <option value="em_dia"   style={{ background: '#0d1a2e' }}>Em dia</option>
+                        <option value="atrasado" style={{ background: '#0d1a2e' }}>Atrasado</option>
+                        <option value="cortesia" style={{ background: '#0d1a2e' }}>Cortesia</option>
+                      </select>
+                    </div>
+                    <div><label style={lbl}>Próximo vencimento</label><input type="date" value={cobVenc} onChange={ev => setCobVenc(ev.target.value)} style={inp} /></div>
+                  </div>
+                  <button onClick={() => salvarCobranca(e.id)} disabled={savingCob} style={{ ...btnPrimary, marginTop: 12 }}>{savingCob ? 'Salvando…' : 'Salvar cobrança'}</button>
                 </div>
               )}
             </div>
