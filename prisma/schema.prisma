@@ -83,6 +83,7 @@ model Participante {
   resetToken        String?   @unique @map("reset_token")
   resetTokenExpiry  DateTime? @map("reset_token_expiry")
   termosAceitosEm   DateTime? @map("termos_aceitos_em")
+  ultimoAcessoEm    DateTime? @map("ultimo_acesso_em")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt      @map("updated_at")
 

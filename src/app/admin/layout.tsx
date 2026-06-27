@@ -22,14 +22,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Colleto · Admin
             </span>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
-            <Link href="/admin/importar" style={{ fontSize: 9, color: 'rgba(96,165,250,0.85)', textDecoration: 'none', letterSpacing: 1 }}>
-              📥 Importar planilha
-            </Link>
-            <Link href="/album" style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textDecoration: 'none', letterSpacing: 1 }}>
-              ← Voltar ao álbum
-            </Link>
-          </div>
+          <Link href="/album" style={{ marginLeft: 'auto', fontSize: 9, color: 'rgba(255,255,255,0.3)', textDecoration: 'none', letterSpacing: 1, flexShrink: 0 }}>
+            ← Voltar ao álbum
+          </Link>
         </header>
 
         <main style={{ padding: '28px 24px', maxWidth: 960, margin: '0 auto' }}>

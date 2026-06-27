@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
+import ImportarParticipantesPanel from '@/components/ImportarParticipantesPanel'
 
 // ─── Tipos ────────────────────────────────────────────────────────
 type Figurinha   = { id: number; classificacao: string; tipo: string; imagemUrl: string | null; ativo: boolean }
-type Participante = { id: number; matricula: string; nome: string; email: string | null; role: string; ativo: boolean }
+type Participante = { id: number; matricula: string; nome: string; email: string | null; role: string; ativo: boolean; temSenha?: boolean; ultimoAcessoEm?: string | null }
 type Campanha    = {
   id: number; nome: string; dataInicio: string; dataFim: string
   stickersPorDiaPadrao: number; chanceEspecial: number; status: string
@@ -343,6 +344,7 @@ function AbaParticipantes() {
   const [loading,       setLoading]       = useState(true)
   const [busca,         setBusca]         = useState('')
   const [showForm,      setShowForm]      = useState(false)
+  const [showImport,    setShowImport]    = useState(false)
   const [pMat,    setPMat]    = useState('')
   const [pNome,   setPNome]   = useState('')
   const [pEmail,  setPEmail]  = useState('')
@@ -398,8 +400,13 @@ function AbaParticipantes() {
           <button onClick={() => { setShowForm(v => !v); setErrF('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: showForm ? 'rgba(255,255,255,0.5)' : '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {showForm ? '✕' : '+ Novo'}
           </button>
+          <button onClick={() => setShowImport(v => !v)} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(96,165,250,0.25)', background: showImport ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.07)', color: 'rgba(96,165,250,0.85)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+            📥 Importar
+          </button>
         </div>
       </div>
+
+      {showImport && <ImportarParticipantesPanel onDone={() => load(busca)} />}
 
       {showForm && (
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
@@ -430,8 +437,11 @@ function AbaParticipantes() {
             <div key={p.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.08)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', opacity: p.ativo ? 1 : 0.45 }}>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{p.nome}</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 0.5 }}>#{p.matricula} · {p.email ?? '—'}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 0.5 }}>
+                  #{p.matricula} · {p.email ?? '—'} · {p.ultimoAcessoEm ? `acesso ${new Date(p.ultimoAcessoEm).toLocaleDateString('pt-BR')}` : 'nunca acessou'}
+                </div>
               </div>
+              {p.temSenha === false && <div style={{ fontSize: 8, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.12)', color: '#fbbf24', letterSpacing: 1, fontWeight: 700, flexShrink: 0 }}>SEM SENHA</div>}
               <div style={{ fontSize: 8, padding: '3px 8px', borderRadius: 4, background: 'rgba(96,165,250,0.1)', color: 'rgba(96,165,250,0.7)', letterSpacing: 1, fontWeight: 700, flexShrink: 0 }}>{p.role}</div>
 
               {resetId === p.id ? (

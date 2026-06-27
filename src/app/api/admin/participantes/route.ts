@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
   const q = new URL(request.url).searchParams.get('q')?.trim() ?? ''
 
-  const participantes = await db.participante.findMany({
+  const rows = await db.participante.findMany({
     where: {
       empresaId,
       ...(q ? {
@@ -23,10 +23,11 @@ export async function GET(request: Request) {
         ],
       } : {}),
     },
-    select:  { id: true, matricula: true, nome: true, email: true, role: true, ativo: true, createdAt: true },
+    select:  { id: true, matricula: true, nome: true, email: true, role: true, ativo: true, createdAt: true, senha: true, ultimoAcessoEm: true },
     orderBy: { nome: 'asc' },
     take: 100,
   })
+  const participantes = rows.map(({ senha, ...p }) => ({ ...p, temSenha: !!senha }))
   return NextResponse.json(participantes)
 }
 

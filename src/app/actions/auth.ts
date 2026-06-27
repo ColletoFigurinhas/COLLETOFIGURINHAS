@@ -71,6 +71,8 @@ export async function loginComSenha(matriculaRaw: string, senha: string): Promis
   const ok = await bcrypt.compare(senha, participante.senha)
   if (!ok) return { error: 'Senha incorreta.' }
 
+  await db.participante.update({ where: { id: participante.id }, data: { ultimoAcessoEm: new Date() } })
+
   await createSession({
     userId:        participante.id,
     matricula,
@@ -109,7 +111,7 @@ export async function cadastrar(
 
   await db.participante.update({
     where: { id: participante.id },
-    data:  { email, senha: await bcrypt.hash(senha, 10) },
+    data:  { email, senha: await bcrypt.hash(senha, 10), ultimoAcessoEm: new Date() },
   })
 
   const campanha = await db.campanha.findFirst({
@@ -150,7 +152,7 @@ export async function definirSenha(
 
   const p = await db.participante.update({
     where: { id: session.userId },
-    data:  { email, senha: await bcrypt.hash(senha, 10) },
+    data:  { email, senha: await bcrypt.hash(senha, 10), ultimoAcessoEm: new Date() },
   })
 
   await createSession({
