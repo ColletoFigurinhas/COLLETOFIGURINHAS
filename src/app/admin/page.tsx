@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 
 // ─── Tipos ────────────────────────────────────────────────────────
 type Figurinha   = { id: number; classificacao: string; tipo: string; imagemUrl: string | null; ativo: boolean }
@@ -1186,36 +1186,86 @@ function AbaPremios() {
 // ═══════════════════════════════════════════════════════════════════
 // ABA RELATÓRIOS (ranking de coleção)
 // ═══════════════════════════════════════════════════════════════════
+type DeptStat = { classificacao: string; total: number; coletado: number; percentual: number }
 type LinhaRanking = {
   id: number; nome: string; matricula: string
   totalColetado: number; totalFigurinhas: number; percentualGeral: number
   trocasEnviadas: number; trocasRecebidas: number
+  porDepartamento: DeptStat[]
 }
+type LogDist = { id: number; participanteNome: string; matricula: string; tipoPacote: string; distribuidoPor: string; criadoEm: string }
 
 function AbaRelatorios() {
   const [parts, setParts] = useState<LinhaRanking[]>([])
   const [total, setTotal] = useState(0)
+  const [logs,  setLogs]  = useState<LogDist[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/admin/andamento').then(r => r.json()).then(d => {
+    Promise.all([
+      fetch('/api/admin/andamento').then(r => r.json()),
+      fetch('/api/admin/logs').then(r => r.json()),
+    ]).then(([d, l]) => {
       setParts(d?.participantes ?? [])
       setTotal(d?.totalFigurinhas ?? 0)
+      setLogs(Array.isArray(l) ? l : [])
       setLoading(false)
     })
   }, [])
 
-  if (loading) return <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
+  const departamentos = useMemo(() => {
+    const map = new Map<string, { total: number; soma: number; n: number }>()
+    for (const p of parts) for (const d of (p.porDepartamento ?? [])) {
+      const cur = map.get(d.classificacao) ?? { total: d.total, soma: 0, n: 0 }
+      cur.total = d.total; cur.soma += d.percentual; cur.n++
+      map.set(d.classificacao, cur)
+    }
+    return [...map.entries()].map(([classificacao, v]) => ({ classificacao, total: v.total, mediaPct: v.n ? Math.round(v.soma / v.n) : 0 }))
+  }, [parts])
 
+  function exportarCSV() {
+    const head = ['Posicao', 'Nome', 'Matricula', 'Coletadas', 'Total', 'Percentual', 'Trocas enviadas', 'Trocas recebidas']
+    const linhas = [head, ...parts.map((p, i) => [String(i + 1), p.nome, p.matricula, String(p.totalColetado), String(p.totalFigurinhas), `${p.percentualGeral}%`, String(p.trocasEnviadas), String(p.trocasRecebidas)])]
+    const csv = linhas.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }))
+    const a = document.createElement('a'); a.href = url; a.download = 'relatorio-colecao.csv'; a.click(); URL.revokeObjectURL(url)
+  }
+
+  if (loading) return <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
   const completos = parts.filter(p => p.percentualGeral >= 100).length
 
   return (
     <div>
-      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Relatórios</h2>
-      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 20 }}>
-        {total} figurinhas no álbum · {parts.length} participantes · {completos} completaram
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Relatórios</h2>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 20 }}>
+            {total} figurinhas no álbum · {parts.length} participantes · {completos} completaram
+          </div>
+        </div>
+        {parts.length > 0 && <button onClick={exportarCSV} style={btnSm}>⬇ Exportar CSV</button>}
       </div>
 
+      {departamentos.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ ...sectionLabel, marginBottom: 10 }}>Por grupo / departamento</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
+            {departamentos.map(d => (
+              <div key={d.classificacao} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.1)', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#93c5fd' }}>{d.classificacao}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: '8px 0 3px' }}>
+                  <span>{d.total} cartas</span><span>{d.mediaPct}% médio</span>
+                </div>
+                <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, d.mediaPct)}%`, background: 'linear-gradient(90deg,#1d4ed8,#60a5fa)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ ...sectionLabel, marginBottom: 10 }}>Ranking de coleção</div>
       {parts.length === 0 ? (
         <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 32 }}>Sem dados de coleção ainda.</div>
       ) : (
@@ -1235,6 +1285,22 @@ function AbaRelatorios() {
                   <div style={{ height: '100%', width: `${Math.min(100, p.percentualGeral)}%`, background: p.percentualGeral >= 100 ? 'linear-gradient(90deg,#16a34a,#4ade80)' : 'linear-gradient(90deg,#1d4ed8,#60a5fa)' }} />
                 </div>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ ...sectionLabel, margin: '28px 0 10px' }}>Histórico de distribuição manual</div>
+      {logs.length === 0 ? (
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Nenhuma distribuição manual registrada.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {logs.slice(0, 50).map(l => (
+            <div key={l.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.06)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, flexWrap: 'wrap' }}>
+              <span style={{ color: 'rgba(255,255,255,0.35)', width: 112, flexShrink: 0 }}>{new Date(l.criadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+              <span style={{ flex: 1, minWidth: 120 }}>{l.participanteNome} <span style={{ opacity: 0.4 }}>#{l.matricula}</span></span>
+              <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(96,165,250,0.12)', color: '#60a5fa', fontWeight: 700 }}>{l.tipoPacote}</span>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>por {l.distribuidoPor}</span>
             </div>
           ))}
         </div>
