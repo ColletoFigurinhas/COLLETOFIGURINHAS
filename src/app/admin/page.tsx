@@ -16,7 +16,7 @@ type Campanha    = {
 type Ganhador = { id: number; tipoPacotePremio: string; dataRegistro: string; participante: { id: number; nome: string; matricula: string } }
 type Acao = { id: number; nome: string; descricao: string | null; dataAcao: string; ganhadores: Ganhador[] }
 
-type Tab = 'figurinhas' | 'participantes' | 'campanha' | 'acoes'
+type Tab = 'figurinhas' | 'participantes' | 'campanha' | 'acoes' | 'pacotes' | 'premios' | 'relatorios'
 
 const CLASSIFICACOES = ['GRUPO A','GRUPO B','GRUPO C','GRUPO D','ESPECIAIS','PREMIO PRATA','PREMIO OURO']
 const TIPOS: Record<string, { label: string; desc: string }> = {
@@ -39,6 +39,9 @@ export default function AdminPage() {
           { key: 'participantes', label: '👥 Participantes' },
           { key: 'campanha',      label: '📅 Campanha' },
           { key: 'acoes',         label: '🎯 Ações' },
+          { key: 'pacotes',       label: '📦 Pacotes' },
+          { key: 'premios',       label: '🎁 Prêmios' },
+          { key: 'relatorios',    label: '📊 Relatórios' },
         ] as { key: Tab; label: string }[]).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '10px 20px', background: 'none', border: 'none',
@@ -56,6 +59,9 @@ export default function AdminPage() {
       {tab === 'participantes' && <AbaParticipantes />}
       {tab === 'campanha'      && <AbaCampanha />}
       {tab === 'acoes'         && <AbaAcoes />}
+      {tab === 'pacotes'       && <AbaPacotes />}
+      {tab === 'premios'       && <AbaPremios />}
+      {tab === 'relatorios'    && <AbaRelatorios />}
     </div>
   )
 }
@@ -916,6 +922,249 @@ function GanhadorForm({ acaoId, prata, ouro, onDone }: { acaoId: number; prata: 
       <button onClick={salvar} disabled={saving} style={{ marginTop: 12, padding: '9px 20px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
         {saving ? 'Salvando…' : '🏆 Confirmar ganhador'}
       </button>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ABA PACOTES (distribuição manual)
+// ═══════════════════════════════════════════════════════════════════
+function AbaPacotes() {
+  const [prata, setPrata] = useState<Figurinha[]>([])
+  const [ouro,  setOuro]  = useState<Figurinha[]>([])
+  const [q,   setQ]   = useState('')
+  const [res, setRes] = useState<Participante[]>([])
+  const [sel, setSel] = useState<Participante | null>(null)
+  const [tipo,    setTipo]    = useState('PADRAO')
+  const [prataId, setPrataId] = useState('')
+  const [ouroId,  setOuroId]  = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    fetch('/api/admin/figurinhas').then(r => r.json()).then((figs: Figurinha[]) => {
+      setPrata(figs.filter(f => f.classificacao === 'PREMIO PRATA' && f.ativo))
+      setOuro(figs.filter(f => f.classificacao === 'PREMIO OURO' && f.ativo))
+    })
+  }, [])
+
+  useEffect(() => {
+    if (sel || q.trim().length < 2) { setRes([]); return }
+    const t = setTimeout(async () => {
+      const r = await fetch(`/api/admin/participantes?q=${encodeURIComponent(q)}`)
+      setRes((await r.json()).slice(0, 6))
+    }, 300)
+    return () => clearTimeout(t)
+  }, [q, sel])
+
+  async function distribuir() {
+    setErr(''); setMsg('')
+    if (!sel) { setErr('Escolha o participante.'); return }
+    if (tipo !== 'PADRAO' && !prataId) { setErr('Escolha a carta Prêmio Prata.'); return }
+    if (tipo === 'PREMIUM' && !ouroId) { setErr('Escolha a carta Prêmio Ouro.'); return }
+    setSaving(true)
+    const r = await fetch('/api/admin/pacotes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participanteId: sel.id, tipo, premioPrataId: prataId ? Number(prataId) : undefined, premioOuroId: tipo === 'PREMIUM' ? Number(ouroId) : undefined }),
+    })
+    setSaving(false)
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) { setErr(data.error ?? 'Erro'); return }
+    setMsg(`Pacote ${tipo} distribuído para ${sel.nome}.`)
+    setSel(null); setQ(''); setTipo('PADRAO'); setPrataId(''); setOuroId('')
+  }
+
+  return (
+    <div>
+      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Distribuir pacote manual</h2>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 20 }}>Entrega um pacote avulso (padrão, plus ou premium) a um participante.</div>
+
+      <div style={{ maxWidth: 520, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 20 }}>
+        <label style={lbl}>Participante</label>
+        {sel ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 13 }}>{sel.nome} <span style={{ opacity: 0.4 }}>#{sel.matricula}</span></span>
+            <button onClick={() => { setSel(null); setQ('') }} style={{ ...btnSm, padding: '3px 8px' }}>trocar</button>
+          </div>
+        ) : (
+          <div style={{ position: 'relative', marginBottom: 14 }}>
+            <input value={q} onChange={e => setQ(e.target.value)} style={inpSm} placeholder="Buscar por nome ou matrícula…" />
+            {res.length > 0 && (
+              <div style={{ position: 'absolute', zIndex: 5, top: 42, left: 0, right: 0, background: '#0d1a2e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden' }}>
+                {res.map(p => (
+                  <button key={p.id} onClick={() => { setSel(p); setRes([]) }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
+                    {p.nome} <span style={{ opacity: 0.4 }}>#{p.matricula}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
+          <div>
+            <label style={lbl}>Tipo</label>
+            <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ ...inpSm, cursor: 'pointer' }}>
+              <option value="PADRAO" style={opt}>Padrão</option>
+              <option value="PLUS" style={opt}>Plus (+ Prêmio Prata)</option>
+              <option value="PREMIUM" style={opt}>Premium (+ Prata e Ouro)</option>
+            </select>
+          </div>
+          {tipo !== 'PADRAO' && (
+            <div>
+              <label style={lbl}>Carta Prêmio Prata</label>
+              <select value={prataId} onChange={e => setPrataId(e.target.value)} style={{ ...inpSm, cursor: 'pointer' }}>
+                <option value="" style={opt}>—</option>
+                {prata.map(f => <option key={f.id} value={f.id} style={opt}>#{f.id}</option>)}
+              </select>
+            </div>
+          )}
+          {tipo === 'PREMIUM' && (
+            <div>
+              <label style={lbl}>Carta Prêmio Ouro</label>
+              <select value={ouroId} onChange={e => setOuroId(e.target.value)} style={{ ...inpSm, cursor: 'pointer' }}>
+                <option value="" style={opt}>—</option>
+                {ouro.map(f => <option key={f.id} value={f.id} style={opt}>#{f.id}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {msg && <div style={{ ...alertStyle, background: 'rgba(74,222,128,0.1)', borderColor: 'rgba(74,222,128,0.3)', color: '#86efac', marginTop: 14 }}>{msg}</div>}
+        {err && <div style={{ ...alertStyle, marginTop: 14 }}>{err}</div>}
+
+        <button onClick={distribuir} disabled={saving} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          {saving ? 'Distribuindo…' : '📦 Distribuir pacote'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ABA PRÊMIOS (entrega de prêmios físicos)
+// ═══════════════════════════════════════════════════════════════════
+type LinhaPremio = {
+  albumItemId: number; unidade: number; entregue: boolean
+  participante: { id: number; nome: string; matricula: string }
+  figurinha: { id: number; classificacao: string; imagemUrl: string | null }
+}
+
+function AbaPremios() {
+  const [linhas, setLinhas] = useState<LinhaPremio[]>([])
+  const [busca,  setBusca]  = useState('')
+  const [loading, setLoading] = useState(true)
+
+  async function load(qv = '') {
+    setLoading(true)
+    const r = await fetch(`/api/admin/premios${qv ? `?q=${encodeURIComponent(qv)}` : ''}`)
+    setLinhas(await r.json())
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
+  useEffect(() => { const t = setTimeout(() => load(busca), 300); return () => clearTimeout(t) }, [busca])
+
+  async function toggle(l: LinhaPremio) {
+    setLinhas(prev => prev.map(x => x === l ? { ...x, entregue: !x.entregue } : x))
+    await fetch(`/api/admin/premios/${l.albumItemId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entregar: !l.entregue }) })
+    load(busca)
+  }
+
+  const pendentes = linhas.filter(l => !l.entregue).length
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Prêmios físicos</h2>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>{pendentes} pendente(s) de entrega · {linhas.length} no total</div>
+        </div>
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar participante…" style={{ height: 36, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 12, padding: '0 12px', outline: 'none', width: 220 }} />
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
+      ) : linhas.length === 0 ? (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 32 }}>Nenhum prêmio físico encontrado.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {linhas.map((l, i) => (
+            <div key={`${l.albumItemId}-${l.unidade}-${i}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, opacity: l.entregue ? 0.55 : 1 }}>
+              <div style={{ width: 34, height: 50, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }}>
+                {l.figurinha.imagemUrl ? <img src={l.figurinha.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+              </div>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{l.participante.nome}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>#{l.participante.matricula} · {l.figurinha.classificacao}</div>
+              </div>
+              <button onClick={() => toggle(l)} style={{ ...btnSm, color: l.entregue ? '#4ade80' : '#fbbf24', borderColor: l.entregue ? 'rgba(74,222,128,0.3)' : 'rgba(251,191,36,0.3)' }}>
+                {l.entregue ? '✓ Entregue' : 'Marcar entregue'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ABA RELATÓRIOS (ranking de coleção)
+// ═══════════════════════════════════════════════════════════════════
+type LinhaRanking = {
+  id: number; nome: string; matricula: string
+  totalColetado: number; totalFigurinhas: number; percentualGeral: number
+  trocasEnviadas: number; trocasRecebidas: number
+}
+
+function AbaRelatorios() {
+  const [parts, setParts] = useState<LinhaRanking[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/admin/andamento').then(r => r.json()).then(d => {
+      setParts(d?.participantes ?? [])
+      setTotal(d?.totalFigurinhas ?? 0)
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading) return <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
+
+  const completos = parts.filter(p => p.percentualGeral >= 100).length
+
+  return (
+    <div>
+      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Relatórios</h2>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 20 }}>
+        {total} figurinhas no álbum · {parts.length} participantes · {completos} completaram
+      </div>
+
+      {parts.length === 0 ? (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', padding: 32 }}>Sem dados de coleção ainda.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {parts.map((p, i) => (
+            <div key={p.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 24, textAlign: 'center', fontSize: 12, fontWeight: 800, color: i < 3 ? '#fbbf24' : 'rgba(255,255,255,0.3)' }}>{i + 1}</div>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{p.nome}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>#{p.matricula} · trocas {p.trocasEnviadas}↑ {p.trocasRecebidas}↓</div>
+              </div>
+              <div style={{ width: 160, flexShrink: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 3 }}>
+                  <span>{p.totalColetado}/{p.totalFigurinhas}</span><span>{p.percentualGeral}%</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, p.percentualGeral)}%`, background: p.percentualGeral >= 100 ? 'linear-gradient(90deg,#16a34a,#4ade80)' : 'linear-gradient(90deg,#1d4ed8,#60a5fa)' }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
