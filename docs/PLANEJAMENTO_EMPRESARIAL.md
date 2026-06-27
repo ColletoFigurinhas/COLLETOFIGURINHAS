@@ -161,9 +161,9 @@ Serviço de prestação contínua de endomarketing. Para escalabilidade da equip
 - [ ] Definir o **nome da empresa principal** (agência prestadora de serviços)
 - [ ] Definir o **domínio do produto**: `empresa.colleto.com.br` (mesmo do marketing) vs `empresa.colletofigurinhas.com.br` — afeta `BASE_DOMAIN` e o wildcard no Vercel.
 
-✅ Resolvido recentemente: onboarding (D5) · **RLS ativada** no Supabase (ver `prisma/rls.sql` e `SECURITY.md`).
+✅ Já entregue no produto: onboarding manual + **importação por planilha (CSV)** · **RLS** (`prisma/rls.sql`) · **aceite de termos** no 1º acesso · **temperatura** da campanha (Low/Medium/High) · **tombamento** (cancela trocas ao desligar) · **email via Resend** · **Ações do dia** (pacote bônus) · abas admin **Pacotes/Prêmios/Relatórios**.
 
-> Execução técnica pendente (não são decisões, são tarefas): **construir** importação por planilha + API de participantes (D5) · termos/contrato jurídicos **reais** (o que está no app é modelo de exemplo) · finalizar deploy no Vercel (domínio wildcard + env vars) · enums · baseline de migrations · rate limit distribuído (Upstash). Detalhes em `SECURITY.md` e `MIGRACAO_SUPABASE.md`.
+> Execução técnica ainda pendente: **API de participantes** (onboarding D5, p/ empresas com sistema) · termos/contrato jurídicos **reais** (app tem modelo de exemplo) · finalizar deploy no Vercel (domínio wildcard + env vars, incl. `RESEND_API_KEY`) · mecânica **Melt** · enums · baseline de migrations · rate limit distribuído (Upstash) · CSP enforce. Detalhes em `SECURITY.md` e `MIGRACAO_SUPABASE.md`.
 
 ---
 
