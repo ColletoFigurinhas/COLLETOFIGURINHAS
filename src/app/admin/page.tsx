@@ -16,7 +16,7 @@ type Campanha    = {
 type Ganhador = { id: number; tipoPacotePremio: string; dataRegistro: string; participante: { id: number; nome: string; matricula: string } }
 type Acao = { id: number; nome: string; descricao: string | null; dataAcao: string; ganhadores: Ganhador[] }
 
-type Tab = 'figurinhas' | 'participantes' | 'campanha' | 'acoes' | 'pacotes' | 'premios' | 'relatorios'
+type Tab = 'visao' | 'figurinhas' | 'participantes' | 'campanha' | 'acoes' | 'pacotes' | 'premios' | 'relatorios'
 
 const CLASSIFICACOES = ['GRUPO A','GRUPO B','GRUPO C','GRUPO D','ESPECIAIS','PREMIO PRATA','PREMIO OURO']
 const TIPOS: Record<string, { label: string; desc: string }> = {
@@ -28,13 +28,14 @@ const TIPOS: Record<string, { label: string; desc: string }> = {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<Tab>('figurinhas')
+  const [tab, setTab] = useState<Tab>('visao')
 
   return (
     <div>
       {/* Abas */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 28, borderBottom: '1px solid rgba(59,130,246,0.12)', paddingBottom: 0 }}>
         {([
+          { key: 'visao',         label: '📈 Visão Geral' },
           { key: 'figurinhas',    label: '🃏 Figurinhas' },
           { key: 'participantes', label: '👥 Participantes' },
           { key: 'campanha',      label: '📅 Campanha' },
@@ -55,6 +56,7 @@ export default function AdminPage() {
         ))}
       </div>
 
+      {tab === 'visao'         && <AbaVisaoGeral />}
       {tab === 'figurinhas'    && <AbaFigurinhas />}
       {tab === 'participantes' && <AbaParticipantes />}
       {tab === 'campanha'      && <AbaCampanha />}
@@ -922,6 +924,78 @@ function GanhadorForm({ acaoId, prata, ouro, onDone }: { acaoId: number; prata: 
       <button onClick={salvar} disabled={saving} style={{ marginTop: 12, padding: '9px 20px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
         {saving ? 'Salvando…' : '🏆 Confirmar ganhador'}
       </button>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ABA VISÃO GERAL (dashboard)
+// ═══════════════════════════════════════════════════════════════════
+type Dashboard = {
+  semCampanha?: boolean
+  campanha?: { nome: string; status: string; dataInicio: string; dataFim: string; temperatura: string; ultimaDistribuicao: string | null }
+  totalCartas: number; participantesAtivos: number; completaram: number; percentualMedio: number
+  semColetar: number; pacotesTotais: number; pacotesAbertos: number; pacotesDisponiveis: number; trocasAceitas: number
+}
+
+function AbaVisaoGeral() {
+  const [d, setD] = useState<Dashboard | null>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { fetch('/api/admin/dashboard').then(r => r.json()).then(x => { setD(x); setLoading(false) }) }, [])
+
+  if (loading) return <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
+  if (!d || d.semCampanha || !d.campanha) {
+    return (
+      <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 64 }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>📈</div>
+        <div style={{ fontSize: 13 }}>Nenhuma campanha ativa. Crie uma na aba <b>Campanha</b>.</div>
+      </div>
+    )
+  }
+
+  const c = d.campanha
+  const tempLabel = TEMP_OPCOES.find(o => o.value === c.temperatura)?.label ?? c.temperatura
+  const cards: { label: string; value: string | number; color: string }[] = [
+    { label: 'Participantes ativos',   value: d.participantesAtivos,    color: '#60a5fa' },
+    { label: 'Completaram o álbum',    value: d.completaram,            color: '#4ade80' },
+    { label: '% médio de conclusão',   value: `${d.percentualMedio}%`,  color: '#fbbf24' },
+    { label: 'Cartas no álbum',        value: d.totalCartas,            color: '#60a5fa' },
+    { label: 'Pacotes a abrir',        value: d.pacotesDisponiveis,     color: '#f0c040' },
+    { label: 'Pacotes abertos',        value: d.pacotesAbertos,         color: '#60a5fa' },
+    { label: 'Trocas realizadas',      value: d.trocasAceitas,          color: '#a78bfa' },
+    { label: 'Ainda não coletaram',    value: d.semColetar,             color: d.semColetar > 0 ? '#f87171' : '#4ade80' },
+  ]
+
+  return (
+    <div>
+      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Visão Geral</h2>
+
+      {/* Cabeçalho da campanha */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '14px 0 22px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: 12, padding: '14px 18px' }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.status === 'ativo' ? '#4ade80' : '#f87171' }} />
+        <div style={{ fontSize: 15, fontWeight: 700 }}>{c.nome}</div>
+        <span style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: 'rgba(96,165,250,0.12)', color: '#60a5fa', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>🌡️ {tempLabel}</span>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+          {new Date(c.dataInicio).toLocaleDateString('pt-BR')} – {new Date(c.dataFim).toLocaleDateString('pt-BR')}
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+          {c.ultimaDistribuicao ? `Última distribuição: ${new Date(c.ultimaDistribuicao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Sem distribuição ainda'}
+        </span>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12 }}>
+        {cards.map(card => (
+          <div key={card.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.1)', borderRadius: 12, padding: '16px 18px' }}>
+            <div style={{ fontSize: 26, fontWeight: 900, color: card.color }}>{card.value}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{card.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 16, fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
+        Ranking detalhado por pessoa na aba <b>Relatórios</b>.
+      </div>
     </div>
   )
 }
