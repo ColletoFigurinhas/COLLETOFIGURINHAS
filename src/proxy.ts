@@ -18,7 +18,7 @@ function extractSubdomain(host: string): string | null {
 
 const PROTECTED  = ['/album', '/inventario', '/admin', '/primeiro-acesso', '/termos']
 const AUTH_ONLY  = ['/login', '/recuperar-senha']
-const SKIP_PATHS = ['/_next', '/api/cron', '/api/figuras', '/figuras', '/icon.png', '/favicon']
+const SKIP_PATHS = ['/_next', '/api/cron', '/api/v1', '/api/figuras', '/figuras', '/icon.png', '/favicon']
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl

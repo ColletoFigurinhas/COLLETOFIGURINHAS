@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 type Empresa = {
   id: number; nome: string; slug: string; cnpj: string
   corPrimaria: string; ativo: boolean; plano: string
+  apiKey: string | null
   criadoEm: string
   _count: { participantes: number; campanhas: number }
 }
@@ -14,6 +15,7 @@ export default function EmpresasPage() {
   const [loading,      setLoading]      = useState(true)
   const [showForm,     setShowForm]     = useState(false)
   const [showAdmin,    setShowAdmin]    = useState<number | null>(null)
+  const [keyRevelada,  setKeyRevelada]  = useState<{ id: number; key: string } | null>(null)
 
   // form nova empresa
   const [nome,  setNome]  = useState('')
@@ -74,6 +76,15 @@ export default function EmpresasPage() {
     setShowAdmin(null); load()
   }
 
+  async function gerarApiKey(id: number) {
+    if (!confirm('Gerar/rotacionar a API key desta empresa? A key anterior deixa de funcionar.')) return
+    const r = await fetch(`/api/super/empresas/${id}/apikey`, { method: 'POST' })
+    if (!r.ok) return
+    const data = await r.json()
+    setKeyRevelada({ id, key: data.apiKey })
+    setEmpresas(prev => prev.map(e => e.id === id ? { ...e, apiKey: data.apiKey } : e))
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -127,6 +138,9 @@ export default function EmpresasPage() {
                 <button onClick={() => setShowAdmin(showAdmin === e.id ? null : e.id)} style={btnSm}>
                   + Admin
                 </button>
+                <button onClick={() => gerarApiKey(e.id)} style={btnSm}>
+                  🔑 {e.apiKey ? 'Rotacionar API' : 'Gerar API'}
+                </button>
                 <button onClick={() => handleToggleAtivo(e)} style={{ ...btnSm, color: e.ativo ? '#f87171' : '#4ade80', borderColor: e.ativo ? 'rgba(248,113,113,0.3)' : 'rgba(74,222,128,0.3)' }}>
                   {e.ativo ? 'Desativar' : 'Ativar'}
                 </button>
@@ -146,6 +160,17 @@ export default function EmpresasPage() {
                       <button type="submit" disabled={savingA} style={btnPrimary}>{savingA ? 'Criando…' : 'Criar Admin'}</button>
                     </div>
                   </form>
+                </div>
+              )}
+
+              {keyRevelada?.id === e.id && (
+                <div style={{ width: '100%', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(59,130,246,0.1)' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(96,165,250,0.7)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>API key — copie agora (só aparece uma vez)</div>
+                  <code style={{ display: 'block', background: '#0d1a2e', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#93c5fd', wordBreak: 'break-all' }}>{keyRevelada.key}</code>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 6, lineHeight: 1.7 }}>
+                    POST <b>/api/v1/participantes</b> · header <b>Authorization: Bearer &lt;key&gt;</b><br />
+                    body: {'{ "participantes": [{ "matricula": "...", "nome": "...", "email": "..." }] }'}
+                  </div>
                 </div>
               )}
             </div>

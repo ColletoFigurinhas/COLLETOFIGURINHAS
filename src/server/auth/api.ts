@@ -1,6 +1,7 @@
 import 'server-only'
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
+import { db } from '@/lib/db'
 import type { Role } from '@prisma/client'
 
 /**
@@ -76,4 +77,24 @@ export async function requireSuper(): Promise<AuthResult<ApiSuper>> {
   const s = await getSession()
   if (!s?.isSuperAdmin || !s.superAdminId) return deny(401, 'Não autorizado')
   return { ok: true, session: { superAdminId: s.superAdminId, nome: s.nome } }
+}
+
+export type ApiEmpresa = { empresaId: number; empresaSlug: string }
+
+/**
+ * Autentica uma requisição EXTERNA pela API key da empresa.
+ * Header: `Authorization: Bearer <key>` ou `x-api-key: <key>`.
+ */
+export async function requireEmpresaApiKey(request: Request): Promise<AuthResult<ApiEmpresa>> {
+  const authz = request.headers.get('authorization')
+  const key = request.headers.get('x-api-key')
+    ?? (authz?.startsWith('Bearer ') ? authz.slice(7).trim() : null)
+  if (!key) return deny(401, 'API key ausente (use Authorization: Bearer <key> ou x-api-key).')
+
+  const empresa = await db.empresa.findFirst({
+    where:  { apiKey: key, ativo: true },
+    select: { id: true, slug: true },
+  })
+  if (!empresa) return deny(401, 'API key inválida.')
+  return { ok: true, session: { empresaId: empresa.id, empresaSlug: empresa.slug } }
 }

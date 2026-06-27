@@ -44,6 +44,14 @@ model Empresa {
   plano       String   @default("basico")
   criadoEm   DateTime @default(now()) @map("criado_em")
 
+  // API de integração (onboarding via sistema do cliente)
+  apiKey            String?   @unique @map("api_key")
+
+  // Cobrança (controle manual pela agência)
+  valorMensal       Float?    @map("valor_mensal")
+  statusCobranca    String    @default("em_dia") @map("status_cobranca")  // em_dia | atrasado | cortesia
+  proximoVencimento DateTime? @map("proximo_vencimento")
+
   participantes Participante[]
   campanhas     Campanha[]
 
