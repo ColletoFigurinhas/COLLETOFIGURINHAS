@@ -17,7 +17,7 @@ type Campanha    = {
 type Ganhador = { id: number; tipoPacotePremio: string; dataRegistro: string; participante: { id: number; nome: string; matricula: string } }
 type Acao = { id: number; nome: string; descricao: string | null; dataAcao: string; ganhadores: Ganhador[] }
 
-type Tab = 'visao' | 'figurinhas' | 'participantes' | 'campanha' | 'acoes' | 'pacotes' | 'premios' | 'relatorios'
+type Tab = 'visao' | 'figurinhas' | 'participantes' | 'campanha' | 'acoes' | 'pacotes' | 'premios' | 'relatorios' | 'estatisticas'
 
 const CLASSIFICACOES = ['GRUPO A','GRUPO B','GRUPO C','GRUPO D','ESPECIAIS','PREMIO PRATA','PREMIO OURO']
 const TIPOS: Record<string, { label: string; desc: string }> = {
@@ -44,6 +44,7 @@ export default function AdminPage() {
           { key: 'pacotes',       label: '📦 Pacotes' },
           { key: 'premios',       label: '🎁 Prêmios' },
           { key: 'relatorios',    label: '📊 Relatórios' },
+          { key: 'estatisticas',  label: '🧮 Estatísticas' },
         ] as { key: Tab; label: string }[]).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '10px 20px', background: 'none', border: 'none',
@@ -65,6 +66,7 @@ export default function AdminPage() {
       {tab === 'pacotes'       && <AbaPacotes />}
       {tab === 'premios'       && <AbaPremios />}
       {tab === 'relatorios'    && <AbaRelatorios />}
+      {tab === 'estatisticas'  && <AbaEstatisticas />}
     </div>
   )
 }
@@ -1415,6 +1417,175 @@ function BrandingCard() {
     </div>
   )
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// ABA ESTATÍSTICAS (avançada, interativa)
+// ═══════════════════════════════════════════════════════════════════
+type CartaStat = { id: number; classificacao: string; tipo: string; ativo: boolean; imagemUrl: string | null; premio: boolean; donos: number; copias: number; saidas: number }
+type PartStat  = { id: number; nome: string; matricula: string; coletadas: number; total: number; percentual: number; repetidas: number; pacotesAbertos: number; pacotesPendentes: number; trocas: number }
+type Estat = {
+  semCampanha?: boolean
+  campanha?: { nome: string; dataInicio: string; dataFim: string }
+  totalCartasNormais: number; classificacoes: string[]; cartas: CartaStat[]; participantes: PartStat[]
+}
+
+function AbaEstatisticas() {
+  const [data, setData]   = useState<Estat | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [modo, setModo]   = useState<'cartas' | 'participantes'>('cartas')
+  const [busca, setBusca] = useState('')
+  const [classif, setClassif] = useState('TODAS')
+  const [tipoF, setTipoF] = useState('TODAS')
+  const [sortCol, setSortCol]   = useState('saidas')
+  const [sortDesc, setSortDesc] = useState(true)
+
+  useEffect(() => { fetch('/api/admin/estatisticas').then(r => r.json()).then(d => { setData(d); setLoading(false) }) }, [])
+
+  function trocarModo(m: 'cartas' | 'participantes') {
+    setModo(m); setBusca(''); setClassif('TODAS'); setTipoF('TODAS')
+    setSortCol(m === 'cartas' ? 'saidas' : 'percentual'); setSortDesc(true)
+  }
+  function clickSort(col: string) {
+    if (sortCol === col) setSortDesc(d => !d)
+    else { setSortCol(col); setSortDesc(true) }
+  }
+
+  const cartas = useMemo(() => {
+    if (!data?.cartas) return []
+    let arr = data.cartas
+    if (classif !== 'TODAS') arr = arr.filter(c => c.classificacao === classif)
+    if (tipoF === 'NORMAIS')   arr = arr.filter(c => !c.premio)
+    if (tipoF === 'ESPECIAIS') arr = arr.filter(c => c.classificacao === 'ESPECIAIS')
+    if (tipoF === 'PREMIOS')   arr = arr.filter(c => c.classificacao.startsWith('PREMIO'))
+    if (busca.trim()) { const q = busca.toLowerCase(); arr = arr.filter(c => String(c.id).includes(q) || c.classificacao.toLowerCase().includes(q)) }
+    const k = sortCol as 'id' | 'donos' | 'copias' | 'saidas'
+    return [...arr].sort((a, b) => (sortDesc ? 1 : -1) * (((b[k] as number) ?? 0) - ((a[k] as number) ?? 0)))
+  }, [data, classif, tipoF, busca, sortCol, sortDesc])
+
+  const parts = useMemo(() => {
+    if (!data?.participantes) return []
+    let arr = data.participantes
+    if (busca.trim()) { const q = busca.toLowerCase(); arr = arr.filter(p => p.nome.toLowerCase().includes(q) || p.matricula.toLowerCase().includes(q)) }
+    const k = sortCol as keyof PartStat
+    return [...arr].sort((a, b) => (sortDesc ? 1 : -1) * (((b[k] as number) ?? 0) - ((a[k] as number) ?? 0)))
+  }, [data, busca, sortCol, sortDesc])
+
+  if (loading) return <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', padding: 48 }}>Carregando…</div>
+  if (!data || data.semCampanha) return <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 64 }}>Nenhuma campanha ativa.</div>
+
+  const normaisAtivas = data.cartas.filter(c => !c.premio && c.ativo)
+  const maisSaiu     = [...data.cartas].sort((a, b) => b.saidas - a.saidas)[0]
+  const maisRara     = [...normaisAtivas].sort((a, b) => a.donos - b.donos)[0]
+  const maisCompleto = [...data.participantes].sort((a, b) => b.percentual - a.percentual)[0]
+  const mediaPct     = data.participantes.length ? Math.round(data.participantes.reduce((s, p) => s + p.percentual, 0) / data.participantes.length) : 0
+  const completaram  = data.participantes.filter(p => p.percentual >= 100).length
+
+  const Th = ({ col, label, right }: { col: string; label: string; right?: boolean }) => (
+    <th onClick={() => clickSort(col)} style={{ textAlign: right ? 'right' : 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: sortCol === col ? '#93c5fd' : 'rgba(96,165,250,0.6)', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      {label}{sortCol === col ? (sortDesc ? ' ▼' : ' ▲') : ''}
+    </th>
+  )
+  const tdN: React.CSSProperties = { padding: '7px 10px', textAlign: 'right', color: 'rgba(255,255,255,0.8)', fontVariantNumeric: 'tabular-nums' }
+
+  return (
+    <div>
+      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Estatísticas avançadas</h2>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 18 }}>
+        {data.totalCartasNormais} cartas · {data.participantes.length} participantes · {mediaPct}% médio · {completaram} completaram
+      </div>
+
+      {/* Destaques */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 22 }}>
+        <div style={destCard}><div style={destLbl}>🔥 Carta que mais saiu</div><div style={destVal}>{maisSaiu ? `#${maisSaiu.id}` : '—'}</div><div style={destSub}>{maisSaiu ? `${maisSaiu.saidas} vezes · ${maisSaiu.classificacao}` : ''}</div></div>
+        <div style={destCard}><div style={destLbl}>💎 Carta mais rara</div><div style={destVal}>{maisRara ? `#${maisRara.id}` : '—'}</div><div style={destSub}>{maisRara ? `${maisRara.donos} têm · ${maisRara.classificacao}` : ''}</div></div>
+        <div style={destCard}><div style={destLbl}>🏆 Mais completo</div><div style={destVal}>{maisCompleto ? `${maisCompleto.percentual}%` : '—'}</div><div style={destSub}>{maisCompleto ? maisCompleto.nome : ''}</div></div>
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 0, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden' }}>
+          {(['cartas', 'participantes'] as const).map(m => (
+            <button key={m} onClick={() => trocarModo(m)} style={{ padding: '8px 16px', border: 'none', background: modo === m ? 'rgba(96,165,250,0.18)' : 'transparent', color: modo === m ? '#93c5fd' : 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+              {m === 'cartas' ? '🃏 Por carta' : '👤 Por participante'}
+            </button>
+          ))}
+        </div>
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder={modo === 'cartas' ? 'Buscar carta (id/grupo)…' : 'Buscar participante…'} style={{ height: 36, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 12, padding: '0 12px', outline: 'none', width: 220 }} />
+        {modo === 'cartas' && (
+          <>
+            <select value={classif} onChange={e => setClassif(e.target.value)} style={{ ...inpSm, width: 'auto', cursor: 'pointer' }}>
+              <option value="TODAS" style={opt}>Todos os grupos</option>
+              {data.classificacoes.map(c => <option key={c} value={c} style={opt}>{c}</option>)}
+            </select>
+            <select value={tipoF} onChange={e => setTipoF(e.target.value)} style={{ ...inpSm, width: 'auto', cursor: 'pointer' }}>
+              <option value="TODAS" style={opt}>Todas</option>
+              <option value="NORMAIS" style={opt}>Só normais</option>
+              <option value="ESPECIAIS" style={opt}>Só especiais</option>
+              <option value="PREMIOS" style={opt}>Só prêmios</option>
+            </select>
+          </>
+        )}
+      </div>
+
+      {/* Tabela */}
+      <div style={{ overflow: 'auto', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, maxHeight: '60vh' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          {modo === 'cartas' ? (
+            <>
+              <thead><tr style={{ position: 'sticky', top: 0, background: '#0c1626' }}>
+                <Th col="id" label="Carta" /><th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(96,165,250,0.6)', fontWeight: 700 }}>Grupo / Tipo</th>
+                <Th col="saidas" label="Saíram" right /><Th col="donos" label="Têm" right /><Th col="copias" label="Cópias" right />
+              </tr></thead>
+              <tbody>
+                {cartas.map(c => (
+                  <tr key={c.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', opacity: c.ativo ? 1 : 0.4 }}>
+                    <td style={{ padding: '6px 10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 22, height: 32, borderRadius: 4, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }}>{c.imagemUrl ? <img src={c.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}</div>
+                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>#{c.id}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '6px 10px', color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>{c.classificacao} · {c.tipo}</td>
+                    <td style={{ ...tdN, color: '#93c5fd', fontWeight: 700 }}>{c.saidas}</td>
+                    <td style={tdN}>{c.donos}</td>
+                    <td style={tdN}>{c.copias}</td>
+                  </tr>
+                ))}
+                {cartas.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.25)' }}>Nada encontrado.</td></tr>}
+              </tbody>
+            </>
+          ) : (
+            <>
+              <thead><tr style={{ position: 'sticky', top: 0, background: '#0c1626' }}>
+                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(96,165,250,0.6)', fontWeight: 700 }}>Participante</th>
+                <Th col="percentual" label="%" right /><Th col="coletadas" label="Coletadas" right /><Th col="repetidas" label="Repetidas" right /><Th col="pacotesPendentes" label="A abrir" right /><Th col="trocas" label="Trocas" right />
+              </tr></thead>
+              <tbody>
+                {parts.map(p => (
+                  <tr key={p.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <td style={{ padding: '6px 10px' }}><div style={{ color: 'rgba(255,255,255,0.85)' }}>{p.nome}</div><div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>#{p.matricula}</div></td>
+                    <td style={{ ...tdN, color: p.percentual >= 100 ? '#4ade80' : '#93c5fd', fontWeight: 700 }}>{p.percentual}%</td>
+                    <td style={tdN}>{p.coletadas}/{p.total}</td>
+                    <td style={tdN}>{p.repetidas}</td>
+                    <td style={tdN}>{p.pacotesPendentes}</td>
+                    <td style={tdN}>{p.trocas}</td>
+                  </tr>
+                ))}
+                {parts.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.25)' }}>Nada encontrado.</td></tr>}
+              </tbody>
+            </>
+          )}
+        </table>
+      </div>
+      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>Clique nos títulos das colunas para ordenar. "Saíram" = vezes que a carta apareceu em pacotes.</div>
+    </div>
+  )
+}
+
+const destCard: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: 12, padding: '14px 16px' }
+const destLbl:  React.CSSProperties = { fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, textTransform: 'uppercase' }
+const destVal:  React.CSSProperties = { fontSize: 22, fontWeight: 900, color: '#60a5fa', marginTop: 4 }
+const destSub:  React.CSSProperties = { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 }
 
 // ─── Styles ───────────────────────────────────────────────────────
 const sectionLabel: React.CSSProperties = { fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(96,165,250,0.55)', marginBottom: 16 }
