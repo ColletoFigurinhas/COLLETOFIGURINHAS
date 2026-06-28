@@ -1070,6 +1070,18 @@ function AbaPacotes() {
     setSel(null); setQ(''); setTipo('PADRAO'); setPrataId(''); setOuroId('')
   }
 
+  const [massEnviando, setMassEnviando] = useState(false)
+  const [massMsg, setMassMsg] = useState('')
+  async function distribuirMassa() {
+    if (!confirm('Dar 1 pacote Padrão para TODOS os participantes ativos?')) return
+    setMassEnviando(true); setMassMsg('')
+    const r = await fetch('/api/admin/pacotes/massa', { method: 'POST' })
+    setMassEnviando(false)
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) { setMassMsg(data.error ?? 'Erro na distribuição.'); return }
+    setMassMsg(`✓ ${data.distribuidos} de ${data.total} participantes receberam um pacote.`)
+  }
+
   return (
     <div>
       <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Distribuir pacote manual</h2>
@@ -1131,6 +1143,17 @@ function AbaPacotes() {
 
         <button onClick={distribuir} disabled={saving} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {saving ? 'Distribuindo…' : '📦 Distribuir pacote'}
+        </button>
+      </div>
+
+      <div style={{ maxWidth: 520, marginTop: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(124,58,237,0.25)', borderRadius: 14, padding: 20 }}>
+        <div style={sectionLabel}>Distribuição em massa</div>
+        <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, margin: '0 0 12px' }}>
+          Dá <b>1 pacote Padrão</b> para <b>todos os participantes ativos</b> de uma vez (respeita a temperatura da campanha).
+        </p>
+        {massMsg && <div style={{ ...alertStyle, background: 'rgba(74,222,128,0.1)', borderColor: 'rgba(74,222,128,0.3)', color: '#86efac', marginBottom: 12 }}>{massMsg}</div>}
+        <button onClick={distribuirMassa} disabled={massEnviando} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: massEnviando ? 'rgba(124,58,237,0.3)' : 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: '#ddd6fe', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: massEnviando ? 'not-allowed' : 'pointer' }}>
+          {massEnviando ? 'Distribuindo…' : '📢 Pacote Padrão para todos'}
         </button>
       </div>
     </div>
