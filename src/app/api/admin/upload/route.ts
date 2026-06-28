@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Arquivo muito grande (máx. 5 MB).' }, { status: 413 })
 
   // Whitelist de pastas — evita path traversal no storage
-  const PASTAS = ['VERDE', 'AMARELO', 'Especiais']
+  const PASTAS = ['VERDE', 'AMARELO', 'Especiais', 'Logo']
   const folderRaw = (formData.get('folder') as string | null) ?? 'Especiais'
   const folder = PASTAS.includes(folderRaw) ? folderRaw : 'Especiais'
 

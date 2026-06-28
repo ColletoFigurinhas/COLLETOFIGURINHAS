@@ -124,6 +124,7 @@ model Campanha {
   ultimaDistribuicao  DateTime? @map("ultima_distribuicao")
   timezone            String    @default("America/Sao_Paulo")
   temperatura         String    @default("LOW")  // LOW | MEDIUM | HIGH — peso do sorteio
+  pausada             Boolean   @default(false)   // pausa a distribuição automática
 
   empresa    Empresa        @relation(fields: [empresaId], references: [id])
   figurinhas Figurinha[]

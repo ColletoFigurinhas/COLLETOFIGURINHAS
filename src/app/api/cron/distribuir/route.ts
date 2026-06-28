@@ -62,6 +62,12 @@ async function handle(request: Request) {
 
   for (const campanha of campanhas) {
 
+    // ── 0. Campanha pausada? ─────────────────────────────────────
+    if (campanha.pausada) {
+      resultados.push({ empresaId: campanha.empresaId, campanhaId: campanha.id, motivo: 'pausada', distribuidos: 0 })
+      continue
+    }
+
     // ── 1. Campanha dentro do período? ───────────────────────────
     const inicio = new Date(campanha.dataInicio); inicio.setHours(0, 0, 0, 0)
     const fim    = new Date(campanha.dataFim);    fim.setHours(23, 59, 59, 999)

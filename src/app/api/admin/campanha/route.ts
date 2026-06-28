@@ -94,7 +94,7 @@ export async function PATCH(request: Request) {
     'nome', 'status',
     'stickersPorDiaPadrao', 'chanceEspecial',
     'horarioInicio', 'horarioFim', 'frequenciaMinutos',
-    'diasSemana', 'qtdCartasFds', 'timezone', 'temperatura',
+    'diasSemana', 'qtdCartasFds', 'timezone', 'temperatura', 'pausada',
   ]
   for (const c of campos) {
     if (body[c] !== undefined) data[c] = body[c]

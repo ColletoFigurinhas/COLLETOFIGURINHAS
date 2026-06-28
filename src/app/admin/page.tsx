@@ -10,7 +10,7 @@ type Campanha    = {
   id: number; nome: string; dataInicio: string; dataFim: string
   stickersPorDiaPadrao: number; chanceEspecial: number; status: string
   horarioInicio: string; horarioFim: string; frequenciaMinutos: number
-  diasSemana: string; qtdCartasFds: number; timezone: string; temperatura: string
+  diasSemana: string; qtdCartasFds: number; timezone: string; temperatura: string; pausada: boolean
   ultimaDistribuicao: string | null
 } | null
 
@@ -531,6 +531,12 @@ function AbaCampanha() {
   }
   useEffect(() => { load() }, [])
 
+  async function togglePausar() {
+    if (!campanha) return
+    await fetch('/api/admin/campanha', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pausada: !campanha.pausada }) })
+    load()
+  }
+
   function toggleDia(d: number) {
     setDias(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort())
   }
@@ -676,6 +682,7 @@ function AbaCampanha() {
 
   return (
     <div>
+      <BrandingCard />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Campanha</h2>
         {!editing && !showNew && (
@@ -701,6 +708,10 @@ function AbaCampanha() {
             <div style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: campanha.status === 'ativo' ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: campanha.status === 'ativo' ? '#4ade80' : '#f87171', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>
               {campanha.status}
             </div>
+            {campanha.pausada && <span style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.12)', color: '#fbbf24', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>⏸ Pausada</span>}
+            <button onClick={togglePausar} style={{ fontSize: 9, padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(96,165,250,0.25)', background: 'rgba(96,165,250,0.07)', color: 'rgba(96,165,250,0.8)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+              {campanha.pausada ? '▶ Retomar' : '⏸ Pausar'}
+            </button>
             {campanha.ultimaDistribuicao && (
               <div style={{ marginLeft: 'auto', fontSize: 9, color: 'rgba(255,255,255,0.25)' }}>
                 última dist. {new Date(campanha.ultimaDistribuicao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
@@ -1315,6 +1326,64 @@ function AbaRelatorios() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// IDENTIDADE VISUAL (branding da empresa) — usado na aba Campanha
+// ═══════════════════════════════════════════════════════════════════
+function BrandingCard() {
+  const [logoUrl, setLogoUrl]   = useState<string | null>(null)
+  const [cor, setCor]           = useState('#1d4ed8')
+  const [uploading, setUploading] = useState(false)
+  const [saving, setSaving]     = useState(false)
+  const [msg, setMsg]           = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetch('/api/admin/empresa').then(r => r.json()).then(e => { if (e) { setLogoUrl(e.logoUrl ?? null); setCor(e.corPrimaria ?? '#1d4ed8') } })
+  }, [])
+
+  async function uploadLogo(f: File) {
+    setUploading(true); setMsg('')
+    const fd = new FormData(); fd.append('file', f); fd.append('folder', 'Logo')
+    const up = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+    setUploading(false)
+    if (!up.ok) { setMsg('Falha no upload do logo.'); return }
+    setLogoUrl((await up.json()).url)
+  }
+
+  async function salvar() {
+    setSaving(true); setMsg('')
+    const r = await fetch('/api/admin/empresa', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logoUrl, corPrimaria: cor }) })
+    setSaving(false)
+    setMsg(r.ok ? 'Identidade salva ✓' : 'Erro ao salvar.')
+  }
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+      <div style={sectionLabel}>Identidade visual da empresa</div>
+      <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {logoUrl ? <img src={logoUrl} alt="logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: 22, opacity: 0.4 }}>🏢</span>}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
+          <button onClick={() => fileRef.current?.click()} disabled={uploading} style={btnSm}>{uploading ? 'Enviando…' : 'Trocar logo'}</button>
+        </div>
+        <div>
+          <label style={lbl}>Cor primária</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="color" value={cor} onChange={e => setCor(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', cursor: 'pointer' }} />
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{cor}</span>
+          </div>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {msg && <span style={{ fontSize: 11, color: msg.includes('✓') ? '#4ade80' : '#f87171' }}>{msg}</span>}
+          <button onClick={salvar} disabled={saving} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Salvando…' : 'Salvar'}</button>
+        </div>
+      </div>
     </div>
   )
 }
