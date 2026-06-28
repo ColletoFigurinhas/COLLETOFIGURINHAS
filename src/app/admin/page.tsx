@@ -74,6 +74,7 @@ export default function AdminPage() {
 // ═══════════════════════════════════════════════════════════════════
 function AbaFigurinhas() {
   const [figurinhas, setFigurinhas] = useState<Figurinha[]>([])
+  const [stats,      setStats]      = useState<Record<number, { donos: number; copias: number }>>({})
   const [loading,    setLoading]    = useState(true)
   const [filtro,     setFiltro]     = useState('TODAS')
   const [showForm,   setShowForm]   = useState(false)
@@ -116,8 +117,9 @@ function AbaFigurinhas() {
 
   async function load() {
     setLoading(true)
-    const r = await fetch('/api/admin/figurinhas')
-    setFigurinhas(await r.json())
+    const [rf, rs] = await Promise.all([fetch('/api/admin/figurinhas'), fetch('/api/admin/figurinhas/stats')])
+    setFigurinhas(await rf.json())
+    setStats(await rs.json().catch(() => ({})))
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -279,6 +281,9 @@ function AbaFigurinhas() {
             <div key={f.id}>
               <div style={{ aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', opacity: f.ativo ? 1 : 0.35 }}>
                 {f.imagemUrl ? <img src={f.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🃏</div>}
+              </div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 3 }}>
+                {stats[f.id] ? `${stats[f.id].donos} têm · ${stats[f.id].copias} cóp.` : '—'}
               </div>
               {deletandoId === f.id ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: 6 }}>
