@@ -1,9 +1,9 @@
-import { verifySuperAdmin } from '@/lib/dal'
+import { verifyOwner } from '@/lib/dal'
 import { db } from '@/lib/db'
 import Link from 'next/link'
 
-export default async function SuperDashboard() {
-  await verifySuperAdmin()
+export default async function OwnerDashboard() {
+  await verifyOwner()
 
   const [totalEmpresas, totalParticipantes, totalAtivos] = await Promise.all([
     db.empresa.count(),
@@ -41,7 +41,7 @@ export default async function SuperDashboard() {
       {/* Últimas empresas */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Empresas recentes</h2>
-        <Link href="/super/empresas" style={{ fontSize: 10, color: '#60a5fa', textDecoration: 'none', letterSpacing: 1 }}>Ver todas →</Link>
+        <Link href="/owner/empresas" style={{ fontSize: 10, color: '#60a5fa', textDecoration: 'none', letterSpacing: 1 }}>Ver todas →</Link>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

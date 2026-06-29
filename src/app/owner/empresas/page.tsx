@@ -49,7 +49,7 @@ export default function EmpresasPage() {
 
   async function load() {
     setLoading(true)
-    const r = await fetch('/api/super/empresas')
+    const r = await fetch('/api/owner/empresas')
     setEmpresas(await r.json())
     setLoading(false)
   }
@@ -57,7 +57,7 @@ export default function EmpresasPage() {
 
   async function handleCriarEmpresa(e: React.FormEvent) {
     e.preventDefault(); setErrF(''); setSaving(true)
-    const r = await fetch('/api/super/empresas', {
+    const r = await fetch('/api/owner/empresas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome, slug, cnpj, corPrimaria: cor }),
@@ -69,7 +69,7 @@ export default function EmpresasPage() {
   }
 
   async function handleToggleAtivo(empresa: Empresa) {
-    await fetch(`/api/super/empresas/${empresa.id}`, {
+    await fetch(`/api/owner/empresas/${empresa.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ativo: !empresa.ativo }),
@@ -79,7 +79,7 @@ export default function EmpresasPage() {
 
   async function handleCriarAdmin(e: React.FormEvent) {
     e.preventDefault(); setErrA(''); setSavingA(true)
-    const r = await fetch('/api/super/admins', {
+    const r = await fetch('/api/owner/admins', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ empresaId: showAdmin, matricula: adminMat, nome: adminNome, email: adminEmail, senha: adminSenha }),
@@ -92,7 +92,7 @@ export default function EmpresasPage() {
 
   async function gerarApiKey(id: number) {
     if (!confirm('Gerar/rotacionar a API key desta empresa? A key anterior deixa de funcionar.')) return
-    const r = await fetch(`/api/super/empresas/${id}/apikey`, { method: 'POST' })
+    const r = await fetch(`/api/owner/empresas/${id}/apikey`, { method: 'POST' })
     if (!r.ok) return
     const data = await r.json()
     setKeyRevelada({ id, key: data.apiKey })
@@ -108,7 +108,7 @@ export default function EmpresasPage() {
 
   async function salvarCobranca(id: number) {
     setSavingCob(true)
-    const r = await fetch(`/api/super/empresas/${id}`, {
+    const r = await fetch(`/api/owner/empresas/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ valorMensal: cobValor === '' ? null : Number(cobValor), statusCobranca: cobStatus, proximoVencimento: cobVenc || null }),
     })
@@ -133,11 +133,11 @@ export default function EmpresasPage() {
         <div style={card}>
           <div style={sectionLabel}>Nova Empresa</div>
           <form onSubmit={handleCriarEmpresa} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16 }}>
-            <div><label style={lbl}>Nome</label><input value={nome} onChange={e => setNome(e.target.value)} style={inp} placeholder="Supermédica RH" required /></div>
+            <div><label style={lbl}>Nome</label><input value={nome} onChange={e => setNome(e.target.value)} style={inp} placeholder="Samsung" required /></div>
             <div>
               <label style={lbl}>Slug (URL)</label>
-              <input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} style={inp} placeholder="supermedica" required />
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', marginTop: 4 }}>supermedica.colleto.com.br</div>
+              <input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} style={inp} placeholder="samsung" required />
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', marginTop: 4 }}>samsung.colleto.com.br</div>
             </div>
             <div><label style={lbl}>CNPJ</label><input value={cnpj} onChange={e => setCnpj(e.target.value)} style={inp} placeholder="00.000.000/0001-00" required /></div>
             <div><label style={lbl}>Cor primária</label><input type="color" value={cor} onChange={e => setCor(e.target.value)} style={{ ...inp, height: 42, padding: 4, cursor: 'pointer' }} /></div>

@@ -5,7 +5,7 @@ import { lerFigurinha } from '@/lib/storage'
 export const dynamic = 'force-dynamic'
 
 // Serve imagens do bucket PRIVADO do Supabase.
-// Chave: {empresaId}/{folder}/{filename} — só a própria empresa (ou super admin) acessa.
+// Chave: {empresaId}/{folder}/{filename} — só a própria empresa (ou owner) acessa.
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ path: string[] }> }
@@ -19,7 +19,7 @@ export async function GET(
   const session = await getSession()
   const autorizado =
     !!session &&
-    (session.isSuperAdmin === true ||
+    (session.isOwner === true ||
       (!!session.userId && session.empresaId === empresaIdDaChave))
   if (!autorizado) return new NextResponse(null, { status: 403 })
 

@@ -25,9 +25,9 @@ export type ApiUser = {
   empresaSlug: string
 }
 
-export type ApiSuper = {
-  superAdminId: number
-  nome:         string
+export type ApiOwner = {
+  ownerId: number
+  nome:    string
 }
 
 export type AuthResult<T> =
@@ -72,11 +72,11 @@ export function requireAdmin(): Promise<AuthResult<ApiUser>> {
   return requireRole('ADMIN', 'MARKETING', 'TI')
 }
 
-/** Exige super admin (equipe Collêto). */
-export async function requireSuper(): Promise<AuthResult<ApiSuper>> {
+/** Exige owner (equipe Collêto). */
+export async function requireOwner(): Promise<AuthResult<ApiOwner>> {
   const s = await getSession()
-  if (!s?.isSuperAdmin || !s.superAdminId) return deny(401, 'Não autorizado')
-  return { ok: true, session: { superAdminId: s.superAdminId, nome: s.nome } }
+  if (!s?.isOwner || !s.ownerId) return deny(401, 'Não autorizado')
+  return { ok: true, session: { ownerId: s.ownerId, nome: s.nome } }
 }
 
 export type ApiEmpresa = { empresaId: number; empresaSlug: string }

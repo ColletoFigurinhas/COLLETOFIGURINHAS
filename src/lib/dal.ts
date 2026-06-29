@@ -13,10 +13,10 @@ export type SessionUser = {
   empresaSlug: string
 }
 
-export type SuperAdminUser = {
-  superAdminId: number
-  nome:         string
-  isSuperAdmin: true
+export type OwnerUser = {
+  ownerId: number
+  nome:    string
+  isOwner: true
 }
 
 export const verifySession = cache(async (): Promise<SessionUser> => {
@@ -55,12 +55,12 @@ export const getOptionalSession = cache(async (): Promise<SessionUser | null> =>
   }
 })
 
-export const verifySuperAdmin = cache(async (): Promise<SuperAdminUser> => {
+export const verifyOwner = cache(async (): Promise<OwnerUser> => {
   const session = await getSession()
-  if (!session?.isSuperAdmin || !session.superAdminId) redirect('/super/login')
+  if (!session?.isOwner || !session.ownerId) redirect('/owner/login')
   return {
-    superAdminId: session.superAdminId,
-    nome:         session.nome,
-    isSuperAdmin: true,
+    ownerId: session.ownerId,
+    nome:    session.nome,
+    isOwner: true,
   }
 })

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Outfit } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const outfit = Outfit({
@@ -25,7 +26,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>{children}</body>
+      <body style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
+        {children}
+        <Analytics />
+      </body>
     </html>
   )
 }

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireSuper } from '@/server/auth/api'
+import { requireOwner } from '@/server/auth/api'
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireSuper()
+  const auth = await requireOwner()
   if (!auth.ok) return auth.response
 
   const { id } = await params

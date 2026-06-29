@@ -15,7 +15,7 @@
 
 O produto vira um SaaS: uma única instalação Next.js + um único banco MySQL no DigitalOcean,
 servindo N empresas clientes. Cada empresa compra o serviço, recebe um slug único
-(ex: `acesso.colleto.com.br/supermedica`) e opera de forma 100% isolada.
+(ex: `acesso.colleto.com.br/samsung`) e opera de forma 100% isolada.
 Nenhum dado de uma empresa é visível para outra.
 
 ---
@@ -25,8 +25,8 @@ Nenhum dado de uma empresa é visível para outra.
 ### Tabela nova: `empresas`
 ```sql
 id          INT PK AUTO_INCREMENT
-nome        VARCHAR(255)          -- "Supermédica RH"
-slug        VARCHAR(100) UNIQUE   -- "supermedica" (URL)
+nome        VARCHAR(255)          -- "Samsung"
+slug        VARCHAR(100) UNIQUE   -- "samsung" (URL)
 cnpj        VARCHAR(18) UNIQUE    -- "00.000.000/0001-00"
 logo_url    VARCHAR(500) NULL
 cor_primaria VARCHAR(7) DEFAULT '#1d4ed8'   -- personalização visual
@@ -62,7 +62,7 @@ criado_em    DATETIME DEFAULT NOW()
 ```
 > Separado de `participantes` — admin não joga, só gerencia.
 
-### Tabela nova: `super_admins`
+### Tabela nova: `owners`
 ```sql
 id        INT PK AUTO_INCREMENT
 email     VARCHAR(255) UNIQUE
@@ -70,7 +70,7 @@ senha_hash VARCHAR(255)
 nome      VARCHAR(255)
 criado_em DATETIME DEFAULT NOW()
 ```
-> Super admin vê e gerencia TODAS as empresas. Nunca aparece para o cliente.
+> O owner vê e gerencia TODAS as empresas. Nunca aparece para o cliente.
 
 ### Índices críticos para performance
 ```sql
@@ -132,14 +132,14 @@ model AdminEmpresa {
   @@map("admins_empresa")
 }
 
-model SuperAdmin {
+model Owner {
   id        Int    @id @default(autoincrement())
   email     String @unique
   senhaHash String @map("senha_hash")
   nome      String
   criadoEm DateTime @default(now()) @map("criado_em")
 
-  @@map("super_admins")
+  @@map("owners")
 }
 ```
 
@@ -153,7 +153,7 @@ colleto.com.br/[slug]/login          → login da empresa
 colleto.com.br/[slug]/album          → álbum do participante
 colleto.com.br/[slug]/inventario     → inventário
 colleto.com.br/[slug]/admin          → painel admin da empresa
-colleto.com.br/super                 → painel super admin (Colleto)
+colleto.com.br/owner                 → painel owner (Colleto)
 ```
 
 ### Mudança na estrutura de pastas do Next.js
@@ -166,7 +166,7 @@ src/app/
     admin/
       page.tsx
       layout.tsx
-  super/                    ← NOVO — super admin
+  owner/                    ← NOVO — owner
     page.tsx
     empresas/page.tsx
     layout.tsx
@@ -175,7 +175,7 @@ src/app/
       admin/figurinhas/route.ts
       admin/participantes/route.ts
       ...
-    super/                  ← APIs do super admin
+    owner/                  ← APIs do owner
       empresas/route.ts
 ```
 
@@ -186,13 +186,13 @@ src/app/
 
 // session nova
 { userId, matricula, nome, role, empresaId, empresaSlug }
-// super admin: { superAdminId, nome, isSuperAdmin: true }
+// owner: { ownerId, nome, isOwner: true }
 ```
 
 ### Middleware (src/middleware.ts) — o que muda
 - Lê `empresaSlug` da URL
 - Valida que empresa existe e está ativa
-- Redireciona `/` para `/[slug]/login` ou `/super/login`
+- Redireciona `/` para `/[slug]/login` ou `/owner/login`
 - Protege rotas admin verificando role + empresaId na session
 
 ---
@@ -269,7 +269,7 @@ O admin atual só tem figurinhas. Vamos adicionar as abas que fazem sentido para
 
 ---
 
-## FASE 6 — PAINEL SUPER ADMIN (colleto.com.br/super)
+## FASE 6 — PAINEL OWNER (colleto.com.br/owner)
 
 Painel exclusivo da equipe Colleto. Clientes nunca veem.
 
@@ -282,7 +282,7 @@ Painel exclusivo da equipe Colleto. Clientes nunca veem.
 
 ### Fluxo de onboarding de novo cliente:
 ```
-Super admin → cria empresa (nome, CNPJ, slug)
+Owner       → cria empresa (nome, CNPJ, slug)
             → cria admin inicial (email + senha temporária)
             → envia credenciais para o cliente
 Cliente     → acessa colleto.com.br/[slug]/admin
@@ -296,7 +296,7 @@ Cliente     → acessa colleto.com.br/[slug]/admin
 
 ## FASE 7 — ERP / INTEGRAÇÃO EXTERNA (opcional por empresa)
 
-Hoje o ERP (Farol da Supermédica) valida matrícula no login. Isso é específico da Supermédica.
+Hoje o ERP (Farol da Samsung) valida matrícula no login. Isso é específico da Samsung.
 No SaaS, cada empresa pode ou não ter ERP.
 
 ### Tabela nova: `configuracoes_empresa`
@@ -364,7 +364,7 @@ spaces.digitalocean.com/colleto/[empresa_id]/AMARELO/[id].webp
 | Funcionalidade                    | Status     |
 |-----------------------------------|------------|
 | Multi-tenant (empresas isoladas)   | ❌ fase 1-4 |
-| Painel super admin (Colleto)       | ❌ fase 6   |
+| Painel owner (Colleto)             | ❌ fase 6   |
 | Admin: gerenciar participantes     | ❌ fase 5   |
 | Admin: criar/editar campanha       | ❌ fase 5   |
 | Admin: distribuição manual         | ❌ fase 5   |
@@ -379,7 +379,7 @@ spaces.digitalocean.com/colleto/[empresa_id]/AMARELO/[id].webp
 Semana 1:
   [1] Apagar banco, recriar schema com empresas + empresa_id + admins
   [2] Migração Prisma limpa (migrate dev)
-  [3] Seed: 1 super admin + 1 empresa teste + 1 campanha + figurinhas
+  [3] Seed: 1 owner + 1 empresa teste + 1 campanha + figurinhas
 
 Semana 2:
   [4] Roteamento /[slug]/ no Next.js
@@ -388,7 +388,7 @@ Semana 2:
   [7] Todas as queries filtradas por empresaId
 
 Semana 3:
-  [8] Painel super admin /super (criar empresa, criar admin)
+  [8] Painel owner /owner (criar empresa, criar admin)
   [9] Admin: abas Participantes + Campanha
 
 Semana 4:

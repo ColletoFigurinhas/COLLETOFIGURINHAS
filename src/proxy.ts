@@ -39,23 +39,23 @@ export async function proxy(request: NextRequest) {
   // Assets e crons passam direto
   if (SKIP_PATHS.some(p => pathname.startsWith(p))) return NextResponse.next()
 
-  // ── Super admin (domínio raiz ou super.localhost / super.colleto.com.br) ──
-  if (!slug || slug === 'super') {
-    if (pathname.startsWith('/super')) {
+  // ── Owner (domínio raiz ou owner.localhost / owner.colleto.com.br) ──
+  if (!slug || slug === 'owner') {
+    if (pathname.startsWith('/owner')) {
       const token = request.cookies.get('album-session')?.value
       const session = await decryptEdge(token)
 
-      if (session?.isSuperAdmin && pathname === '/super/login') {
-        return NextResponse.redirect(new URL('/super', request.url))
+      if (session?.isOwner && pathname === '/owner/login') {
+        return NextResponse.redirect(new URL('/owner', request.url))
       }
-      if (!session?.isSuperAdmin && pathname !== '/super/login') {
-        return NextResponse.redirect(new URL('/super/login', request.url))
+      if (!session?.isOwner && pathname !== '/owner/login') {
+        return NextResponse.redirect(new URL('/owner/login', request.url))
       }
       return next
     }
-    // Domínio raiz → super login
+    // Domínio raiz → owner login
     if (pathname === '/') {
-      return NextResponse.redirect(new URL('/super/login', request.url))
+      return NextResponse.redirect(new URL('/owner/login', request.url))
     }
     return next
   }

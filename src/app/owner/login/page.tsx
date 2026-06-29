@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { superAdminLogin } from '@/app/actions/auth'
+import { ownerLogin } from '@/app/actions/auth'
 
-export default function SuperLoginPage() {
+export default function OwnerLoginPage() {
   const [email,   setEmail]   = useState('')
   const [senha,   setSenha]   = useState('')
   const [erro,    setErro]    = useState('')
@@ -12,7 +12,7 @@ export default function SuperLoginPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setErro('')
     start(async () => {
-      const r = await superAdminLogin(email, senha)
+      const r = await ownerLogin(email, senha)
       if (r?.error) setErro(r.error)
     })
   }
@@ -24,7 +24,7 @@ export default function SuperLoginPage() {
           <img src="/logo-icon.png" alt="Colleto" draggable={false}
             style={{ width: 60, height: 60, objectFit: 'contain', marginBottom: 10, filter: 'drop-shadow(0 0 18px rgba(59,130,246,0.45))' }} />
           <div style={{ fontSize: 9, letterSpacing: 5, textTransform: 'uppercase', color: 'rgba(96,165,250,0.6)', marginBottom: 4 }}>Colleto</div>
-          <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: 2, color: '#fff' }}>Super Admin</div>
+          <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: 2, color: '#fff' }}>Owner</div>
         </div>
 
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 14, padding: '32px 28px' }}>

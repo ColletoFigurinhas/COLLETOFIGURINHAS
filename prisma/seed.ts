@@ -12,26 +12,26 @@ const adapter = new PrismaPg({
 const db = new PrismaClient({ adapter })
 
 async function main() {
-  // ── 1. Super Admin (equipe Colleto) ────────────────────────────
-  const superHash = await bcrypt.hash('colleto@super2026', 10)
-  const superAdmin = await db.superAdmin.upsert({
+  // ── 1. Owner (equipe Colleto) ───────────────────────────────────
+  const ownerHash = await bcrypt.hash('colleto@owner2026', 10)
+  const owner = await db.owner.upsert({
     where:  { email: 'raulmartinsagrivet1@gmail.com' },
     update: {},
     create: {
       email:     'raulmartinsagrivet1@gmail.com',
       nome:      'Raul Colleto',
-      senhaHash: superHash,
+      senhaHash: ownerHash,
     },
   })
-  console.log('✓ SuperAdmin:', superAdmin.email)
+  console.log('✓ Owner:', owner.email)
 
   // ── 2. Empresa teste ────────────────────────────────────────────
   const empresa = await db.empresa.upsert({
-    where:  { slug: 'supermedica' },
+    where:  { slug: 'samsung' },
     update: {},
     create: {
-      nome:        'Supermédica RH',
-      slug:        'supermedica',
+      nome:        'Samsung',
+      slug:        'samsung',
       cnpj:        '00.000.000/0001-00',
       corPrimaria: '#1d4ed8',
       plano:       'basico',
@@ -49,7 +49,7 @@ async function main() {
       empresaId: empresa.id,
       matricula: 'admin',
       nome:      'Administrador',
-      email:     'admin@supermedica.com',
+      email:     'admin@samsung.com',
       senha:     adminHash,
       role:      'ADMIN',
       ativo:     true,
@@ -77,12 +77,12 @@ async function main() {
 
   // ── 5. Campanha ────────────────────────────────────────────────
   const campanha = await db.campanha.upsert({
-    where:  { empresaId_slug: { empresaId: empresa.id, slug: 'super-copa-2026' } },
+    where:  { empresaId_slug: { empresaId: empresa.id, slug: 'copa-samsung-2026' } },
     update: {},
     create: {
       empresaId:             empresa.id,
-      nome:                  'Super Copa 2026',
-      slug:                  'super-copa-2026',
+      nome:                  'Copa Samsung 2026',
+      slug:                  'copa-samsung-2026',
       dataInicio:            new Date('2026-06-01T00:00:00'),
       dataFim:               new Date('2026-09-30T23:59:59'),
       stickersPorDiaPadrao:  14,
@@ -122,10 +122,10 @@ async function main() {
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('Seed concluído!\n')
-  console.log('Super Admin  → http://localhost:3001/super/login')
+  console.log('Owner        → http://localhost:3001/owner/login')
   console.log('  Email: raulmartinsagrivet1@gmail.com')
-  console.log('  Senha: colleto@super2026\n')
-  console.log('Admin Empresa → http://supermedica.localhost:3001/login')
+  console.log('  Senha: colleto@owner2026\n')
+  console.log('Admin Empresa → http://samsung.localhost:3001/login')
   console.log('  Matrícula: admin')
   console.log('  Senha: admin123\n')
   console.log('Participante  → mesmo endereço')

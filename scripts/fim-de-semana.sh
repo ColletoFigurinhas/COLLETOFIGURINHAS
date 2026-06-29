@@ -7,7 +7,7 @@ set -euo pipefail
 
 ENV_FILE="/var/www/album-figurinhas/.env"
 LOG_FILE="/var/log/album-cron.log"
-URL="https://copa.supermedica.com.br/api/cron/fim-de-semana"
+URL="https://copa.samsung.com.br/api/cron/fim-de-semana"
 
 # Carrega variáveis do .env
 if [ ! -f "$ENV_FILE" ]; then

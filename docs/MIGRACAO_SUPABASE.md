@@ -31,7 +31,7 @@ Migrar o banco do álbum de **MariaDB/MySQL (local)** para **PostgreSQL no Supab
 
 ## Estado atual (baseline)
 
-- Banco local MariaDB `album_supermedica` — **dados fictícios e descartáveis** (8 participantes, 10 figurinhas, 2 empresas, ~290 `pacote_figurinhas`). Será **recriado do zero** no Supabase.
+- Banco local MariaDB `album_samsung` — **dados fictícios e descartáveis** (8 participantes, 10 figurinhas, 2 empresas, ~290 `pacote_figurinhas`). Será **recriado do zero** no Supabase.
 - 13 tabelas de aplicação + `_prisma_migrations`. Histórico de migration atual é SQL de MySQL → **será descartado**; criamos um migration inicial novo pro Postgres.
 
 ---

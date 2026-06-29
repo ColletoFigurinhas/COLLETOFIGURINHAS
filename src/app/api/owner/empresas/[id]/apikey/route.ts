@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { db } from '@/lib/db'
-import { requireSuper } from '@/server/auth/api'
+import { requireOwner } from '@/server/auth/api'
 
 export const dynamic = 'force-dynamic'
 
 // POST — (re)gera a API key da empresa. Retorna a key em texto (mostrada uma vez).
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireSuper()
+  const auth = await requireOwner()
   if (!auth.ok) return auth.response
 
   const { id } = await params

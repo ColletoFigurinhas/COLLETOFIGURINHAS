@@ -8,7 +8,7 @@ DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_USER="${DB_USER:-root}"
 DB_PASSWORD="${DB_PASSWORD:-}"
-DB_NAME="${DB_NAME:-album_supermedica}"
+DB_NAME="${DB_NAME:-album_samsung}"
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/colleto}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"

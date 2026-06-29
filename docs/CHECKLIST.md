@@ -1,4 +1,4 @@
-# Checklist de Validação — Álbum Supermédica
+# Checklist de Validação — Álbum Samsung
 > Verificação por leitura de código + análise da implementação. Data: 2026-05-30.
 
 ---
@@ -9,7 +9,7 @@
 - [x] Layout correto no mobile (sem sobreposição / corte)
 
 **Resultado: ✅ OK**
-- Título "⚽ Supermédica · Super Copa 2026" está no `<header>` (`FlipBook.tsx:904`)
+- Título "⚽ Samsung · Copa Samsung 2026" está no `<header>` (`FlipBook.tsx:904`)
 - Botões Pacotes / Inventário / Trocas seguem na mesma linha (`FlipBook.tsx:906–960`)
 - No mobile, botões mostram emoji ao invés de texto (`isPortrait ? '🎴' : 'Pacotes'`)
 

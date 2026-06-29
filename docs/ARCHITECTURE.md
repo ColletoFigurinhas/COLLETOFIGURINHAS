@@ -39,7 +39,7 @@ Request  →  middleware (src/proxy.ts)
      lib/dal.ts     →  guards de sessão (empresaId embutido)
 ```
 
-- **Sem subdomínio** (domínio raiz) ou `super.*` → área **Super Admin** (equipe Collêto).
+- **Sem subdomínio** (domínio raiz) ou `owner.*` → área **Owner** (equipe Collêto).
 - **Com subdomínio** → contexto da **empresa**; sessão carrega `empresaId` + `empresaSlug`.
 - **Regra de ouro:** toda query de dados de empresa **filtra por `empresaId`**. Nunca confiar só no ID do recurso.
 
@@ -53,8 +53,8 @@ src/
 │   ├── (auth)/           login, primeiro-acesso, recuperar-senha
 │   ├── album/ inventario/  experiência do participante
 │   ├── admin/            painel da empresa (RH/marketing)
-│   ├── super/            painel da equipe Collêto (super admin)
-│   └── api/              admin/* · super/* · trocas · pacotes · inventario · cron · health
+│   ├── owner/            painel da equipe Collêto (owner)
+│   └── api/              admin/* · owner/* · trocas · pacotes · inventario · cron · health
 ├── server/               Backend isolado (server-only)
 │   ├── auth/             guards centralizados (API → 401, RSC → redirect)
 │   └── services/         regra de negócio (campanha, pacotes, trocas, ...)
@@ -78,7 +78,7 @@ Empresa ─┬─< Campanha ─┬─< Figurinha ─< PacoteFigurinha
          │             └─< AcaoCampanha ─< GanhadorAcao
          └─< Participante ─< AlbumItem
 
-SuperAdmin (global)        LogDistribuicaoManual (por empresa)
+Owner (global)             LogDistribuicaoManual (por empresa)
 ```
 
 - `@@unique([empresaId, matricula])` em `Participante`, `@@unique([empresaId, slug])` em `Campanha`, índices por `empresaId`.
@@ -88,10 +88,10 @@ SuperAdmin (global)        LogDistribuicaoManual (por empresa)
 
 ## 5. Autenticação & papéis
 
-- **Papéis** (`Role`): `PARTICIPANTE`, `MARKETING`, `TI`, `ADMIN` (empresa) + `SuperAdmin` (global, separado).
+- **Papéis** (`Role`): `PARTICIPANTE`, `MARKETING`, `TI`, `ADMIN` (empresa) + `Owner` (global, separado).
 - **Sessão** (cookie `album-session`, httpOnly, JWT HS256, 8h):
   - Participante/admin: `{ userId, matricula, nome, role, empresaId, empresaSlug, primeiroAcesso? }`
-  - Super admin: `{ superAdminId, nome, isSuperAdmin: true }`
+  - Owner: `{ ownerId, nome, isOwner: true }`
 - **Guards** (`src/server/auth`): variante de **página** redireciona; variante de **API** retorna `401/403`. Ambas embutem o tenant para evitar vazamento entre empresas.
 
 ---

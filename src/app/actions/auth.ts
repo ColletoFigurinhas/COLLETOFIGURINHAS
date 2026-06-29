@@ -273,28 +273,28 @@ export async function logout(): Promise<void> {
   redirect('/login')
 }
 
-// ── Super admin login ─────────────────────────────────────────────
-export async function superAdminLogin(
+// ── Owner login (equipe Colleto) ──────────────────────────────────
+export async function ownerLogin(
   email: string,
   senha: string,
 ): Promise<{ error: string } | void> {
   if (!email || !senha) return { error: 'Preencha todos os campos.' }
 
-  const admin = await db.superAdmin.findUnique({ where: { email } })
-  if (!admin) return { error: 'Credenciais inválidas.' }
+  const owner = await db.owner.findUnique({ where: { email } })
+  if (!owner) return { error: 'Credenciais inválidas.' }
 
-  const ok = await bcrypt.compare(senha, admin.senhaHash)
+  const ok = await bcrypt.compare(senha, owner.senhaHash)
   if (!ok) return { error: 'Credenciais inválidas.' }
 
   await createSession({
-    superAdminId: admin.id,
-    nome:         admin.nome,
-    isSuperAdmin: true,
+    ownerId: owner.id,
+    nome:    owner.nome,
+    isOwner: true,
   })
-  redirect('/super')
+  redirect('/owner')
 }
 
-export async function superAdminLogout(): Promise<void> {
+export async function ownerLogout(): Promise<void> {
   await deleteSession()
-  redirect('/super/login')
+  redirect('/owner/login')
 }

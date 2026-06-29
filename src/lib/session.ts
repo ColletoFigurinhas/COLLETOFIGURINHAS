@@ -13,9 +13,9 @@ export type SessionPayload = {
   empresaSlug?:  string
   primeiroAcesso?: boolean
   termosAceitos?:  boolean
-  // Super admin
-  superAdminId?: number
-  isSuperAdmin?: boolean
+  // Owner (equipe Colleto)
+  ownerId?: number
+  isOwner?: boolean
 
   expiresAt: Date
 }
