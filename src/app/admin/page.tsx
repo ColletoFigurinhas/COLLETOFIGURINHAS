@@ -34,7 +34,7 @@ export default function AdminPage() {
   return (
     <div>
       {/* Abas */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 28, borderBottom: '1px solid rgba(59,130,246,0.12)', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 28, borderBottom: '1px solid rgba(var(--brand-bright-rgb),0.12)', paddingBottom: 0 }}>
         {([
           { key: 'visao',         label: '📈 Visão Geral' },
           { key: 'figurinhas',    label: '🃏 Figurinhas' },
@@ -48,8 +48,8 @@ export default function AdminPage() {
         ] as { key: Tab; label: string }[]).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '10px 20px', background: 'none', border: 'none',
-            borderBottom: tab === t.key ? '2px solid #3b82f6' : '2px solid transparent',
-            color: tab === t.key ? '#60a5fa' : 'rgba(255,255,255,0.35)',
+            borderBottom: tab === t.key ? '2px solid var(--color-verde-light)' : '2px solid transparent',
+            color: tab === t.key ? 'var(--color-gold)' : 'rgba(255,255,255,0.35)',
             fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
             cursor: 'pointer', transition: 'color 0.15s', marginBottom: -1,
           }}>
@@ -227,13 +227,13 @@ function AbaFigurinhas() {
             <span style={{ color: '#4ade80' }}>{ativas} ativas</span> · <span style={{ color: '#f87171' }}>{figurinhas.length - ativas} inativas</span> · {figurinhas.length} total
           </div>
         </div>
-        <button onClick={() => { setShowForm(v => !v); setErrForm('') }} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: showForm ? 'rgba(255,255,255,0.5)' : '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={() => { setShowForm(v => !v); setErrForm('') }} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showForm ? 'rgba(255,255,255,0.5)' : 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {showForm ? '✕ Cancelar' : '+ Nova Carta'}
         </button>
       </div>
 
       {showForm && (
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 24, marginBottom: 24 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-light-rgb),0.2)', borderRadius: 14, padding: 24, marginBottom: 24 }}>
           <div style={sectionLabel}>Cadastrar Nova Carta</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
             <div><label style={lbl}>Grupo / Classificação</label><select value={classif} onChange={e => handleClassifChange(e.target.value)} style={sel}>{CLASSIFICACOES.map(c => <option key={c} value={c} style={opt}>{c}</option>)}</select></div>
@@ -261,7 +261,7 @@ function AbaFigurinhas() {
             </div>
           )}
           {errForm && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 12 }}>{errForm}</div>}
-          <button onClick={handleCadastrar} disabled={uploading || (isFuncionario ? (!fileVerde || !fileAmarelo) : !file)} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={handleCadastrar} disabled={uploading || (isFuncionario ? (!fileVerde || !fileAmarelo) : !file)} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {uploading ? 'Cadastrando…' : 'Cadastrar Carta'}
           </button>
         </div>
@@ -272,7 +272,7 @@ function AbaFigurinhas() {
           const count = c === 'TODAS' ? figurinhas.length : figurinhas.filter(f => f.classificacao === c).length
           if (c !== 'TODAS' && count === 0) return null
           return (
-            <button key={c} onClick={() => setFiltro(c)} style={{ padding: '5px 13px', borderRadius: 20, border: `1px solid ${filtro === c ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.1)'}`, background: filtro === c ? 'rgba(96,165,250,0.1)' : 'transparent', color: filtro === c ? '#60a5fa' : 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+            <button key={c} onClick={() => setFiltro(c)} style={{ padding: '5px 13px', borderRadius: 20, border: `1px solid ${filtro === c ? 'rgba(var(--brand-light-rgb),0.5)' : 'rgba(255,255,255,0.1)'}`, background: filtro === c ? 'rgba(var(--brand-light-rgb),0.1)' : 'transparent', color: filtro === c ? 'var(--color-gold)' : 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
               {c} <span style={{ opacity: 0.6 }}>({count})</span>
             </button>
           )
@@ -324,7 +324,7 @@ function AbaFigurinhas() {
       {/* Modal edição */}
       {editando && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setEditando(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#070e1a', border: '1px solid rgba(96,165,250,0.15)', borderRadius: 16, padding: 28, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#070e1a', border: '1px solid rgba(var(--brand-light-rgb),0.15)', borderRadius: 16, padding: 28, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={sectionLabel}>Editar Carta #{editando.id}</div>
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 20 }}>
               <div style={{ textAlign: 'center' }}>
@@ -348,7 +348,7 @@ function AbaFigurinhas() {
             {editErr && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 12 }}>{editErr}</div>}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setEditando(null)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={salvarEdicao} disabled={editUploading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{editUploading ? 'Salvando…' : 'Salvar'}</button>
+              <button onClick={salvarEdicao} disabled={editUploading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{editUploading ? 'Salvando…' : 'Salvar'}</button>
             </div>
           </div>
         </div>
@@ -418,10 +418,10 @@ function AbaParticipantes() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou matrícula…" style={{ height: 36, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 12, padding: '0 12px', outline: 'none', width: 240 }} />
-          <button onClick={() => { setShowForm(v => !v); setErrF('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: showForm ? 'rgba(255,255,255,0.5)' : '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={() => { setShowForm(v => !v); setErrF('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showForm ? 'rgba(255,255,255,0.5)' : 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {showForm ? '✕' : '+ Novo'}
           </button>
-          <button onClick={() => setShowImport(v => !v)} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(96,165,250,0.25)', background: showImport ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.07)', color: 'rgba(96,165,250,0.85)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={() => setShowImport(v => !v)} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(var(--brand-light-rgb),0.25)', background: showImport ? 'rgba(var(--brand-light-rgb),0.18)' : 'rgba(var(--brand-light-rgb),0.07)', color: 'rgba(var(--brand-light-rgb),0.85)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
             📥 Importar
           </button>
         </div>
@@ -430,7 +430,7 @@ function AbaParticipantes() {
       {showImport && <ImportarParticipantesPanel onDone={() => load(busca)} />}
 
       {showForm && (
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-light-rgb),0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
           <div style={sectionLabel}>Novo Participante</div>
           <form onSubmit={handleCriar} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
             <div><label style={lbl}>Matrícula</label><input value={pMat} onChange={e => setPMat(e.target.value)} style={inpSm} placeholder="00001" required /></div>
@@ -444,7 +444,7 @@ function AbaParticipantes() {
             <div><label style={lbl}>Senha inicial</label><input type="password" value={pSenha} onChange={e => setPSenha(e.target.value)} style={inpSm} placeholder="Deixe em branco para pedir no 1º acesso" /></div>
             {errF && <div style={{ ...alertStyle, gridColumn: '1/-1' }}>{errF}</div>}
             <div style={{ gridColumn: '1/-1' }}>
-              <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Participante'}</button>
+              <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Participante'}</button>
             </div>
           </form>
         </div>
@@ -455,7 +455,7 @@ function AbaParticipantes() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {participantes.map(p => (
-            <div key={p.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.08)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', opacity: p.ativo ? 1 : 0.45 }}>
+            <div key={p.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(var(--brand-bright-rgb),0.08)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', opacity: p.ativo ? 1 : 0.45 }}>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{p.nome}</div>
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 0.5 }}>
@@ -463,7 +463,7 @@ function AbaParticipantes() {
                 </div>
               </div>
               {p.temSenha === false && <div style={{ fontSize: 8, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.12)', color: '#fbbf24', letterSpacing: 1, fontWeight: 700, flexShrink: 0 }}>SEM SENHA</div>}
-              <div style={{ fontSize: 8, padding: '3px 8px', borderRadius: 4, background: 'rgba(96,165,250,0.1)', color: 'rgba(96,165,250,0.7)', letterSpacing: 1, fontWeight: 700, flexShrink: 0 }}>{p.role}</div>
+              <div style={{ fontSize: 8, padding: '3px 8px', borderRadius: 4, background: 'rgba(var(--brand-light-rgb),0.1)', color: 'rgba(var(--brand-light-rgb),0.7)', letterSpacing: 1, fontWeight: 700, flexShrink: 0 }}>{p.role}</div>
 
               {resetId === p.id ? (
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -612,9 +612,9 @@ function AbaCampanha() {
               return (
                 <button key={idx} type="button" onClick={() => toggleDia(idx)} style={{
                   padding: '7px 12px', borderRadius: 8,
-                  border: `1px solid ${ativo ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                  background: ativo ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.03)',
-                  color: ativo ? '#93c5fd' : 'rgba(255,255,255,0.3)',
+                  border: `1px solid ${ativo ? 'rgba(var(--brand-light-rgb),0.5)' : 'rgba(255,255,255,0.1)'}`,
+                  background: ativo ? 'rgba(var(--brand-light-rgb),0.15)' : 'rgba(255,255,255,0.03)',
+                  color: ativo ? 'var(--color-gold-light)' : 'rgba(255,255,255,0.3)',
                   fontSize: 10, fontWeight: 700, letterSpacing: 1, cursor: 'pointer',
                 }}>
                   {label}
@@ -676,10 +676,10 @@ function AbaCampanha() {
             return (
               <button key={o.value} type="button" onClick={() => setTemperatura(o.value)} style={{
                 flex: '1 1 160px', textAlign: 'left', padding: '12px 14px', borderRadius: 10,
-                border: `1px solid ${ativo ? 'rgba(96,165,250,0.6)' : 'rgba(255,255,255,0.1)'}`,
-                background: ativo ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.03)', cursor: 'pointer',
+                border: `1px solid ${ativo ? 'rgba(var(--brand-light-rgb),0.6)' : 'rgba(255,255,255,0.1)'}`,
+                background: ativo ? 'rgba(var(--brand-light-rgb),0.12)' : 'rgba(255,255,255,0.03)', cursor: 'pointer',
               }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: ativo ? '#93c5fd' : 'rgba(255,255,255,0.7)' }}>{o.label}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: ativo ? 'var(--color-gold-light)' : 'rgba(255,255,255,0.7)' }}>{o.label}</div>
                 <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.4)', marginTop: 4, lineHeight: 1.5 }}>{o.desc}</div>
               </button>
             )
@@ -689,7 +689,7 @@ function AbaCampanha() {
 
       {err && <div style={alertStyle}>{err}</div>}
       <div style={{ display: 'flex', gap: 10 }}>
-        <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {saving ? 'Salvando…' : campanha ? 'Salvar alterações' : 'Criar campanha'}
         </button>
         <button type="button" onClick={() => { setEditing(false); setShowNew(false) }} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 10, cursor: 'pointer' }}>
@@ -707,21 +707,21 @@ function AbaCampanha() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Campanha</h2>
         {!editing && !showNew && (
-          <button onClick={() => { campanha ? setEditing(true) : setShowNew(true) }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={() => { campanha ? setEditing(true) : setShowNew(true) }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {campanha ? 'Editar' : '+ Nova Campanha'}
           </button>
         )}
       </div>
 
       {(editing || showNew) && (
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 24, marginBottom: 24 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-light-rgb),0.2)', borderRadius: 14, padding: 24, marginBottom: 24 }}>
           <div style={sectionLabel}>{campanha ? 'Editar Campanha Ativa' : 'Criar Nova Campanha'}</div>
           {form}
         </div>
       )}
 
       {campanha && !editing ? (
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 14, padding: 24 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.15)', borderRadius: 14, padding: 24 }}>
           {/* Cabeçalho */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: campanha.status === 'ativo' ? '#4ade80' : '#f87171', flexShrink: 0 }} />
@@ -730,7 +730,7 @@ function AbaCampanha() {
               {campanha.status}
             </div>
             {campanha.pausada && <span style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.12)', color: '#fbbf24', letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' }}>⏸ Pausada</span>}
-            <button onClick={togglePausar} style={{ fontSize: 9, padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(96,165,250,0.25)', background: 'rgba(96,165,250,0.07)', color: 'rgba(96,165,250,0.8)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+            <button onClick={togglePausar} style={{ fontSize: 9, padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(var(--brand-light-rgb),0.25)', background: 'rgba(var(--brand-light-rgb),0.07)', color: 'rgba(var(--brand-light-rgb),0.8)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
               {campanha.pausada ? '▶ Retomar' : '⏸ Pausar'}
             </button>
             {campanha.ultimaDistribuicao && (
@@ -752,7 +752,7 @@ function AbaCampanha() {
               { label: 'Temperatura',      value: TEMP_OPCOES.find(o => o.value === campanha.temperatura)?.label ?? campanha.temperatura },
             ].map(s => (
               <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: '#60a5fa' }}>{s.value}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--color-gold)' }}>{s.value}</div>
                 <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 3 }}>{s.label}</div>
               </div>
             ))}
@@ -769,7 +769,7 @@ function AbaCampanha() {
                 try { ativos = JSON.parse(campanha.diasSemana) } catch {}
                 const ativo = ativos.includes(idx)
                 return (
-                  <span key={idx} style={{ fontSize: 9, padding: '3px 7px', borderRadius: 4, background: ativo ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.03)', color: ativo ? '#60a5fa' : 'rgba(255,255,255,0.18)', fontWeight: 700 }}>
+                  <span key={idx} style={{ fontSize: 9, padding: '3px 7px', borderRadius: 4, background: ativo ? 'rgba(var(--brand-light-rgb),0.12)' : 'rgba(255,255,255,0.03)', color: ativo ? 'var(--color-gold)' : 'rgba(255,255,255,0.18)', fontWeight: 700 }}>
                     {label}
                   </span>
                 )
@@ -830,26 +830,26 @@ function AbaAcoes() {
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Ações do dia</h2>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>{acoes.length} ação(ões) · ganhadores recebem pacote bônus</div>
         </div>
-        <button onClick={() => { setShowNew(v => !v); setErr('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showNew ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: showNew ? 'rgba(255,255,255,0.5)' : '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={() => { setShowNew(v => !v); setErr('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showNew ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showNew ? 'rgba(255,255,255,0.5)' : 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {showNew ? '✕' : '+ Nova ação'}
         </button>
       </div>
 
       {showNew && (
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-light-rgb),0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
           <div style={sectionLabel}>Nova Ação</div>
           <form onSubmit={criar} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
             <div><label style={lbl}>Nome</label><input value={nome} onChange={e => setNome(e.target.value)} style={inpSm} placeholder="Ex.: Quiz da manhã" required /></div>
             <div><label style={lbl}>Descrição (opcional)</label><input value={descricao} onChange={e => setDescricao(e.target.value)} style={inpSm} placeholder="Detalhes da ação" /></div>
             {err && <div style={{ ...alertStyle, gridColumn: '1/-1' }}>{err}</div>}
-            <div style={{ gridColumn: '1/-1' }}><button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Ação'}</button></div>
+            <div style={{ gridColumn: '1/-1' }}><button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Ação'}</button></div>
           </form>
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {acoes.map(a => (
-          <div key={a.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.1)', borderRadius: 12, padding: 16 }}>
+          <div key={a.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(var(--brand-bright-rgb),0.1)', borderRadius: 12, padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{a.nome}</div>
@@ -998,12 +998,12 @@ function AbaVisaoGeral() {
   const c = d.campanha
   const tempLabel = TEMP_OPCOES.find(o => o.value === c.temperatura)?.label ?? c.temperatura
   const cards: { label: string; value: string | number; color: string }[] = [
-    { label: 'Participantes ativos',   value: d.participantesAtivos,    color: '#60a5fa' },
+    { label: 'Participantes ativos',   value: d.participantesAtivos,    color: 'var(--color-gold)' },
     { label: 'Completaram o álbum',    value: d.completaram,            color: '#4ade80' },
     { label: '% médio de conclusão',   value: `${d.percentualMedio}%`,  color: '#fbbf24' },
-    { label: 'Cartas no álbum',        value: d.totalCartas,            color: '#60a5fa' },
+    { label: 'Cartas no álbum',        value: d.totalCartas,            color: 'var(--color-gold)' },
     { label: 'Pacotes a abrir',        value: d.pacotesDisponiveis,     color: '#f0c040' },
-    { label: 'Pacotes abertos',        value: d.pacotesAbertos,         color: '#60a5fa' },
+    { label: 'Pacotes abertos',        value: d.pacotesAbertos,         color: 'var(--color-gold)' },
     { label: 'Trocas realizadas',      value: d.trocasAceitas,          color: '#a78bfa' },
     { label: 'Ainda não coletaram',    value: d.semColetar,             color: d.semColetar > 0 ? '#f87171' : '#4ade80' },
   ]
@@ -1013,10 +1013,10 @@ function AbaVisaoGeral() {
       <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Visão Geral</h2>
 
       {/* Cabeçalho da campanha */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '14px 0 22px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: 12, padding: '14px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '14px 0 22px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.12)', borderRadius: 12, padding: '14px 18px' }}>
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.status === 'ativo' ? '#4ade80' : '#f87171' }} />
         <div style={{ fontSize: 15, fontWeight: 700 }}>{c.nome}</div>
-        <span style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: 'rgba(96,165,250,0.12)', color: '#60a5fa', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>🌡️ {tempLabel}</span>
+        <span style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, background: 'rgba(var(--brand-light-rgb),0.12)', color: 'var(--color-gold)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>🌡️ {tempLabel}</span>
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
           {new Date(c.dataInicio).toLocaleDateString('pt-BR')} – {new Date(c.dataFim).toLocaleDateString('pt-BR')}
         </span>
@@ -1028,7 +1028,7 @@ function AbaVisaoGeral() {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12 }}>
         {cards.map(card => (
-          <div key={card.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.1)', borderRadius: 12, padding: '16px 18px' }}>
+          <div key={card.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.1)', borderRadius: 12, padding: '16px 18px' }}>
             <div style={{ fontSize: 26, fontWeight: 900, color: card.color }}>{card.value}</div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{card.label}</div>
           </div>
@@ -1108,7 +1108,7 @@ function AbaPacotes() {
       <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Distribuir pacote manual</h2>
       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 20 }}>Entrega um pacote avulso (padrão, plus ou premium) a um participante.</div>
 
-      <div style={{ maxWidth: 520, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 20 }}>
+      <div style={{ maxWidth: 520, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-light-rgb),0.2)', borderRadius: 14, padding: 20 }}>
         <label style={lbl}>Participante</label>
         {sel ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
@@ -1162,7 +1162,7 @@ function AbaPacotes() {
         {msg && <div style={{ ...alertStyle, background: 'rgba(74,222,128,0.1)', borderColor: 'rgba(74,222,128,0.3)', color: '#86efac', marginTop: 14 }}>{msg}</div>}
         {err && <div style={{ ...alertStyle, marginTop: 14 }}>{err}</div>}
 
-        <button onClick={distribuir} disabled={saving} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={distribuir} disabled={saving} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {saving ? 'Distribuindo…' : '📦 Distribuir pacote'}
         </button>
       </div>
@@ -1229,7 +1229,7 @@ function AbaPremios() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {linhas.map((l, i) => (
-            <div key={`${l.albumItemId}-${l.unidade}-${i}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, opacity: l.entregue ? 0.55 : 1 }}>
+            <div key={`${l.albumItemId}-${l.unidade}-${i}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(var(--brand-bright-rgb),0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, opacity: l.entregue ? 0.55 : 1 }}>
               <div style={{ width: 34, height: 50, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }}>
                 {l.figurinha.imagemUrl ? <img src={l.figurinha.imagemUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
               </div>
@@ -1316,13 +1316,13 @@ function AbaRelatorios() {
           <div style={{ ...sectionLabel, marginBottom: 10 }}>Por grupo / departamento</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
             {departamentos.map(d => (
-              <div key={d.classificacao} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.1)', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#93c5fd' }}>{d.classificacao}</div>
+              <div key={d.classificacao} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.1)', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-gold-light)' }}>{d.classificacao}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: '8px 0 3px' }}>
                   <span>{d.total} cartas</span><span>{d.mediaPct}% médio</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, d.mediaPct)}%`, background: 'linear-gradient(90deg,#1d4ed8,#60a5fa)' }} />
+                  <div style={{ height: '100%', width: `${Math.min(100, d.mediaPct)}%`, background: 'linear-gradient(90deg,var(--color-verde),var(--color-gold))' }} />
                 </div>
               </div>
             ))}
@@ -1336,7 +1336,7 @@ function AbaRelatorios() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {parts.map((p, i) => (
-            <div key={p.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div key={p.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(var(--brand-bright-rgb),0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 24, textAlign: 'center', fontSize: 12, fontWeight: 800, color: i < 3 ? '#fbbf24' : 'rgba(255,255,255,0.3)' }}>{i + 1}</div>
               <div style={{ flex: 1, minWidth: 140 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{p.nome}</div>
@@ -1347,7 +1347,7 @@ function AbaRelatorios() {
                   <span>{p.totalColetado}/{p.totalFigurinhas}</span><span>{p.percentualGeral}%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, p.percentualGeral)}%`, background: p.percentualGeral >= 100 ? 'linear-gradient(90deg,#16a34a,#4ade80)' : 'linear-gradient(90deg,#1d4ed8,#60a5fa)' }} />
+                  <div style={{ height: '100%', width: `${Math.min(100, p.percentualGeral)}%`, background: p.percentualGeral >= 100 ? 'linear-gradient(90deg,#16a34a,#4ade80)' : 'linear-gradient(90deg,var(--color-verde),var(--color-gold))' }} />
                 </div>
               </div>
             </div>
@@ -1361,10 +1361,10 @@ function AbaRelatorios() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {logs.slice(0, 50).map(l => (
-            <div key={l.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(59,130,246,0.06)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, flexWrap: 'wrap' }}>
+            <div key={l.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(var(--brand-bright-rgb),0.06)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, flexWrap: 'wrap' }}>
               <span style={{ color: 'rgba(255,255,255,0.35)', width: 112, flexShrink: 0 }}>{new Date(l.criadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
               <span style={{ flex: 1, minWidth: 120 }}>{l.participanteNome} <span style={{ opacity: 0.4 }}>#{l.matricula}</span></span>
-              <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(96,165,250,0.12)', color: '#60a5fa', fontWeight: 700 }}>{l.tipoPacote}</span>
+              <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(var(--brand-light-rgb),0.12)', color: 'var(--color-gold)', fontWeight: 700 }}>{l.tipoPacote}</span>
               <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>por {l.distribuidoPor}</span>
             </div>
           ))}
@@ -1406,7 +1406,7 @@ function BrandingCard() {
   }
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.12)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
       <div style={sectionLabel}>Identidade visual da empresa</div>
       <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -1425,7 +1425,7 @@ function BrandingCard() {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           {msg && <span style={{ fontSize: 11, color: msg.includes('✓') ? '#4ade80' : '#f87171' }}>{msg}</span>}
-          <button onClick={salvar} disabled={saving} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Salvando…' : 'Salvar'}</button>
+          <button onClick={salvar} disabled={saving} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Salvando…' : 'Salvar'}</button>
         </div>
       </div>
     </div>
@@ -1495,7 +1495,7 @@ function AbaEstatisticas() {
   const completaram  = data.participantes.filter(p => p.percentual >= 100).length
 
   const Th = ({ col, label, right }: { col: string; label: string; right?: boolean }) => (
-    <th onClick={() => clickSort(col)} style={{ textAlign: right ? 'right' : 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: sortCol === col ? '#93c5fd' : 'rgba(96,165,250,0.6)', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+    <th onClick={() => clickSort(col)} style={{ textAlign: right ? 'right' : 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: sortCol === col ? 'var(--color-gold-light)' : 'rgba(var(--brand-light-rgb),0.6)', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
       {label}{sortCol === col ? (sortDesc ? ' ▼' : ' ▲') : ''}
     </th>
   )
@@ -1519,7 +1519,7 @@ function AbaEstatisticas() {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
         <div style={{ display: 'flex', gap: 0, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden' }}>
           {(['cartas', 'participantes'] as const).map(m => (
-            <button key={m} onClick={() => trocarModo(m)} style={{ padding: '8px 16px', border: 'none', background: modo === m ? 'rgba(96,165,250,0.18)' : 'transparent', color: modo === m ? '#93c5fd' : 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
+            <button key={m} onClick={() => trocarModo(m)} style={{ padding: '8px 16px', border: 'none', background: modo === m ? 'rgba(var(--brand-light-rgb),0.18)' : 'transparent', color: modo === m ? 'var(--color-gold-light)' : 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
               {m === 'cartas' ? '🃏 Por carta' : '👤 Por participante'}
             </button>
           ))}
@@ -1547,7 +1547,7 @@ function AbaEstatisticas() {
           {modo === 'cartas' ? (
             <>
               <thead><tr style={{ position: 'sticky', top: 0, background: '#0c1626' }}>
-                <Th col="id" label="Carta" /><th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(96,165,250,0.6)', fontWeight: 700 }}>Grupo / Tipo</th>
+                <Th col="id" label="Carta" /><th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(var(--brand-light-rgb),0.6)', fontWeight: 700 }}>Grupo / Tipo</th>
                 <Th col="saidas" label="Saíram" right /><Th col="donos" label="Têm" right /><Th col="copias" label="Cópias" right />
               </tr></thead>
               <tbody>
@@ -1560,7 +1560,7 @@ function AbaEstatisticas() {
                       </div>
                     </td>
                     <td style={{ padding: '6px 10px', color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>{c.classificacao} · {c.tipo}</td>
-                    <td style={{ ...tdN, color: '#93c5fd', fontWeight: 700 }}>{c.saidas}</td>
+                    <td style={{ ...tdN, color: 'var(--color-gold-light)', fontWeight: 700 }}>{c.saidas}</td>
                     <td style={tdN}>{c.donos}</td>
                     <td style={tdN}>{c.copias}</td>
                   </tr>
@@ -1571,14 +1571,14 @@ function AbaEstatisticas() {
           ) : (
             <>
               <thead><tr style={{ position: 'sticky', top: 0, background: '#0c1626' }}>
-                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(96,165,250,0.6)', fontWeight: 700 }}>Participante</th>
+                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(var(--brand-light-rgb),0.6)', fontWeight: 700 }}>Participante</th>
                 <Th col="percentual" label="%" right /><Th col="coletadas" label="Coletadas" right /><Th col="repetidas" label="Repetidas" right /><Th col="pacotesPendentes" label="A abrir" right /><Th col="trocas" label="Trocas" right />
               </tr></thead>
               <tbody>
                 {parts.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                     <td style={{ padding: '6px 10px' }}><div style={{ color: 'rgba(255,255,255,0.85)' }}>{p.nome}</div><div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>#{p.matricula}</div></td>
-                    <td style={{ ...tdN, color: p.percentual >= 100 ? '#4ade80' : '#93c5fd', fontWeight: 700 }}>{p.percentual}%</td>
+                    <td style={{ ...tdN, color: p.percentual >= 100 ? '#4ade80' : 'var(--color-gold-light)', fontWeight: 700 }}>{p.percentual}%</td>
                     <td style={tdN}>{p.coletadas}/{p.total}</td>
                     <td style={tdN}>{p.repetidas}</td>
                     <td style={tdN}>{p.pacotesPendentes}</td>
@@ -1596,19 +1596,19 @@ function AbaEstatisticas() {
   )
 }
 
-const destCard: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: 12, padding: '14px 16px' }
+const destCard: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.12)', borderRadius: 12, padding: '14px 16px' }
 const destLbl:  React.CSSProperties = { fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, textTransform: 'uppercase' }
-const destVal:  React.CSSProperties = { fontSize: 22, fontWeight: 900, color: '#60a5fa', marginTop: 4 }
+const destVal:  React.CSSProperties = { fontSize: 22, fontWeight: 900, color: 'var(--color-gold)', marginTop: 4 }
 const destSub:  React.CSSProperties = { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 }
 
 // ─── Styles ───────────────────────────────────────────────────────
-const sectionLabel: React.CSSProperties = { fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(96,165,250,0.55)', marginBottom: 16 }
+const sectionLabel: React.CSSProperties = { fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(var(--brand-light-rgb),0.55)', marginBottom: 16 }
 const lbl:  React.CSSProperties = { display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 7 }
 const sel:  React.CSSProperties = { width: '100%', height: 42, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: '#0d1a2e', color: '#fff', fontSize: 12, padding: '0 12px', outline: 'none', cursor: 'pointer' }
 const opt:  React.CSSProperties = { background: '#0d1a2e', color: '#fff' }
 const inpSm: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: '#0d1a2e', color: '#fff', fontSize: 12, padding: '0 12px', outline: 'none', boxSizing: 'border-box' }
 const alertStyle: React.CSSProperties = { background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#ff9999' }
-const btnSm: React.CSSProperties = { padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(96,165,250,0.2)', background: 'rgba(96,165,250,0.06)', color: 'rgba(96,165,250,0.6)', fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', flexShrink: 0 }
+const btnSm: React.CSSProperties = { padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(var(--brand-light-rgb),0.2)', background: 'rgba(var(--brand-light-rgb),0.06)', color: 'rgba(var(--brand-light-rgb),0.6)', fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', flexShrink: 0 }
 const editBtn: React.CSSProperties = { width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, lineHeight: 1 }
 const delBtn:  React.CSSProperties = { width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: 'rgba(248,113,113,0.6)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, lineHeight: 1 }
 const confirmBtn: React.CSSProperties = { width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(220,38,38,0.5)', background: 'rgba(220,38,38,0.15)', color: '#f87171', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, lineHeight: 1 }

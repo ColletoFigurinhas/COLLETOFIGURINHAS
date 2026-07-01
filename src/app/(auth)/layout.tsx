@@ -18,13 +18,8 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       {/* Logo — da empresa (se houver) ou marca Colleto padrão */}
       <div style={{ width: '100%', maxWidth: 400, padding: '0 20px', textAlign: 'center', marginBottom: 36 }}>
         {b.logoUrl ? (
-          <>
-            <img src={b.logoUrl} alt={b.nome ?? 'Logo'} draggable={false}
-              style={{ maxWidth: 200, maxHeight: 84, objectFit: 'contain', marginBottom: 10, filter: 'drop-shadow(0 0 24px rgba(var(--brand-rgb),0.35))' }} />
-            {b.nome && (
-              <div style={{ fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>{b.nome}</div>
-            )}
-          </>
+          <img src={b.logoUrl} alt={b.nome ?? 'Logo'} draggable={false}
+            style={{ display: 'block', margin: '0 auto', maxWidth: 180, maxHeight: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 24px rgba(var(--brand-rgb),0.35))' }} />
         ) : (
           <>
             <img src="/logo-icon.png" alt="Colleto" draggable={false}

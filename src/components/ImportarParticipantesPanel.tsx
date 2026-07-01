@@ -72,8 +72,8 @@ export default function ImportarParticipantesPanel({ onDone }: { onDone?: () => 
   )
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(96,165,250,0.55)', marginBottom: 10 }}>Importar planilha (CSV)</div>
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-light-rgb),0.2)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(var(--brand-light-rgb),0.55)', marginBottom: 10 }}>Importar planilha (CSV)</div>
       <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, margin: '0 0 14px' }}>
         Colunas <code style={code}>matricula</code>, <code style={code}>nome</code>, <code style={code}>email</code> (e-mail opcional). Separador <b>,</b> ou <b>;</b>. Quem já existe é atualizado; novos definem senha no 1º acesso.
       </p>
@@ -82,7 +82,7 @@ export default function ImportarParticipantesPanel({ onDone }: { onDone?: () => 
         <input ref={fileRef} type="file" accept=".csv,text/csv"
           onChange={e => { const f = e.target.files?.[0]; if (f) f.text().then(carregar) }}
           style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }} />
-        <a href={modeloHref} download="modelo-participantes.csv" style={{ fontSize: 11, color: '#60a5fa' }}>⬇ Baixar modelo</a>
+        <a href={modeloHref} download="modelo-participantes.csv" style={{ fontSize: 11, color: 'var(--color-gold)' }}>⬇ Baixar modelo</a>
       </div>
 
       <details style={{ marginTop: 12 }}>
@@ -99,8 +99,8 @@ export default function ImportarParticipantesPanel({ onDone }: { onDone?: () => 
           </div>
           <button onClick={importar} disabled={enviando || validas === 0} style={{
             padding: '10px 22px', borderRadius: 10, border: 'none',
-            background: (enviando || validas === 0) ? 'rgba(59,130,246,0.3)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)',
-            color: '#93c5fd', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+            background: (enviando || validas === 0) ? 'rgba(var(--brand-bright-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))',
+            color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
             cursor: (enviando || validas === 0) ? 'not-allowed' : 'pointer',
           }}>
             {enviando ? 'Importando…' : `Importar ${validas} participante(s)`}

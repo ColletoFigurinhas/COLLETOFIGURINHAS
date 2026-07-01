@@ -1049,6 +1049,39 @@ html, body {
 }
 
 /* ============================================================
+   SELO COLLETO — "powered by" fixo, pequeno, canto inferior-dir.
+   ============================================================ */
+.colleto-badge {
+  position: fixed;
+  right: 14px;
+  bottom: 12px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  opacity: 0.55;
+  text-decoration: none;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.colleto-badge:hover { opacity: 1; transform: translateY(-1px); }
+.colleto-badge img { height: 14px; width: auto; object-fit: contain; display: block; }
+.colleto-badge-label {
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+}
+@media (max-width: 599px) {
+  .colleto-badge { right: 10px; bottom: 10px; padding: 4px 8px; }
+  .colleto-badge img { height: 12px; }
+}
+
+/* ============================================================
    SAFE AREA (notch / home bar do iPhone)
    ============================================================ */
 .album-header {

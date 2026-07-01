@@ -1,24 +1,26 @@
 import { verifyRole } from '@/lib/dal'
+import { getBranding } from '@/server/branding'
 import Link from 'next/link'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await verifyRole('MARKETING', 'TI', 'ADMIN')
+  const b = await getBranding()
 
   return (
     <>
       <style>{`html, body { overflow: auto !important; height: auto !important; }`}</style>
-      <div style={{ minHeight: '100vh', background: '#070e1a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: '#070e1a', color: '#fff', fontFamily: 'system-ui, sans-serif', ...b.vars } as React.CSSProperties}>
 
         {/* Header */}
         <header style={{
           height: 52, background: 'rgba(0,0,0,0.6)',
-          borderBottom: '1px solid rgba(59,130,246,0.12)',
+          borderBottom: '1px solid rgba(var(--brand-bright-rgb),0.12)',
           display: 'flex', alignItems: 'center', padding: '0 24px', gap: 16,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <img src="/logo-icon.png" alt="Colleto" draggable={false}
               style={{ width: 22, height: 22, objectFit: 'contain' }} />
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(96,165,250,0.7)' }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(var(--brand-light-rgb),0.7)' }}>
               Colleto · Admin
             </span>
           </div>
