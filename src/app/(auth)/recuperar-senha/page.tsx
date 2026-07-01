@@ -46,7 +46,7 @@ export default function RecuperarSenhaPage() {
       <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 28 }}>
         Agora entre com sua matrícula e a nova senha.
       </div>
-      <a href="/login" style={{ display: 'inline-block', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', borderRadius: 10, padding: '12px 28px', textDecoration: 'none' }}>
+      <a href="/login" style={{ display: 'inline-block', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', borderRadius: 10, padding: '12px 28px', textDecoration: 'none' }}>
         Ir para o login
       </a>
     </div>
@@ -136,4 +136,4 @@ export default function RecuperarSenhaPage() {
 const lbl: React.CSSProperties = { display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 }
 const inp: React.CSSProperties = { width: '100%', height: 44, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 14, padding: '0 14px', outline: 'none', boxSizing: 'border-box' }
 const alertStyle: React.CSSProperties = { background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#ff9999' }
-const btn = (d: boolean): React.CSSProperties => ({ height: 48, borderRadius: 10, border: 'none', background: d ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', cursor: d ? 'not-allowed' : 'pointer' })
+const btn = (d: boolean): React.CSSProperties => ({ height: 48, borderRadius: 10, border: 'none', background: d ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', cursor: d ? 'not-allowed' : 'pointer' })

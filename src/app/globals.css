@@ -21,6 +21,7 @@
   --color-verde:      #1d4ed8;
   --color-verde-light:#3b82f6;
   --color-verde-dark: #1e40af;
+  --on-primary:       #f8fafc;
   --color-verde-dim:  rgba(var(--brand-rgb),0.15);
 
   /* RGB triplets — permitem rgba() temável (sobrescritos por empresa) */

@@ -228,7 +228,7 @@ function AbaFigurinhas() {
             <span style={{ color: '#4ade80' }}>{ativas} ativas</span> · <span style={{ color: '#f87171' }}>{figurinhas.length - ativas} inativas</span> · {figurinhas.length} total
           </div>
         </div>
-        <button onClick={() => { setShowForm(v => !v); setErrForm('') }} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showForm ? 'rgba(255,255,255,0.5)' : 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={() => { setShowForm(v => !v); setErrForm('') }} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showForm ? 'rgba(255,255,255,0.5)' : 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {showForm ? '✕ Cancelar' : '+ Nova Carta'}
         </button>
       </div>
@@ -262,7 +262,7 @@ function AbaFigurinhas() {
             </div>
           )}
           {errForm && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 12 }}>{errForm}</div>}
-          <button onClick={handleCadastrar} disabled={uploading || (isFuncionario ? (!fileVerde || !fileAmarelo) : !file)} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={handleCadastrar} disabled={uploading || (isFuncionario ? (!fileVerde || !fileAmarelo) : !file)} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {uploading ? 'Cadastrando…' : 'Cadastrar Carta'}
           </button>
         </div>
@@ -349,7 +349,7 @@ function AbaFigurinhas() {
             {editErr && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 12 }}>{editErr}</div>}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setEditando(null)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={salvarEdicao} disabled={editUploading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{editUploading ? 'Salvando…' : 'Salvar'}</button>
+              <button onClick={salvarEdicao} disabled={editUploading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{editUploading ? 'Salvando…' : 'Salvar'}</button>
             </div>
           </div>
         </div>
@@ -419,7 +419,7 @@ function AbaParticipantes() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou matrícula…" style={{ height: 36, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 12, padding: '0 12px', outline: 'none', width: 240 }} />
-          <button onClick={() => { setShowForm(v => !v); setErrF('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showForm ? 'rgba(255,255,255,0.5)' : 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={() => { setShowForm(v => !v); setErrF('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showForm ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showForm ? 'rgba(255,255,255,0.5)' : 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {showForm ? '✕' : '+ Novo'}
           </button>
           <button onClick={() => setShowImport(v => !v)} style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(var(--brand-light-rgb),0.25)', background: showImport ? 'rgba(var(--brand-light-rgb),0.18)' : 'rgba(var(--brand-light-rgb),0.07)', color: 'rgba(var(--brand-light-rgb),0.85)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }}>
@@ -445,7 +445,7 @@ function AbaParticipantes() {
             <div><label style={lbl}>Senha inicial</label><input type="password" value={pSenha} onChange={e => setPSenha(e.target.value)} style={inpSm} placeholder="Deixe em branco para pedir no 1º acesso" /></div>
             {errF && <div style={{ ...alertStyle, gridColumn: '1/-1' }}>{errF}</div>}
             <div style={{ gridColumn: '1/-1' }}>
-              <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Participante'}</button>
+              <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Participante'}</button>
             </div>
           </form>
         </div>
@@ -690,7 +690,7 @@ function AbaCampanha() {
 
       {err && <div style={alertStyle}>{err}</div>}
       <div style={{ display: 'flex', gap: 10 }}>
-        <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {saving ? 'Salvando…' : campanha ? 'Salvar alterações' : 'Criar campanha'}
         </button>
         <button type="button" onClick={() => { setEditing(false); setShowNew(false) }} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 10, cursor: 'pointer' }}>
@@ -708,7 +708,7 @@ function AbaCampanha() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Campanha</h2>
         {!editing && !showNew && (
-          <button onClick={() => { campanha ? setEditing(true) : setShowNew(true) }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={() => { campanha ? setEditing(true) : setShowNew(true) }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
             {campanha ? 'Editar' : '+ Nova Campanha'}
           </button>
         )}
@@ -831,7 +831,7 @@ function AbaAcoes() {
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>Ações do dia</h2>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>{acoes.length} ação(ões) · ganhadores recebem pacote bônus</div>
         </div>
-        <button onClick={() => { setShowNew(v => !v); setErr('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showNew ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showNew ? 'rgba(255,255,255,0.5)' : 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={() => { setShowNew(v => !v); setErr('') }} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: showNew ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: showNew ? 'rgba(255,255,255,0.5)' : 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {showNew ? '✕' : '+ Nova ação'}
         </button>
       </div>
@@ -843,7 +843,7 @@ function AbaAcoes() {
             <div><label style={lbl}>Nome</label><input value={nome} onChange={e => setNome(e.target.value)} style={inpSm} placeholder="Ex.: Quiz da manhã" required /></div>
             <div><label style={lbl}>Descrição (opcional)</label><input value={descricao} onChange={e => setDescricao(e.target.value)} style={inpSm} placeholder="Detalhes da ação" /></div>
             {err && <div style={{ ...alertStyle, gridColumn: '1/-1' }}>{err}</div>}
-            <div style={{ gridColumn: '1/-1' }}><button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Ação'}</button></div>
+            <div style={{ gridColumn: '1/-1' }}><button type="submit" disabled={saving} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Criando…' : 'Criar Ação'}</button></div>
           </form>
         </div>
       )}
@@ -1163,7 +1163,7 @@ function AbaPacotes() {
         {msg && <div style={{ ...alertStyle, background: 'rgba(74,222,128,0.1)', borderColor: 'rgba(74,222,128,0.3)', color: '#86efac', marginTop: 14 }}>{msg}</div>}
         {err && <div style={{ ...alertStyle, marginTop: 14 }}>{err}</div>}
 
-        <button onClick={distribuir} disabled={saving} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={distribuir} disabled={saving} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>
           {saving ? 'Distribuindo…' : '📦 Distribuir pacote'}
         </button>
       </div>
@@ -1448,7 +1448,7 @@ function BrandingCard() {
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           {msg && <span style={{ fontSize: 11, color: msg.includes('✓') ? '#4ade80' : '#f87171' }}>{msg}</span>}
-          <button onClick={salvar} disabled={saving} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Salvando…' : 'Salvar'}</button>
+          <button onClick={salvar} disabled={saving} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Salvando…' : 'Salvar'}</button>
         </div>
       </div>
 
@@ -1481,7 +1481,7 @@ function BrandingCard() {
               {logoUrl ? <img src={logoUrl} alt="" style={{ height: 22, objectFit: 'contain', verticalAlign: 'middle' }} /> : 'Título'}
             </span>
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(var(--brand-light-rgb),0.9)', border: '1px solid rgba(var(--brand-light-rgb),0.3)', borderRadius: 8, padding: '6px 12px' }}>Aba ativa</span>
-            <button style={{ border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'default', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase' }}>Botão</button>
+            <button style={{ border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'default', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase' }}>Botão</button>
             <span style={{ fontSize: 9, fontWeight: 800, color: '#000', background: 'var(--color-gold)', borderRadius: 20, padding: '3px 8px' }}>badge</span>
           </div>
         </div>

@@ -53,18 +53,19 @@ export function ehClaro(cor: string): boolean {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.6
 }
 
-// Tons de UMA cor, com piso/teto de contraste (legível no fundo escuro, sem neon)
+// Tons de UMA cor, com piso/teto de contraste (legível no fundo escuro, sem neon).
+// Preserva tons de cinza (s≈0) para não introduzir matiz falso em branco/preto.
 function tons(cor: string) {
   const rgb = hexToRgb(cor)
   const [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2])
-  const Sacc  = Math.min(0.78, Math.max(0.42, s))
+  const Sacc  = s < 0.08 ? s : Math.min(0.78, Math.max(0.42, s))
   const shade = (ll: number, ss = Sacc) => hslToRgb(h, ss, clamp01(ll))
   return {
     rgb,
     gold:   shade(entre(l + 0.18, 0.56, 0.66)),  // acento principal (texto/borda)
-    pale:   shade(entre(l + 0.32, 0.70, 0.80)),  // texto sobre botão
+    pale:   shade(entre(l + 0.32, 0.70, 0.80)),  // acento claro sobre fundo escuro
     bright: shade(entre(l + 0.08, 0.46, 0.58)),
-    dark:   shade(Math.min(l, 0.42) * 0.60),     // gradiente/hover escuro
+    dark:   shade(l * 0.72, s < 0.08 ? s : Sacc), // gradiente: escurece PROPORCIONAL (cor clara continua clara)
     bg:     shade(0.06,  Math.min(0.42, s * 0.55)),
     bgMid:  shade(0.115, Math.min(0.40, s * 0.50)),
   }
@@ -81,6 +82,8 @@ export function paletaDe(primaria: string, destaque?: string | null): Record<str
   const ac  = tons(A)   // acento
 
   return {
+    // texto sobre a cor primária (botões): auto preto/branco → funciona até com branco
+    '--on-primary':        ehClaro(P) ? '#0b1020' : '#f8fafc',
     // fundo tingido + estrutura (da PRIMÁRIA)
     '--color-bg':          toHex(est.bg),
     '--color-bg-mid':      toHex(est.bgMid),

@@ -100,7 +100,7 @@ export default function ImportarParticipantesPanel({ onDone }: { onDone?: () => 
           <button onClick={importar} disabled={enviando || validas === 0} style={{
             padding: '10px 22px', borderRadius: 10, border: 'none',
             background: (enviando || validas === 0) ? 'rgba(var(--brand-bright-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))',
-            color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+            color: 'var(--on-primary)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
             cursor: (enviando || validas === 0) ? 'not-allowed' : 'pointer',
           }}>
             {enviando ? 'Importando…' : `Importar ${validas} participante(s)`}

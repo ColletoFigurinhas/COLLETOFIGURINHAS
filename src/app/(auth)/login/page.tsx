@@ -103,7 +103,7 @@ export default function LoginPage() {
                   value={matricula} onChange={e => setMatricula(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending || !matricula.trim()} style={{ ...btn, background: (pending || !matricula.trim()) ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: (pending || !matricula.trim()) ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending || !matricula.trim()} style={{ ...btn, background: (pending || !matricula.trim()) ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', cursor: (pending || !matricula.trim()) ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Verificando…' : 'Continuar →'}
               </button>
             </form>
@@ -121,7 +121,7 @@ export default function LoginPage() {
                   value={senha} onChange={e => setSenha(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: pending ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', cursor: pending ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Entrando…' : 'Entrar'}
               </button>
             </form>
@@ -169,7 +169,7 @@ export default function LoginPage() {
                   value={confirmar} onChange={e => setConfirmar(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(var(--brand-rgb),0.2)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: pending ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(var(--brand-rgb),0.2)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', cursor: pending ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Criando acesso…' : 'Criar acesso'}
               </button>
             </form>
@@ -222,7 +222,7 @@ export default function LoginPage() {
                   value={confirmarNova} onChange={e => setConfirmarNova(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending || codigo.length < 6} style={{ ...btn, background: (pending || codigo.length < 6) ? 'rgba(var(--brand-rgb),0.25)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: (pending || codigo.length < 6) ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending || codigo.length < 6} style={{ ...btn, background: (pending || codigo.length < 6) ? 'rgba(var(--brand-rgb),0.25)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', cursor: (pending || codigo.length < 6) ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Confirmando…' : 'Confirmar nova senha'}
               </button>
             </form>
@@ -241,7 +241,7 @@ export default function LoginPage() {
               Agora entre com sua matrícula e a nova senha.
             </div>
             <button onClick={() => { setSenha(''); setStep('senha') }}
-              style={{ ...btn, background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: 'pointer', width: '100%' }}>
+              style={{ ...btn, background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--on-primary)', cursor: 'pointer', width: '100%' }}>
               Entrar agora
             </button>
           </div>

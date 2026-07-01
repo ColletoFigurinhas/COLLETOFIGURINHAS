@@ -72,7 +72,7 @@ export default function FigurinhaPreview({ id, imagemUrl, classificacao, onClose
           <button onClick={baixar} style={{
             flex: 1, height: 40, borderRadius: 10, border: 'none', cursor: 'pointer',
             background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))',
-            color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
+            color: 'var(--on-primary)', fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
             textTransform: 'uppercase',
           }}>
             ⬇ Baixar
