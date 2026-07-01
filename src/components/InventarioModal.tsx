@@ -123,7 +123,7 @@ function ModalTroca({ fig, onClose, onSucesso }: {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase' }}>Propor troca</div>
-            <div style={{ fontSize: 11, color: '#f5c800', fontWeight: 700, marginTop: 3 }}>Figurinha #{fig.id}</div>
+            <div style={{ fontSize: 11, color: 'var(--color-gold)', fontWeight: 700, marginTop: 3 }}>Figurinha #{fig.id}</div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{fig.classificacao}</div>
           </div>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>×</button>
@@ -208,7 +208,7 @@ function ModalTroca({ fig, onClose, onSucesso }: {
                 </button>
                 <button type="submit" disabled={!selecionado || enviando} style={{
                   flex: 2, height: 38, borderRadius: 8, border: 'none',
-                  background: selecionado && !enviando ? 'linear-gradient(135deg,#f5c800,#c49200)' : 'rgba(255,255,255,0.07)',
+                  background: selecionado && !enviando ? 'linear-gradient(135deg,var(--color-gold),var(--color-verde-dark))' : 'rgba(255,255,255,0.07)',
                   color: selecionado && !enviando ? '#000' : 'rgba(255,255,255,0.2)',
                   fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase',
                   cursor: selecionado && !enviando ? 'pointer' : 'not-allowed',
@@ -251,7 +251,7 @@ function FigurinhaCard({ fig, onTrocar }: { fig: Figurinha; onTrocar: (fig: Figu
       {fig.quantidade > 1 && (
         <div style={{
           position: 'absolute', top: 5, right: 5,
-          background: '#f5c800', color: '#000',
+          background: 'var(--color-gold)', color: '#000',
           fontSize: 10, fontWeight: 900, borderRadius: 10,
           padding: '1px 6px', lineHeight: 1.5,
           boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
@@ -265,7 +265,7 @@ function FigurinhaCard({ fig, onTrocar }: { fig: Figurinha; onTrocar: (fig: Figu
         position: 'absolute', inset: 0,
         background: 'rgba(245,200,0,0.18)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 10, fontWeight: 900, color: '#f5c800',
+        fontSize: 10, fontWeight: 900, color: 'var(--color-gold)',
         letterSpacing: 2, textTransform: 'uppercase',
         opacity: 0, transition: 'opacity 0.15s',
       }}>
@@ -351,13 +351,13 @@ export default function InventarioModal({ onClose }: { onClose: () => void }) {
           padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0,
         }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 4, textTransform: 'uppercase', color: '#f5c800' }}>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--color-gold)' }}>
               Minhas Figurinhas
             </div>
             {!loading && (
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginTop: 3 }}>
                 {totalRepetidas} figurinha{totalRepetidas !== 1 ? 's' : ''}
-                {totalRepetBadge > 0 && <> · <span style={{ color: '#f5c800' }}>{totalRepetBadge} repetida{totalRepetBadge !== 1 ? 's' : ''}</span></>}
+                {totalRepetBadge > 0 && <> · <span style={{ color: 'var(--color-gold)' }}>{totalRepetBadge} repetida{totalRepetBadge !== 1 ? 's' : ''}</span></>}
                 {' · '}
                 <span style={{ color: 'rgba(255,255,255,0.25)' }}>clique para trocar</span>
               </div>
@@ -397,7 +397,7 @@ export default function InventarioModal({ onClose }: { onClose: () => void }) {
                       <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>
                         {sec.figurinhas.length} figurinha{sec.figurinhas.length !== 1 ? 's' : ''}
                         {sec.figurinhas.filter(f => f.quantidade >= 2).length > 0 && (
-                          <span style={{ color: '#f5c800' }}>{' · '}{sec.figurinhas.filter(f => f.quantidade >= 2).length} repetida{sec.figurinhas.filter(f => f.quantidade >= 2).length !== 1 ? 's' : ''}</span>
+                          <span style={{ color: 'var(--color-gold)' }}>{' · '}{sec.figurinhas.filter(f => f.quantidade >= 2).length} repetida{sec.figurinhas.filter(f => f.quantidade >= 2).length !== 1 ? 's' : ''}</span>
                         )}
                       </span>
                     </div>

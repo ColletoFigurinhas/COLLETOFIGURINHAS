@@ -66,18 +66,21 @@ export function paletaDe(cor: string) {
   const baseRgb = hexToRgb(base)
   const [h, s, l] = rgbToHsl(baseRgb[0], baseRgb[1], baseRgb[2])
 
-  // Saturação reforçada nos acentos → cor "forte e característica"
-  const Sv    = Math.min(1, s * 1.15 + 0.05)
-  const shade = (ll: number, ss = Sv) => hslToRgb(h, ss, clamp01(ll))
+  // Saturação fiel à cor, sem exagero/neon
+  const Sacc  = Math.min(0.78, Math.max(0.42, s))
+  const shade = (ll: number, ss = Sacc) => hslToRgb(h, ss, clamp01(ll))
+  const entre = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x))
 
-  // Tons claros: sobem POUCO de brilho (ficam perto da cor, não lavam)
-  const dark   = shade(l * 0.70)
-  const bright = shade(Math.min(0.58, l + 0.10))
-  const gold   = shade(Math.min(0.62, l + 0.18))   // acento principal — vivo
-  const pale   = shade(Math.min(0.74, l + 0.30))
-  // Fundo escuro TINGIDO com a cor escolhida (não mais azul fixo)
-  const bg     = shade(0.055, Math.min(0.60, s * 0.75))
-  const bgMid  = shade(0.11,  Math.min(0.55, s * 0.70))
+  // Acentos de PRIMEIRO PLANO com PISO de luminosidade → sempre legíveis no
+  // fundo escuro, mesmo se a cor escolhida for escura (contraste garantido);
+  // e TETO pra não ficar estourado/neon ("nada muito resaltado").
+  const gold   = shade(entre(l + 0.18, 0.56, 0.66))   // acento principal (texto/borda)
+  const pale   = shade(entre(l + 0.32, 0.70, 0.80))   // texto sobre botão
+  const bright = shade(entre(l + 0.08, 0.46, 0.58))
+  const dark   = shade(Math.min(l, 0.42) * 0.60)      // gradiente/hover escuro
+  // Fundo escuro tingido com a cor (saturação contida)
+  const bg     = shade(0.06,  Math.min(0.42, s * 0.55))
+  const bgMid  = shade(0.115, Math.min(0.40, s * 0.50))
 
   const claro = (0.2126 * baseRgb[0] + 0.7152 * baseRgb[1] + 0.0722 * baseRgb[2]) / 255 > 0.6
 
