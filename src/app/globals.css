@@ -6,9 +6,10 @@
 :root {
   --font-primary: 'Outfit', sans-serif;
 
-  /* Fundo escuro azul */
+  /* Fundo escuro (tingido pela cor da empresa em runtime) */
   --color-bg:         #070e1a;
   --color-bg-mid:     #0d1a2e;
+  --color-bg-rgb:     6,8,15;
   --color-surface:    rgba(255,255,255,0.03);
 
   /* Azul — Colleto */
@@ -75,7 +76,7 @@ html, body {
     radial-gradient(ellipse 80% 55% at 50% 0%,   rgba(var(--brand-rgb),0.20)   0%, transparent 65%),
     radial-gradient(ellipse 55% 40% at 100% 100%, rgba(var(--brand-bright-rgb),0.12)  0%, transparent 60%),
     radial-gradient(ellipse 40% 30% at 0%   85%,  rgba(var(--brand-rgb),0.10)   0%, transparent 55%),
-    #070e1a;
+    var(--color-bg);
   overflow: hidden;
 }
 
@@ -119,7 +120,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 14px 28px;
-  background: linear-gradient(to bottom, rgba(6,8,15,0.95) 0%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(var(--color-bg-rgb),0.95) 0%, transparent 100%);
   backdrop-filter: blur(4px);
 }
 
@@ -914,7 +915,7 @@ html, body {
   justify-content: center;
   gap: 12px;
   padding: 18px 24px 24px;
-  background: linear-gradient(to top, rgba(6,8,15,0.95) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(var(--color-bg-rgb),0.95) 0%, transparent 100%);
 }
 
 .ctrl-btn {

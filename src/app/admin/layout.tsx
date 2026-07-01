@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <>
       <style>{`html, body { overflow: auto !important; height: auto !important; }`}</style>
-      <div style={{ minHeight: '100vh', background: '#070e1a', color: '#fff', fontFamily: 'system-ui, sans-serif', ...b.vars } as React.CSSProperties}>
+      <div style={{ minHeight: '100vh', background: 'var(--color-bg)', color: '#fff', fontFamily: 'system-ui, sans-serif', ...b.vars } as React.CSSProperties}>
 
         {/* Header */}
         <header style={{

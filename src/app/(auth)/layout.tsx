@@ -11,7 +11,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'radial-gradient(ellipse 80% 55% at 50% 0%, rgba(var(--brand-rgb),0.25) 0%, transparent 65%), radial-gradient(ellipse 55% 40% at 100% 100%, rgba(var(--brand-bright-rgb),0.12) 0%, transparent 60%), #070e1a',
+      background: 'radial-gradient(ellipse 80% 55% at 50% 0%, rgba(var(--brand-rgb),0.25) 0%, transparent 65%), radial-gradient(ellipse 55% 40% at 100% 100%, rgba(var(--brand-bright-rgb),0.12) 0%, transparent 60%), var(--color-bg)',
       ...b.vars,
     } as React.CSSProperties}>
 
