@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import ImportarParticipantesPanel from '@/components/ImportarParticipantesPanel'
+import { paletaDe } from '@/lib/palette'
 
 // ─── Tipos ────────────────────────────────────────────────────────
 type Figurinha   = { id: number; classificacao: string; tipo: string; imagemUrl: string | null; ativo: boolean }
@@ -1377,16 +1378,28 @@ function AbaRelatorios() {
 // ═══════════════════════════════════════════════════════════════════
 // IDENTIDADE VISUAL (branding da empresa) — usado na aba Campanha
 // ═══════════════════════════════════════════════════════════════════
+const PRESETS_TEMA = [
+  { nome: 'Azul',     primaria: '#1d4ed8', destaque: '#38bdf8' },
+  { nome: 'Vermelho', primaria: '#b91c1c', destaque: '#f59e0b' },
+  { nome: 'Verde',    primaria: '#15803d', destaque: '#84cc16' },
+  { nome: 'Roxo',     primaria: '#6d28d9', destaque: '#ec4899' },
+  { nome: 'Laranja',  primaria: '#c2410c', destaque: '#fbbf24' },
+  { nome: 'Grafite',  primaria: '#334155', destaque: '#38bdf8' },
+]
+
 function BrandingCard() {
-  const [logoUrl, setLogoUrl]   = useState<string | null>(null)
-  const [cor, setCor]           = useState('#1d4ed8')
+  const [logoUrl, setLogoUrl]     = useState<string | null>(null)
+  const [primaria, setPrimaria]   = useState('#1d4ed8')
+  const [destaque, setDestaque]   = useState('#1d4ed8')
   const [uploading, setUploading] = useState(false)
-  const [saving, setSaving]     = useState(false)
-  const [msg, setMsg]           = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [msg, setMsg]             = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch('/api/admin/empresa').then(r => r.json()).then(e => { if (e) { setLogoUrl(e.logoUrl ?? null); setCor(e.corPrimaria ?? '#1d4ed8') } })
+    fetch('/api/admin/empresa').then(r => r.json()).then(e => {
+      if (e) { setLogoUrl(e.logoUrl ?? null); setPrimaria(e.corPrimaria ?? '#1d4ed8'); setDestaque(e.corDestaque ?? e.corPrimaria ?? '#1d4ed8') }
+    })
   }, [])
 
   async function uploadLogo(f: File) {
@@ -1400,14 +1413,27 @@ function BrandingCard() {
 
   async function salvar() {
     setSaving(true); setMsg('')
-    const r = await fetch('/api/admin/empresa', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logoUrl, corPrimaria: cor }) })
+    const r = await fetch('/api/admin/empresa', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logoUrl, corPrimaria: primaria, corDestaque: destaque }) })
     setSaving(false)
     setMsg(r.ok ? 'Identidade salva ✓' : 'Erro ao salvar.')
   }
 
+  const previewVars = paletaDe(primaria, destaque) as React.CSSProperties
+
+  const picker = (label: string, val: string, set: (v: string) => void) => (
+    <div>
+      <label style={lbl}>{label}</label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input type="color" value={val} onChange={e => set(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', cursor: 'pointer' }} />
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{val}</span>
+      </div>
+    </div>
+  )
+
   return (
     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.12)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
       <div style={sectionLabel}>Identidade visual da empresa</div>
+
       <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 64, height: 64, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -1416,16 +1442,51 @@ function BrandingCard() {
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
           <button onClick={() => fileRef.current?.click()} disabled={uploading} style={btnSm}>{uploading ? 'Enviando…' : 'Trocar logo'}</button>
         </div>
-        <div>
-          <label style={lbl}>Cor primária</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="color" value={cor} onChange={e => setCor(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', cursor: 'pointer' }} />
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{cor}</span>
-          </div>
-        </div>
+
+        {picker('Cor primária (estrutura)', primaria, setPrimaria)}
+        {picker('Cor de destaque (acento)', destaque, setDestaque)}
+
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           {msg && <span style={{ fontSize: 11, color: msg.includes('✓') ? '#4ade80' : '#f87171' }}>{msg}</span>}
           <button onClick={salvar} disabled={saving} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer' }}>{saving ? 'Salvando…' : 'Salvar'}</button>
+        </div>
+      </div>
+
+      {/* Paletas prontas */}
+      <div style={{ marginTop: 16 }}>
+        <label style={lbl}>Paletas prontas</label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+          {PRESETS_TEMA.map(p => {
+            const ativo = p.primaria.toLowerCase() === primaria.toLowerCase() && p.destaque.toLowerCase() === destaque.toLowerCase()
+            return (
+              <button key={p.nome} onClick={() => { setPrimaria(p.primaria); setDestaque(p.destaque) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 20, cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: ativo ? '1px solid rgba(255,255,255,0.5)' : '1px solid rgba(255,255,255,0.1)' }}>
+                <span style={{ display: 'flex' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: '50% 0 0 50%', background: p.primaria }} />
+                  <span style={{ width: 12, height: 12, borderRadius: '0 50% 50% 0', background: p.destaque }} />
+                </span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{p.nome}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Prévia ao vivo */}
+      <div style={{ marginTop: 16 }}>
+        <label style={lbl}>Prévia</label>
+        <div style={{ ...previewVars, marginTop: 6, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ background: 'var(--color-bg)', padding: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--color-gold)' }}>
+              {logoUrl ? <img src={logoUrl} alt="" style={{ height: 22, objectFit: 'contain', verticalAlign: 'middle' }} /> : 'Título'}
+            </span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(var(--brand-light-rgb),0.9)', border: '1px solid rgba(var(--brand-light-rgb),0.3)', borderRadius: 8, padding: '6px 12px' }}>Aba ativa</span>
+            <button style={{ border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'default', background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase' }}>Botão</button>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#000', background: 'var(--color-gold)', borderRadius: 20, padding: '3px 8px' }}>badge</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>
+          Primária = fundo e botões · Destaque = títulos, abas e selos. O contraste é ajustado automaticamente pra ficar sempre legível.
         </div>
       </div>
     </div>

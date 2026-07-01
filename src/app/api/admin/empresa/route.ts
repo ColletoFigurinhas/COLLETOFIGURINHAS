@@ -12,7 +12,7 @@ export async function GET() {
 
   const empresa = await db.empresa.findUnique({
     where:  { id: empresaId },
-    select: { id: true, nome: true, slug: true, logoUrl: true, corPrimaria: true, plano: true },
+    select: { id: true, nome: true, slug: true, logoUrl: true, corPrimaria: true, corDestaque: true, plano: true },
   })
   return NextResponse.json(empresa)
 }
@@ -30,14 +30,24 @@ export async function PATCH(request: Request) {
   if (body.corPrimaria !== undefined) {
     const cor = String(body.corPrimaria)
     if (!/^#[0-9a-fA-F]{6}$/.test(cor))
-      return NextResponse.json({ error: 'Cor inválida (use #RRGGBB).' }, { status: 400 })
+      return NextResponse.json({ error: 'Cor primária inválida (use #RRGGBB).' }, { status: 400 })
     data.corPrimaria = cor
+  }
+  if (body.corDestaque !== undefined) {
+    if (body.corDestaque === null || body.corDestaque === '') {
+      data.corDestaque = null   // volta a derivar da primária
+    } else {
+      const cor = String(body.corDestaque)
+      if (!/^#[0-9a-fA-F]{6}$/.test(cor))
+        return NextResponse.json({ error: 'Cor de destaque inválida (use #RRGGBB).' }, { status: 400 })
+      data.corDestaque = cor
+    }
   }
 
   const empresa = await db.empresa.update({
     where:  { id: empresaId },
     data,
-    select: { id: true, logoUrl: true, corPrimaria: true },
+    select: { id: true, logoUrl: true, corPrimaria: true, corDestaque: true },
   })
   return NextResponse.json(empresa)
 }

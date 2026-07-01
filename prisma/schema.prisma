@@ -40,6 +40,7 @@ model Empresa {
   cnpj        String   @unique
   logoUrl     String?  @map("logo_url")
   corPrimaria String   @default("#1d4ed8") @map("cor_primaria")
+  corDestaque String?  @map("cor_destaque")
   ativo       Boolean  @default(true)
   plano       String   @default("basico")
   criadoEm   DateTime @default(now()) @map("criado_em")
