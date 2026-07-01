@@ -28,7 +28,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin()
@@ -41,16 +41,37 @@ export async function DELETE(
   const existe = await db.figurinha.findFirst({ where: { id: figId, campanha: { empresaId } }, select: { id: true } })
   if (!existe) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
 
-  const [emPacote, emAlbum] = await Promise.all([
+  // ?force=true → cascade explícito (admin confirmou no 2º passo)
+  const force = new URL(request.url).searchParams.get('force') === 'true'
+
+  const [emPacote, emAlbum, emTroca] = await Promise.all([
     db.pacoteFigurinha.count({ where: { figurinhaId: figId } }),
     db.albumItem.count({       where: { figurinhaId: figId } }),
+    db.troca.count({           where: { OR: [{ figurinhaOfertadaId: figId }, { figurinhaRecebidaId: figId }] } }),
   ])
 
-  if (emPacote > 0 || emAlbum > 0) {
+  const emUso = emPacote > 0 || emAlbum > 0 || emTroca > 0
+
+  if (emUso && !force) {
     return NextResponse.json(
-      { error: `Não é possível deletar: carta em ${emPacote} pacote(s) e ${emAlbum} álbum(ns).` },
+      {
+        error: `Não é possível deletar: carta em ${emPacote} pacote(s), ${emAlbum} álbum(ns) e ${emTroca} troca(s).`,
+        emUso: true,
+        counts: { pacotes: emPacote, albuns: emAlbum, trocas: emTroca },
+      },
       { status: 409 }
     )
+  }
+
+  if (emUso) {
+    // Cascade: remove todas as referências e a carta numa única transação.
+    await db.$transaction([
+      db.pacoteFigurinha.deleteMany({ where: { figurinhaId: figId } }),
+      db.albumItem.deleteMany({       where: { figurinhaId: figId } }),
+      db.troca.deleteMany({           where: { OR: [{ figurinhaOfertadaId: figId }, { figurinhaRecebidaId: figId }] } }),
+      db.figurinha.delete({           where: { id: figId } }),
+    ])
+    return NextResponse.json({ ok: true, cascade: true, removed: { pacotes: emPacote, albuns: emAlbum, trocas: emTroca } })
   }
 
   await db.figurinha.delete({ where: { id: figId } })

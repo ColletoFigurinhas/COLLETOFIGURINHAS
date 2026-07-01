@@ -15,7 +15,7 @@ type Toast = { id: number; type: ToastType; message: string }
 
 const TOAST_CFG: Record<ToastType, { icon: string; bg: string; border: string }> = {
   pacote:          { icon: '🎴', bg: 'linear-gradient(135deg,#b45309,#92400e)', border: '#f59e0b' },
-  troca_recebida:  { icon: '🔄', bg: 'linear-gradient(135deg,#1d4ed8,#1e3a8a)', border: '#60a5fa' },
+  troca_recebida:  { icon: '🔄', bg: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', border: 'var(--color-gold)' },
   troca_aceita:    { icon: '✅', bg: 'linear-gradient(135deg,#15803d,#14532d)', border: '#4ade80' },
   troca_recusada:  { icon: '❌', bg: 'linear-gradient(135deg,#b91c1c,#7f1d1d)', border: '#f87171' },
   troca_cancelada: { icon: '↩️', bg: 'linear-gradient(135deg,#374151,#1f2937)', border: '#9ca3af' },
@@ -300,8 +300,8 @@ function Filmstrip({ pages, current, onGo }: {
               width: TH_W, height: TH_H, flexShrink: 0,
               borderRadius: 5, overflow: 'hidden', cursor: 'pointer',
               position: 'relative',
-              border: active ? '2px solid #60a5fa' : '2px solid rgba(255,255,255,0.08)',
-              boxShadow: active ? '0 0 10px rgba(96,165,250,0.4)' : 'none',
+              border: active ? '2px solid var(--color-gold)' : '2px solid rgba(255,255,255,0.08)',
+              boxShadow: active ? '0 0 10px rgba(var(--brand-light-rgb),0.4)' : 'none',
               transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.1s',
             }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'}
@@ -326,7 +326,7 @@ function Filmstrip({ pages, current, onGo }: {
             <div style={{
               position: 'absolute', bottom: 2, left: 0, right: 0,
               textAlign: 'center', fontSize: 7, fontWeight: 900,
-              color: active ? '#60a5fa' : 'rgba(255,255,255,0.7)',
+              color: active ? 'var(--color-gold)' : 'rgba(255,255,255,0.7)',
               textShadow: '0 1px 3px rgba(0,0,0,0.9)',
               pointerEvents: 'none',
             }}>
@@ -428,7 +428,7 @@ function MobileFilmstrip({ pages, current, onGo, onClose }: {
                 cursor: 'pointer', flexShrink: 0,
                 position: 'relative',
                 border: active
-                  ? '2px solid #60a5fa'
+                  ? '2px solid var(--color-gold)'
                   : '2px solid rgba(255,255,255,0.07)',
                 boxShadow: active ? '0 0 10px rgba(245,200,0,0.45)' : 'none',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
@@ -449,7 +449,7 @@ function MobileFilmstrip({ pages, current, onGo, onClose }: {
               <div style={{
                 position: 'absolute', bottom: 1, right: 2,
                 fontSize: 6, fontWeight: 900,
-                color: active ? '#60a5fa' : 'rgba(255,255,255,0.55)',
+                color: active ? 'var(--color-gold)' : 'rgba(255,255,255,0.55)',
                 textShadow: '0 1px 3px rgba(0,0,0,1)',
                 lineHeight: 1,
               }}>
@@ -703,8 +703,8 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
 
   const btnDesktop: React.CSSProperties = {
     fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-    color: 'rgba(96,165,250,0.9)', background: 'transparent',
-    border: '1px solid rgba(96,165,250,0.25)', borderRadius: 8,
+    color: 'rgba(var(--brand-light-rgb),0.9)', background: 'transparent',
+    border: '1px solid rgba(var(--brand-light-rgb),0.25)', borderRadius: 8,
     padding: '4px 10px', minHeight: 40, cursor: 'pointer', position: 'relative',
     display: 'flex', alignItems: 'center', gap: 4,
   }
@@ -749,9 +749,9 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
               <button
                 onClick={() => setFilmstripMobile(f => !f)}
                 style={{
-                  background: filmstripMobile ? 'rgba(96,165,250,0.18)' : 'transparent',
-                  border: `1px solid ${filmstripMobile ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.15)'}`,
-                  borderRadius: 7, color: filmstripMobile ? '#60a5fa' : 'rgba(255,255,255,0.5)',
+                  background: filmstripMobile ? 'rgba(var(--brand-light-rgb),0.18)' : 'transparent',
+                  border: `1px solid ${filmstripMobile ? 'rgba(var(--brand-light-rgb),0.5)' : 'rgba(255,255,255,0.15)'}`,
+                  borderRadius: 7, color: filmstripMobile ? 'var(--color-gold)' : 'rgba(255,255,255,0.5)',
                   fontSize: 16, width: 36, height: 36,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s', flexShrink: 0,
@@ -786,7 +786,7 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
                 </div>
               </div>
               {isAdmin && (
-                <a href="/admin" style={{ ...btnDesktop, textDecoration: 'none', color: 'rgba(96,165,250,0.7)', borderColor: 'rgba(96,165,250,0.2)', display: 'flex', alignItems: 'center' }}>
+                <a href="/admin" style={{ ...btnDesktop, textDecoration: 'none', color: 'rgba(var(--brand-light-rgb),0.7)', borderColor: 'rgba(var(--brand-light-rgb),0.2)', display: 'flex', alignItems: 'center' }}>
                   Admin
                 </a>
               )}
@@ -802,9 +802,9 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
               onClick={() => setMobileMenuOpen(o => !o)}
               style={{
                 position: 'relative',
-                background: mobileMenuOpen ? 'rgba(96,165,250,0.15)' : 'transparent',
-                border: `1px solid ${mobileMenuOpen ? 'rgba(96,165,250,0.45)' : 'rgba(255,255,255,0.2)'}`,
-                borderRadius: 8, color: mobileMenuOpen ? '#60a5fa' : 'rgba(255,255,255,0.6)',
+                background: mobileMenuOpen ? 'rgba(var(--brand-light-rgb),0.15)' : 'transparent',
+                border: `1px solid ${mobileMenuOpen ? 'rgba(var(--brand-light-rgb),0.45)' : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: 8, color: mobileMenuOpen ? 'var(--color-gold)' : 'rgba(255,255,255,0.6)',
                 width: 40, height: 40, fontSize: 18,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, transition: 'all 0.2s',
@@ -856,19 +856,19 @@ export default function FlipBook({ sections, nomeUsuario, matricula, role }: { s
               {[
                 {
                   label: 'Pacotes', icon: '🎴', badge: pacotesBadge,
-                  color: '#60a5fa', onClick: () => { setPacotesOpen(true); setMobileMenuOpen(false) },
+                  color: 'var(--color-gold)', onClick: () => { setPacotesOpen(true); setMobileMenuOpen(false) },
                 },
                 {
                   label: 'Inventário', icon: '📋', badge: 0,
-                  color: '#60a5fa', onClick: () => { setInventarioOpen(true); setMobileMenuOpen(false) },
+                  color: 'var(--color-gold)', onClick: () => { setInventarioOpen(true); setMobileMenuOpen(false) },
                 },
                 {
                   label: 'Trocas', icon: '🔄', badge: trocasBadge,
-                  color: '#60a5fa', onClick: () => { setTrocasOpen(true); setTrocasBadge(0); setMobileMenuOpen(false) },
+                  color: 'var(--color-gold)', onClick: () => { setTrocasOpen(true); setTrocasBadge(0); setMobileMenuOpen(false) },
                 },
                 ...(isAdmin ? [{
                   label: 'Admin', icon: '⚙️', badge: 0,
-                  color: 'rgba(96,165,250,0.7)', onClick: () => { window.location.href = '/admin' },
+                  color: 'rgba(var(--brand-light-rgb),0.7)', onClick: () => { window.location.href = '/admin' },
                 }] : []),
               ].map(item => (
                 <button key={item.label} onClick={item.onClick} style={{

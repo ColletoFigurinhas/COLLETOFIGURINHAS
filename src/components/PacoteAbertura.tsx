@@ -27,13 +27,13 @@ const TIER: Record<Tier, {
   bgGlow: string; entrance: string
 }> = {
   padrao: {
-    colors: ['#93c5fd','#60a5fa','#dbeafe'],
-    primary: '#3b82f6', glow: 'rgba(59,130,246,0.7)',
-    label: '', labelColor: '#93c5fd',
+    colors: ['var(--color-gold-light)','var(--color-gold)','#dbeafe'],
+    primary: 'var(--color-verde-light)', glow: 'rgba(var(--brand-bright-rgb),0.7)',
+    label: '', labelColor: 'var(--color-gold-light)',
     rings: 1, particles: 10,
-    border: '1.5px solid rgba(147,197,253,0.6)',
-    shadow: '0 0 28px rgba(59,130,246,0.55), 0 16px 50px rgba(0,0,0,0.85)',
-    bgGlow: 'rgba(59,130,246,0.1)', entrance: 'enter-slide',
+    border: '1.5px solid rgba(var(--brand-pale-rgb),0.6)',
+    shadow: '0 0 28px rgba(var(--brand-bright-rgb),0.55), 0 16px 50px rgba(0,0,0,0.85)',
+    bgGlow: 'rgba(var(--brand-bright-rgb),0.1)', entrance: 'enter-slide',
   },
   gestor: {
     colors: ['#fde68a','#fbbf24','#f59e0b','#fff'],
@@ -45,7 +45,7 @@ const TIER: Record<Tier, {
     bgGlow: 'rgba(245,158,11,0.18)', entrance: 'enter-bounce',
   },
   especial: {
-    colors: ['#c084fc','#f472b6','#60a5fa','#34d399','#fbbf24'],
+    colors: ['#c084fc','#f472b6','var(--color-gold)','#34d399','#fbbf24'],
     primary: '#a855f7', glow: 'rgba(168,85,247,0.95)',
     label: '✦  ESPECIAL', labelColor: '#e9d5ff',
     rings: 3, particles: 24,
@@ -488,7 +488,7 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
                     ? `${tcfg.entrance} 0.6s cubic-bezier(0.2,0.8,0.2,1), shake 0.55s ease-out`
                     : `${tcfg.entrance} 0.6s cubic-bezier(0.2,0.8,0.2,1)`,
                 ...(tier === 'especial' ? {
-                  backgroundImage: 'linear-gradient(#0a0a0a,#0a0a0a), linear-gradient(90deg,#c084fc,#f472b6,#fbbf24,#34d399,#60a5fa,#c084fc)',
+                  backgroundImage: 'linear-gradient(#0a0a0a,#0a0a0a), linear-gradient(90deg,#c084fc,#f472b6,#fbbf24,#34d399,var(--color-gold),#c084fc)',
                   backgroundOrigin: 'border-box', backgroundClip: 'padding-box,border-box',
                   outline: '2px solid transparent',
                 } : tier === 'premio_prata' ? {
@@ -504,7 +504,7 @@ function AberturaAnimation({ pacote, onClose }: { pacote: Pacote; onClose: () =>
             >
               {/* Borda animada por tier */}
               {tier === 'especial' && (
-                <div style={{ position: 'absolute', inset: -2, zIndex: -1, borderRadius: 16, background: 'linear-gradient(90deg,#c084fc,#f472b6,#fbbf24,#34d399,#60a5fa,#c084fc)', backgroundSize: '300% 100%', animation: 'rainbow-border 2.5s linear infinite' }} />
+                <div style={{ position: 'absolute', inset: -2, zIndex: -1, borderRadius: 16, background: 'linear-gradient(90deg,#c084fc,#f472b6,#fbbf24,#34d399,var(--color-gold),#c084fc)', backgroundSize: '300% 100%', animation: 'rainbow-border 2.5s linear infinite' }} />
               )}
               {tier === 'premio_prata' && (
                 <>

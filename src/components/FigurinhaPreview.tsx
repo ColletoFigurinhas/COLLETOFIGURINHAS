@@ -71,7 +71,7 @@ export default function FigurinhaPreview({ id, imagemUrl, classificacao, onClose
         <div style={{ display: 'flex', gap: 8, width: '100%' }}>
           <button onClick={baixar} style={{
             flex: 1, height: 40, borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: 'linear-gradient(135deg,#1d4ed8,#1e3a8a)',
+            background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))',
             color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
             textTransform: 'uppercase',
           }}>

@@ -90,17 +90,7 @@ export default function LoginPage() {
   return (
     <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', padding: '0 20px' }}>
 
-      {/* Logo */}
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <img src="/logo-icon.png" alt="Colleto" draggable={false}
-          style={{ width: 72, height: 72, objectFit: 'contain', marginBottom: 12, filter: 'drop-shadow(0 0 24px rgba(59,130,246,0.5))' }} />
-        <div style={{ fontSize: 9, letterSpacing: 6, textTransform: 'uppercase', color: 'rgba(96,165,250,0.7)', marginBottom: 4 }}>Colleto</div>
-        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase', background: 'linear-gradient(90deg,#3b82f6,#93c5fd,#3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-          Figurinhas
-        </div>
-      </div>
-
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 16, padding: '36px 32px', backdropFilter: 'blur(10px)' }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-bright-rgb),0.2)', borderRadius: 16, padding: '36px 32px', backdropFilter: 'blur(10px)' }}>
 
         {/* ── STEP 1: Matrícula ── */}
         {step === 'matricula' && (
@@ -113,7 +103,7 @@ export default function LoginPage() {
                   value={matricula} onChange={e => setMatricula(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending || !matricula.trim()} style={{ ...btn, background: (pending || !matricula.trim()) ? 'rgba(29,78,216,0.3)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: (pending || !matricula.trim()) ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending || !matricula.trim()} style={{ ...btn, background: (pending || !matricula.trim()) ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: (pending || !matricula.trim()) ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Verificando…' : 'Continuar →'}
               </button>
             </form>
@@ -131,13 +121,13 @@ export default function LoginPage() {
                   value={senha} onChange={e => setSenha(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(29,78,216,0.3)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: pending ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(var(--brand-rgb),0.3)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: pending ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Entrando…' : 'Entrar'}
               </button>
             </form>
             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button onClick={voltarMatricula} style={linkBtn}>← Trocar matrícula</button>
-              <button onClick={handleEsqueceu} disabled={pending} style={{ ...linkBtn, color: 'rgba(96,165,250,0.6)' }}>
+              <button onClick={handleEsqueceu} disabled={pending} style={{ ...linkBtn, color: 'rgba(var(--brand-light-rgb),0.6)' }}>
                 Esqueci minha senha
               </button>
             </div>
@@ -150,7 +140,7 @@ export default function LoginPage() {
             <div style={{ ...title, marginBottom: 4 }}>
               {isNovo ? 'Criar acesso' : `Olá, ${primeiroNome}!`}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(96,165,250,0.6)', letterSpacing: 1, textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ fontSize: 10, color: 'rgba(var(--brand-light-rgb),0.6)', letterSpacing: 1, textAlign: 'center', marginBottom: 24 }}>
               {isNovo ? 'Preencha seus dados para entrar no álbum' : 'Defina sua senha para entrar'}
             </div>
             <form onSubmit={handleCadastro} style={form}>
@@ -179,7 +169,7 @@ export default function LoginPage() {
                   value={confirmar} onChange={e => setConfirmar(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(29,78,216,0.2)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: pending ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending} style={{ ...btn, background: pending ? 'rgba(var(--brand-rgb),0.2)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: pending ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Criando acesso…' : 'Criar acesso'}
               </button>
             </form>
@@ -208,9 +198,9 @@ export default function LoginPage() {
             </div>
 
             {codigoDebug && (
-              <div style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, textAlign: 'center' }}>
-                <div style={{ fontSize: 8, color: 'rgba(96,165,250,0.5)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Código (dev)</div>
-                <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 8, color: '#60a5fa' }}>{codigoDebug}</div>
+              <div style={{ background: 'rgba(var(--brand-light-rgb),0.08)', border: '1px solid rgba(var(--brand-light-rgb),0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 8, color: 'rgba(var(--brand-light-rgb),0.5)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Código (dev)</div>
+                <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 8, color: 'var(--color-gold)' }}>{codigoDebug}</div>
               </div>
             )}
 
@@ -232,7 +222,7 @@ export default function LoginPage() {
                   value={confirmarNova} onChange={e => setConfirmarNova(e.target.value)} style={inp} />
               </div>
               {erro && <div style={alert}>{erro}</div>}
-              <button type="submit" disabled={pending || codigo.length < 6} style={{ ...btn, background: (pending || codigo.length < 6) ? 'rgba(29,78,216,0.25)' : 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: (pending || codigo.length < 6) ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={pending || codigo.length < 6} style={{ ...btn, background: (pending || codigo.length < 6) ? 'rgba(var(--brand-rgb),0.25)' : 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: (pending || codigo.length < 6) ? 'not-allowed' : 'pointer' }}>
                 {pending ? 'Confirmando…' : 'Confirmar nova senha'}
               </button>
             </form>
@@ -251,7 +241,7 @@ export default function LoginPage() {
               Agora entre com sua matrícula e a nova senha.
             </div>
             <button onClick={() => { setSenha(''); setStep('senha') }}
-              style={{ ...btn, background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#93c5fd', cursor: 'pointer', width: '100%' }}>
+              style={{ ...btn, background: 'linear-gradient(135deg,var(--color-verde),var(--color-verde-dark))', color: 'var(--color-gold-light)', cursor: 'pointer', width: '100%' }}>
               Entrar agora
             </button>
           </div>

@@ -105,6 +105,7 @@ function AbaFigurinhas() {
   const editFileRef = useRef<HTMLInputElement>(null)
 
   const [deletandoId, setDeletandoId] = useState<number | null>(null)
+  const [forcarId,    setForcarId]    = useState<number | null>(null)
   const [deleteErr,   setDeleteErr]   = useState('')
 
   const isFuncionario = tipo === 'FUNCIONARIO'
@@ -196,12 +197,17 @@ function AbaFigurinhas() {
     setEditUploading(false)
   }
 
-  async function handleDeletar(id: number) {
+  async function handleDeletar(id: number, force = false) {
     setDeleteErr('')
-    const r = await fetch(`/api/admin/figurinhas/${id}`, { method: 'DELETE' })
-    if (!r.ok) { const b = await r.json().catch(() => ({})); setDeleteErr(b.error ?? 'Erro ao deletar.'); setDeletandoId(null); return }
+    const r = await fetch(`/api/admin/figurinhas/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' })
+    if (!r.ok) {
+      const b = await r.json().catch(() => ({}))
+      // 409 = carta em uso → pede confirmação de exclusão forçada (cascade)
+      if (r.status === 409 && b.emUso) { setDeleteErr(b.error ?? 'Carta em uso.'); setForcarId(id); setDeletandoId(null); return }
+      setDeleteErr(b.error ?? 'Erro ao deletar.'); setDeletandoId(null); setForcarId(null); return
+    }
     setFigurinhas(prev => prev.filter(f => f.id !== id))
-    setDeletandoId(null)
+    setDeletandoId(null); setForcarId(null); setDeleteErr('')
   }
 
   async function toggleAtivo(id: number, ativo: boolean) {
@@ -287,7 +293,15 @@ function AbaFigurinhas() {
               <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 3 }}>
                 {stats[f.id] ? `${stats[f.id].donos} têm · ${stats[f.id].copias} cóp.` : '—'}
               </div>
-              {deletandoId === f.id ? (
+              {forcarId === f.id ? (
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                  <span style={{ fontSize: 8, color: '#f87171', textAlign: 'center', lineHeight: 1.3 }}>Forçar? apaga de<br />pacotes, álbuns e trocas</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button onClick={() => handleDeletar(f.id, true)} style={confirmBtn}>✓</button>
+                    <button onClick={() => { setForcarId(null); setDeleteErr('') }} style={cancelBtn}>✕</button>
+                  </div>
+                </div>
+              ) : deletandoId === f.id ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: 6 }}>
                   <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)' }}>Deletar?</span>
                   <button onClick={() => handleDeletar(f.id)} style={confirmBtn}>✓</button>
