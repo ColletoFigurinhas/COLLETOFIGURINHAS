@@ -9,14 +9,14 @@ export default function PrimeiroAcessoPage() {
   return (
     <div style={{ width: '100%', maxWidth: 420, margin: '0 auto', padding: '0 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 36 }}>
-        <div style={{ fontSize: 48, marginBottom: 10, filter: 'drop-shadow(0 0 20px rgba(240,192,64,0.4))' }}>🔑</div>
-        <div style={{ fontSize: 9, letterSpacing: 5, textTransform: 'uppercase', color: 'rgba(240,192,64,0.6)', marginBottom: 6 }}>Primeiro Acesso</div>
+        <div style={{ fontSize: 48, marginBottom: 10, filter: 'drop-shadow(0 0 20px rgba(var(--brand-light-rgb),0.4))' }}>🔑</div>
+        <div style={{ fontSize: 9, letterSpacing: 5, textTransform: 'uppercase', color: 'rgba(var(--brand-light-rgb),0.6)', marginBottom: 6 }}>Primeiro Acesso</div>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Complete seu cadastro</div>
       </div>
 
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(240,192,64,0.15)', borderRadius: 16, padding: '36px 32px', backdropFilter: 'blur(10px)' }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(var(--brand-light-rgb),0.15)', borderRadius: 16, padding: '36px 32px', backdropFilter: 'blur(10px)' }}>
 
-        <div style={{ background: 'rgba(240,192,64,0.06)', border: '1px solid rgba(240,192,64,0.12)', borderRadius: 8, padding: '10px 14px', marginBottom: 24, fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.8 }}>
+        <div style={{ background: 'rgba(var(--brand-light-rgb),0.06)', border: '1px solid rgba(var(--brand-light-rgb),0.12)', borderRadius: 8, padding: '10px 14px', marginBottom: 24, fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.8 }}>
           O e-mail será usado para notificações e recuperação de senha.<br/>
           Senha: mínimo 8 caracteres · uma letra · um número.
         </div>
@@ -63,7 +63,7 @@ export default function PrimeiroAcessoPage() {
 
           <button type="submit" disabled={pending} style={{
             height: 48, borderRadius: 10, border: 'none',
-            background: pending ? 'rgba(240,192,64,0.3)' : 'linear-gradient(135deg,#f0c040,#b8902c)',
+            background: pending ? 'rgba(var(--brand-light-rgb),0.3)' : 'linear-gradient(135deg,var(--color-gold),var(--color-verde-dark))',
             color: '#000', fontSize: 12, fontWeight: 800,
             letterSpacing: 3, textTransform: 'uppercase',
             cursor: pending ? 'not-allowed' : 'pointer',

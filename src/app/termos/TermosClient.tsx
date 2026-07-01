@@ -61,7 +61,7 @@ export default function TermosClient({ nome, ehAdmin }: { nome: string; ehAdmin:
             disabled={!leuTudo}
             checked={aceito}
             onChange={e => setAceito(e.target.checked)}
-            style={{ width: 18, height: 18, accentColor: '#f0c040' }}
+            style={{ width: 18, height: 18, accentColor: 'var(--color-gold)' }}
           />
           <span>Li e concordo com os Termos de Uso e a Política de Privacidade.</span>
         </label>
@@ -71,7 +71,7 @@ export default function TermosClient({ nome, ehAdmin }: { nome: string; ehAdmin:
           disabled={!aceito || pending}
           style={{
             ...botao,
-            background: (!aceito || pending) ? 'rgba(240,192,64,0.25)' : 'linear-gradient(135deg,#f0c040,#b8902c)',
+            background: (!aceito || pending) ? 'rgba(var(--brand-light-rgb),0.25)' : 'linear-gradient(135deg,var(--color-gold),var(--color-verde-dark))',
             color: (!aceito || pending) ? 'rgba(255,255,255,0.5)' : '#000',
             cursor: (!aceito || pending) ? 'not-allowed' : 'pointer',
           }}
@@ -89,21 +89,21 @@ const wrap: React.CSSProperties = {
 }
 const card: React.CSSProperties = {
   width: '100%', maxWidth: 720, background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(240,192,64,0.15)', borderRadius: 16, padding: '28px 28px 24px',
+  border: '1px solid rgba(var(--brand-light-rgb),0.15)', borderRadius: 16, padding: '28px 28px 24px',
   backdropFilter: 'blur(10px)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
 }
-const kicker: React.CSSProperties = { fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(240,192,64,0.7)', marginBottom: 8 }
+const kicker: React.CSSProperties = { fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: 'rgba(var(--brand-light-rgb),0.7)', marginBottom: 8 }
 const titulo: React.CSSProperties = { margin: 0, fontSize: 20, fontWeight: 800, color: '#fff' }
 const sub: React.CSSProperties = { margin: '8px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }
-const aviso: React.CSSProperties = { marginTop: 14, background: 'rgba(240,192,64,0.06)', border: '1px solid rgba(240,192,64,0.18)', borderRadius: 8, padding: '10px 12px', fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }
+const aviso: React.CSSProperties = { marginTop: 14, background: 'rgba(var(--brand-light-rgb),0.06)', border: '1px solid rgba(var(--brand-light-rgb),0.18)', borderRadius: 8, padding: '10px 12px', fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }
 const scrollBox: React.CSSProperties = {
   marginTop: 16, height: '46vh', overflowY: 'auto', padding: '4px 16px 4px 4px',
   border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, background: 'rgba(0,0,0,0.2)',
 }
-const secTitulo: React.CSSProperties = { margin: '0 0 6px', fontSize: 13, fontWeight: 800, color: '#f0c040' }
+const secTitulo: React.CSSProperties = { margin: '0 0 6px', fontSize: 13, fontWeight: 800, color: 'var(--color-gold)' }
 const paragrafo: React.CSSProperties = { margin: '0 0 8px', fontSize: 12.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.7 }
 const fim: React.CSSProperties = { textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)', padding: '10px 0 4px' }
-const dica: React.CSSProperties = { marginTop: 12, textAlign: 'center', fontSize: 11, color: 'rgba(240,192,64,0.8)' }
+const dica: React.CSSProperties = { marginTop: 12, textAlign: 'center', fontSize: 11, color: 'rgba(var(--brand-light-rgb),0.8)' }
 const checkRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, fontSize: 13, color: 'rgba(255,255,255,0.8)' }
 const botao: React.CSSProperties = {
   width: '100%', height: 50, marginTop: 16, borderRadius: 10, border: 'none',

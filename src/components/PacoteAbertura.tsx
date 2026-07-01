@@ -256,7 +256,7 @@ function SelecaoPacote({ pacotes, onSelect, onClose }: { pacotes: Pacote[]; onSe
   ].filter(t => conta[t.tipo] > 0)
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(14px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 40 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 5, textTransform: 'uppercase', color: '#f5c800' }}>Escolha um pacote para abrir</div>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--color-gold)' }}>Escolha um pacote para abrir</div>
       <div style={{ display: 'flex', gap: 48, alignItems: 'flex-end' }}>
         {tipos.map(t => (
           <div key={t.tipo} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>

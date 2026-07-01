@@ -51,8 +51,8 @@ function MiniCard({ fig, selecionado, onClick }: {
   return (
     <div onClick={onClick} style={{
       width: 52, height: 70, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
-      border: selecionado ? '2px solid #f0c040' : repetida ? '1.5px solid rgba(240,192,64,0.5)' : '1.5px solid rgba(255,255,255,0.12)',
-      boxShadow: selecionado ? '0 0 10px rgba(240,192,64,0.4)' : 'none',
+      border: selecionado ? '2px solid var(--color-gold)' : repetida ? '1.5px solid rgba(var(--brand-light-rgb),0.5)' : '1.5px solid rgba(255,255,255,0.12)',
+      boxShadow: selecionado ? '0 0 10px rgba(var(--brand-light-rgb),0.4)' : 'none',
       background: 'rgba(255,255,255,0.06)',
       cursor: onClick ? 'pointer' : 'default',
       position: 'relative',
@@ -63,11 +63,11 @@ function MiniCard({ fig, selecionado, onClick }: {
             alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'rgba(255,255,255,0.3)' }}>#{fig.id}</div>
       }
-      {selecionado && <div style={{ position: 'absolute', inset: 0, background: 'rgba(240,192,64,0.15)' }} />}
+      {selecionado && <div style={{ position: 'absolute', inset: 0, background: 'rgba(var(--brand-light-rgb),0.15)' }} />}
       {repetida && (
         <div style={{
           position: 'absolute', top: 2, right: 2,
-          background: '#f0c040', color: '#000',
+          background: 'var(--color-gold)', color: '#000',
           fontSize: 7, fontWeight: 900, borderRadius: 4,
           padding: '1px 3px', lineHeight: 1.2,
         }}>
@@ -160,8 +160,8 @@ function TrocaRecebidaPendente({ troca, onAtualizar, onTrocaConcluida }: { troca
             <button onClick={() => setSoRepetidas(v => !v)} style={{
               fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
               padding: '3px 8px', borderRadius: 5, cursor: 'pointer', border: 'none',
-              background: soRepetidas ? '#f0c040' : 'rgba(240,192,64,0.12)',
-              color: soRepetidas ? '#000' : '#f0c040',
+              background: soRepetidas ? 'var(--color-gold)' : 'rgba(var(--brand-light-rgb),0.12)',
+              color: soRepetidas ? '#000' : 'var(--color-gold)',
               transition: 'all 0.15s',
             }}>
               {soRepetidas ? '★ Repetidas' : '☆ Repetidas'}
@@ -175,7 +175,7 @@ function TrocaRecebidaPendente({ troca, onAtualizar, onTrocaConcluida }: { troca
           {erro && <div style={{ fontSize: 10, color: '#f87171', marginTop: 6 }}>{erro}</div>}
           <button onClick={aceitar} disabled={!selecionada || enviando} style={{
             marginTop: 10, width: '100%', height: 34, borderRadius: 7, border: 'none',
-            background: selecionada ? 'linear-gradient(135deg,#f0c040,#b8902c)' : 'rgba(255,255,255,0.06)',
+            background: selecionada ? 'linear-gradient(135deg,var(--color-gold),var(--color-verde-dark))' : 'rgba(255,255,255,0.06)',
             color: selecionada ? '#000' : 'rgba(255,255,255,0.2)',
             fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase',
             cursor: selecionada ? 'pointer' : 'not-allowed',
@@ -333,7 +333,7 @@ export default function TrocasModal({ onClose, onTrocaConcluida }: { onClose: ()
     }}>
       <div onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: 520, maxHeight: '85vh',
-        background: '#0d1220', border: '1px solid rgba(240,192,64,0.15)',
+        background: '#0d1220', border: '1px solid rgba(var(--brand-light-rgb),0.15)',
         borderRadius: 16, display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         {/* Header */}
@@ -341,7 +341,7 @@ export default function TrocasModal({ onClose, onTrocaConcluida }: { onClose: ()
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 4, textTransform: 'uppercase', color: '#f0c040' }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--color-gold)' }}>
             Trocas
           </div>
           <button onClick={onClose} style={{
@@ -359,17 +359,17 @@ export default function TrocasModal({ onClose, onTrocaConcluida }: { onClose: ()
           ]).map(tab => (
             <button key={tab.key} onClick={() => setAba(tab.key)} style={{
               flex: 1, padding: '12px 16px', cursor: 'pointer',
-              background: aba === tab.key ? 'rgba(240,192,64,0.08)' : 'transparent',
+              background: aba === tab.key ? 'rgba(var(--brand-light-rgb),0.08)' : 'transparent',
               borderTop: 'none', borderLeft: 'none', borderRight: 'none',
-              borderBottom: aba === tab.key ? '2px solid #f0c040' : '2px solid transparent',
-              color: aba === tab.key ? '#f0c040' : 'rgba(255,255,255,0.35)',
+              borderBottom: aba === tab.key ? '2px solid var(--color-gold)' : '2px solid transparent',
+              color: aba === tab.key ? 'var(--color-gold)' : 'rgba(255,255,255,0.35)',
               fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}>
               {tab.label}
               {tab.count > 0 && (
                 <span style={{
-                  background: aba === tab.key ? '#f0c040' : 'rgba(255,255,255,0.12)',
+                  background: aba === tab.key ? 'var(--color-gold)' : 'rgba(255,255,255,0.12)',
                   color: aba === tab.key ? '#000' : 'rgba(255,255,255,0.5)',
                   borderRadius: 10, fontSize: 9, fontWeight: 900, padding: '1px 6px',
                 }}>
